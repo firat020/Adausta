@@ -3,55 +3,45 @@ import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
   CreditCard, Shield, Star, Zap, Check, RefreshCw, MessageSquare
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { kategorileriGetir, sehirleriGetir, ustaKayit } from '../api'
 
-const PLANLAR = [
-  {
-    id: 'aylik',
-    ad: 'Monthly Plan',
-    fiyat: '9.99',
-    birim: '$ / month',
-    aciklama: 'Renews monthly, cancel anytime.',
-    ozellikler: [
-      'Profile visible in search results',
-      'Unlimited customer inquiries',
-      'WhatsApp & phone button',
-      'Reviews and rating system',
-    ],
-    rozet: null,
-  },
-  {
-    id: 'yillik',
-    ad: 'Annual Plan',
-    fiyat: '79.99',
-    birim: '$ / year',
-    aylikEsit: '$6.67/mo — Save 33%',
-    aciklama: 'Best value — one full year of uninterrupted visibility.',
-    ozellikler: [
-      'Everything in Monthly',
-      'Priority ranking in search results',
-      'Featured craftsman badge',
-      '24/7 priority support',
-    ],
-    rozet: 'Most Popular',
-  },
-]
-
-// ─── DEMO: Sahte SMS kodu (gerçek SMS entegrasyonu eklenecek) ─────────────────
+// ─── DEMO: Sahte SMS kodu ─────────────────────────────────────────────────────
 function smsKoduGonder(telefon) {
-  // Gerçek entegrasyonda: Twilio / Netgsm API çağrısı
   console.log(`SMS kodu gönderildi: ${telefon} → 1234`)
-  return Promise.resolve('1234') // demo kod
+  return Promise.resolve('1234')
 }
 
 export default function UstaKayit() {
-  // adım: 1=plan, 2=telefon doğrulama, 3=bilgiler, 4=ödeme
+  const { t } = useTranslation()
+
+  const PLANLAR = [
+    {
+      id: 'aylik',
+      ad: t('kayit.planAylik'),
+      fiyat: '9.99',
+      birim: t('kayit.planAylikBirim'),
+      aciklama: t('kayit.planAylikAciklama'),
+      ozellikler: [t('kayit.planF1A'), t('kayit.planF2A'), t('kayit.planF3A'), t('kayit.planF4A')],
+      rozet: null,
+    },
+    {
+      id: 'yillik',
+      ad: t('kayit.planYillik'),
+      fiyat: '79.99',
+      birim: t('kayit.planYillikBirim'),
+      aylikEsit: t('kayit.planYillikIndirim'),
+      aciklama: t('kayit.planYillikAciklama'),
+      ozellikler: [t('kayit.planF1Y'), t('kayit.planF2Y'), t('kayit.planF3Y'), t('kayit.planF4Y')],
+      rozet: t('kayit.planEnPopuler'),
+    },
+  ]
+
   const [adim, setAdim] = useState(1)
   const [secilenPlan, setSecilenPlan] = useState('yillik')
 
-  // Telefon doğrulama state
   const [telefonGirdi, setTelefonGirdi] = useState('')
-  const [smsDurum, setSmsDurum] = useState('idle') // idle | gonderildi | dogrulandi
+  const [smsDurum, setSmsDurum] = useState('idle')
   const [smsKod, setSmsKod] = useState('')
   const [gercekKod, setGercekKod] = useState('')
   const [kodHata, setKodHata] = useState('')
@@ -59,7 +49,6 @@ export default function UstaKayit() {
   const timerRef = useRef(null)
   const girdiRef = useRef([])
 
-  // Form
   const [kategoriler, setKategoriler] = useState([])
   const [sehirler, setSehirler] = useState([])
   const [ilceler, setIlceler] = useState([])
@@ -82,7 +71,6 @@ export default function UstaKayit() {
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
   }, [])
 
-  // Geri sayım
   useEffect(() => {
     if (geriSayim > 0) {
       timerRef.current = setTimeout(() => setGeriSayim(g => g - 1), 1000)
@@ -96,7 +84,6 @@ export default function UstaKayit() {
     setIlceler(s?.ilceler || [])
   }
 
-  // SMS gönder
   const smsiGonder = async () => {
     if (!telefonGirdi.trim()) return
     setKodHata('')
@@ -107,7 +94,6 @@ export default function UstaKayit() {
     setGercekKod(kod)
   }
 
-  // Kodu doğrula
   const koduDogrula = () => {
     if (smsKod === gercekKod) {
       setSmsDurum('dogrulandi')
@@ -119,7 +105,6 @@ export default function UstaKayit() {
     }
   }
 
-  // Otomatik odaklanma — kod kutucukları
   const handleKodInput = (val, idx) => {
     const temiz = val.replace(/\D/g, '').slice(-1)
     const arr = (smsKod + '    ').split('').slice(0, 4)
@@ -162,18 +147,16 @@ export default function UstaKayit() {
 
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
 
-  // ─── Başarılı ────────────────────────────────────────────────
+  // ─── Başarılı ────────────────────────────────────────────────────────────────
   if (basarili) return (
     <div className="max-w-lg mx-auto px-4 py-20 text-center">
       <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
         <CheckCircle size={36} className="text-blue-600" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Submitted!</h2>
-      <p className="text-gray-500 leading-relaxed mb-4">
-        After payment confirmation your profile will go live within 24 hours.
-      </p>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('kayit.basarili')}</h2>
+      <p className="text-gray-500 leading-relaxed mb-4">{t('kayit.basariliAlt')}</p>
       <div className="bg-blue-50 border border-blue-100 rounded-xl px-6 py-4 text-sm text-blue-700">
-        Questions? <strong>+90 533 426 58 90</strong>
+        +90 533 426 58 90
       </div>
     </div>
   )
@@ -181,12 +164,12 @@ export default function UstaKayit() {
   const inputCls = "w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
   const labelCls = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"
 
-  // ─── Adım göstergesi ──────────────────────────────────────────
+  // ─── Adım göstergesi ─────────────────────────────────────────────────────────
   const ADIMLAR = [
-    { no: 1, ad: 'Plan' },
-    { no: 2, ad: 'Doğrulama' },
-    { no: 3, ad: 'Bilgiler' },
-    { no: 4, ad: 'Ödeme' },
+    { no: 1, ad: t('kayit.planAdim') },
+    { no: 2, ad: t('kayit.dogrulamaAdim') },
+    { no: 3, ad: t('kayit.bilgilerAdim') },
+    { no: 4, ad: t('kayit.odemeAdim') },
   ]
 
   const AdimGostergesi = () => (
@@ -209,12 +192,12 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 1: Plan Seçimi ──────────────────────────────────────
+  // ─── Adım 1: Plan Seçimi ──────────────────────────────────────────────────────
   if (adim === 1) return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Register as a Craftsman</h1>
-        <p className="text-gray-500 text-sm mt-2">Choose a plan to reach customers across KKTC</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('kayit.baslik')}</h1>
+        <p className="text-gray-500 text-sm mt-2">{t('kayit.alt')}</p>
       </div>
       <AdimGostergesi />
 
@@ -262,23 +245,21 @@ export default function UstaKayit() {
       </div>
 
       <div className="flex items-center justify-center gap-2 mb-6 text-xs text-gray-400">
-        <Shield size={13} /><span>SSL encrypted · Secure payment · Cancel anytime</span>
+        <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
       </div>
       <button onClick={() => setAdim(2)}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
-        Continue — ${seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? '/mo' : '/yr'}
+        {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
       </button>
     </div>
   )
 
-  // ─── Adım 2: Telefon Doğrulama ────────────────────────────────
+  // ─── Adım 2: Telefon Doğrulama ────────────────────────────────────────────────
   if (adim === 2) return (
     <div className="max-w-md mx-auto px-4 py-10">
       <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Telefon Doğrulama</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Numaranıza SMS kodu göndereceğiz
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('kayit.telefonDogrulama')}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('kayit.telefonAlt')}</p>
       </div>
       <AdimGostergesi />
 
@@ -290,14 +271,13 @@ export default function UstaKayit() {
             <span className="font-semibold text-blue-800">{seciliPlan?.ad}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-bold text-blue-700">${seciliPlan?.fiyat}{seciliPlan?.id === 'aylik' ? '/mo' : '/yr'}</span>
-            <button onClick={() => setAdim(1)} className="text-xs text-blue-500 hover:underline">Değiştir</button>
+            <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
+            <button onClick={() => setAdim(1)} className="text-xs text-blue-500 hover:underline">{t('kayit.degistir')}</button>
           </div>
         </div>
 
-        {/* Telefon girişi */}
         <div className="mb-4">
-          <label className={labelCls}>Telefon Numarası</label>
+          <label className={labelCls}>+90</label>
           <div className="flex gap-2">
             <input
               type="tel"
@@ -312,20 +292,19 @@ export default function UstaKayit() {
               disabled={!telefonGirdi.trim() || geriSayim > 0 || smsDurum === 'dogrulandi'}
               className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
               {smsDurum === 'idle' ? (
-                <><MessageSquare size={14} /> Kod Gönder</>
+                <><MessageSquare size={14} /> {t('kayit.kodGonder')}</>
               ) : geriSayim > 0 ? (
                 <><RefreshCw size={13} className="animate-spin" /> {geriSayim}s</>
               ) : (
-                <><RefreshCw size={13} /> Tekrar</>
+                <><RefreshCw size={13} /> {t('kayit.tekrar')}</>
               )}
             </button>
           </div>
         </div>
 
-        {/* Kod giriş kutuları */}
         {smsDurum !== 'idle' && (
           <div className="mb-4">
-            <label className={labelCls}>SMS Kodu</label>
+            <label className={labelCls}>{t('kayit.smsKodu')}</label>
             <div className="flex gap-3 justify-center my-4">
               {[0, 1, 2, 3].map(i => (
                 <input
@@ -349,49 +328,40 @@ export default function UstaKayit() {
               ))}
             </div>
 
-            {kodHata && (
-              <p className="text-red-500 text-xs text-center mb-3">{kodHata}</p>
-            )}
+            {kodHata && <p className="text-red-500 text-xs text-center mb-3">{kodHata}</p>}
 
             {smsDurum === 'dogrulandi' ? (
               <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold text-sm">
-                <CheckCircle size={16} /> Telefon doğrulandı!
+                <CheckCircle size={16} /> {t('kayit.telefonDogrulandi')}
               </div>
             ) : (
               <button
                 onClick={koduDogrula}
                 disabled={smsKod.length < 4}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-bold py-3 rounded-xl transition-colors text-sm">
-                Doğrula
+                {t('kayit.dogrula')}
               </button>
             )}
           </div>
         )}
 
-        {smsDurum === 'idle' && (
-          <p className="text-center text-xs text-gray-400 mt-2">
-            Numaranıza 4 haneli doğrulama kodu gelecektir.
-          </p>
-        )}
-
         <button type="button" onClick={() => setAdim(1)}
           className="w-full mt-3 text-blue-500 hover:underline text-sm text-center">
-          ← Geri Dön
+          {t('kayit.geriDon')}
         </button>
       </div>
     </div>
   )
 
-  // ─── Adım 3: Bilgi Formu ──────────────────────────────────────
+  // ─── Adım 3: Bilgi Formu ──────────────────────────────────────────────────────
   if (adim === 3) return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Profil Bilgileri</h1>
-        <p className="text-gray-500 text-sm mt-1">Profilinde görünecek bilgiler</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('kayit.profilBilgileri')}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('kayit.profilAlt')}</p>
       </div>
       <AdimGostergesi />
 
-      {/* Plan + telefon özeti */}
       <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 mb-6 text-sm">
         <div className="flex items-center gap-3">
           <Zap size={14} className="text-blue-600" />
@@ -402,7 +372,7 @@ export default function UstaKayit() {
             <CheckCircle size={13} className="text-emerald-500 ml-1" />
           </span>
         </div>
-        <span className="font-bold text-blue-700">${seciliPlan?.fiyat}{seciliPlan?.id === 'aylik' ? '/mo' : '/yr'}</span>
+        <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
       </div>
 
       <form onSubmit={formGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
@@ -411,11 +381,11 @@ export default function UstaKayit() {
         <div className="p-6 border-b border-blue-50">
           <div className="flex items-center gap-2 mb-5">
             <User size={16} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-900 text-sm">Kişisel Bilgiler</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.kisiselBilgiler')}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Ad *</label>
+              <label className={labelCls}>{t('nav.ustalar').slice(0, 2)} *</label>
               <input type="text" required value={form.ad}
                 onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
                 className={inputCls} placeholder="Adınız" />
@@ -433,11 +403,11 @@ export default function UstaKayit() {
         <div className="p-6 border-b border-blue-50">
           <div className="flex items-center gap-2 mb-5">
             <Phone size={16} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-900 text-sm">İletişim</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.iletisim')}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Telefon (doğrulandı)</label>
+              <label className={labelCls}>{t('footer.iletisim')}</label>
               <input type="tel" value={telefonGirdi} readOnly
                 className={`${inputCls} bg-emerald-50 border-emerald-300 text-emerald-700 cursor-not-allowed`} />
             </div>
@@ -460,15 +430,15 @@ export default function UstaKayit() {
         <div className="p-6 border-b border-blue-50">
           <div className="flex items-center gap-2 mb-5">
             <MapPin size={16} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-900 text-sm">Konum</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.konum')}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Şehir *</label>
+              <label className={labelCls}>{t('ustaListesi.sehir')} *</label>
               <select required value={form.sehir_id}
                 onChange={e => sehirDegisti(e.target.value)}
                 className={inputCls}>
-                <option value="">Şehir seçin...</option>
+                <option value="">{t('hero.sehirSec')}</option>
                 {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
               </select>
             </div>
@@ -485,15 +455,15 @@ export default function UstaKayit() {
           </div>
         </div>
 
-        {/* Hizmet — Kategori */}
+        {/* Hizmet */}
         <div className="p-6 border-b border-blue-50">
           <div className="flex items-center gap-2 mb-5">
             <Briefcase size={16} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-900 text-sm">Hizmet Kategorisi</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.hizmetKategorisi')}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className={labelCls}>Hizmet Türü *</label>
+              <label className={labelCls}>{t('ustaListesi.hizmetTuru')} *</label>
               <select required value={form.kategori_id}
                 onChange={e => setForm(f => ({ ...f, kategori_id: e.target.value }))}
                 className={inputCls}>
@@ -514,61 +484,60 @@ export default function UstaKayit() {
         <div className="p-6 border-b border-blue-50">
           <div className="flex items-center gap-2 mb-5">
             <FileText size={16} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-900 text-sm">Hakkında</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.hakkindaLabel')}</h3>
           </div>
           <textarea value={form.aciklama}
             onChange={e => setForm(f => ({ ...f, aciklama: e.target.value }))}
             rows={4} className={`${inputCls} resize-none`}
-            placeholder="Kendinizi ve sunduğunuz hizmetleri kısaca anlatın..." />
+            placeholder={t('kayit.hakkindaPlaceholder')} />
         </div>
 
         <div className="p-6 flex gap-3">
           <button type="button" onClick={() => setAdim(2)}
             className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-            Geri
+            {t('kayit.geriBtn')}
           </button>
           <button type="submit"
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
-            Ödemeye Geç →
+            {t('kayit.odemeGec')}
           </button>
         </div>
       </form>
     </div>
   )
 
-  // ─── Adım 4: Ödeme ────────────────────────────────────────────
+  // ─── Adım 4: Ödeme ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Payment</h1>
-        <p className="text-gray-500 text-sm mt-1">Secure checkout — SSL encrypted</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('kayit.odemeBaslik')}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('kayit.odemeAlt')}</p>
       </div>
       <AdimGostergesi />
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-        {/* Ödeme formu */}
         <form onSubmit={odemeGonder} className="md:col-span-3 bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
           <div className="p-6 border-b border-blue-50">
             <div className="flex items-center gap-2 mb-5">
               <CreditCard size={16} className="text-blue-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">Card Details</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">{t('kayit.kartBilgileri')}</h3>
             </div>
             <div className="space-y-4">
               <div>
-                <label className={labelCls}>Cardholder Name</label>
+                <label className={labelCls}>{t('kayit.kartSahibiLabel')}</label>
                 <input type="text" required value={odeme.kart_ad}
                   onChange={e => setOdeme(o => ({ ...o, kart_ad: e.target.value }))}
-                  className={inputCls} placeholder="FULL NAME" />
+                  className={inputCls} placeholder="AD SOYAD" />
               </div>
               <div>
-                <label className={labelCls}>Card Number</label>
+                <label className={labelCls}>{t('kayit.kartNoLabel')}</label>
                 <input type="text" required value={odeme.kart_no}
                   onChange={e => setOdeme(o => ({ ...o, kart_no: kartNoFormat(e.target.value) }))}
                   className={inputCls} placeholder="0000 0000 0000 0000" maxLength={19} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Expiry Date</label>
+                  <label className={labelCls}>{t('kayit.sonTarihLabel')}</label>
                   <input type="text" required value={odeme.son_tarih}
                     onChange={e => setOdeme(o => ({ ...o, son_tarih: sonTarihFormat(e.target.value) }))}
                     className={inputCls} placeholder="MM/YY" maxLength={5} />
@@ -591,15 +560,15 @@ export default function UstaKayit() {
             <div className="flex gap-3">
               <button type="button" onClick={() => setAdim(3)}
                 className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-                Back
+                {t('kayit.geriBtn')}
               </button>
               <button type="submit" disabled={yukleniyor}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
-                {yukleniyor ? 'Processing...' : `Pay $${seciliPlan?.fiyat}`}
+                {yukleniyor ? t('kayit.isliyor') : `${t('kayit.odet')}${seciliPlan?.fiyat}`}
               </button>
             </div>
             <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
-              <Shield size={12} /><span>256-bit SSL secure payment</span>
+              <Shield size={12} /><span>{t('kayit.guvenliOdeme')}</span>
             </div>
           </div>
         </form>
@@ -607,7 +576,7 @@ export default function UstaKayit() {
         {/* Sipariş özeti */}
         <div className="md:col-span-2">
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-            <h4 className="font-bold text-gray-900 text-sm mb-4">Order Summary</h4>
+            <h4 className="font-bold text-gray-900 text-sm mb-4">{t('kayit.odemeOzeti')}</h4>
             <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">{seciliPlan?.ad}</span>
@@ -615,19 +584,19 @@ export default function UstaKayit() {
               </div>
               {seciliPlan?.id === 'yillik' && (
                 <div className="flex justify-between text-blue-600 text-xs">
-                  <span>Annual discount (33%)</span>
+                  <span>{t('kayit.yillikIndirim')}</span>
                   <span>-$39.89</span>
                 </div>
               )}
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Verified phone</span>
+                <span>{t('kayit.dogrulanmisTelefon')}</span>
                 <span className="text-emerald-600 flex items-center gap-1">
                   <CheckCircle size={11} /> {telefonGirdi}
                 </span>
               </div>
             </div>
             <div className="border-t border-blue-200 pt-3 flex justify-between font-bold text-gray-900">
-              <span>Total</span>
+              <span>{t('kayit.toplam')}</span>
               <span>${seciliPlan?.fiyat}</span>
             </div>
             <ul className="mt-5 space-y-1.5">

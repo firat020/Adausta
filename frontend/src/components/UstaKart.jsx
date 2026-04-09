@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   return (
     <div
@@ -41,7 +43,7 @@ export default function UstaKart({ usta }) {
             ))}
           </div>
           <span className="text-xs text-gray-500">
-            {usta.puan > 0 ? usta.puan.toFixed(1) : '—'} · {usta.yorum_sayisi} yorum
+            {usta.puan > 0 ? usta.puan.toFixed(1) : '—'} · {usta.yorum_sayisi} {t('ustalar.yorum')}
           </span>
         </div>
 
@@ -61,7 +63,7 @@ export default function UstaKart({ usta }) {
           {usta.deneyim_yil > 0 ? (
             <div className="flex items-center gap-1 text-xs text-gray-400">
               <Clock size={11} />
-              <span>{usta.deneyim_yil} yıl deneyim</span>
+              <span>{usta.deneyim_yil} {t('ustaDetay.yilDeneyim')}</span>
             </div>
           ) : <div />}
 
@@ -71,7 +73,7 @@ export default function UstaKart({ usta }) {
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
           >
             <Phone size={12} />
-            Ara
+            {t('common.ara')}
           </a>
         </div>
       </div>

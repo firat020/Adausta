@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import * as Icons from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 
 const GORSELLER = {
   'Elektrikçi':              'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&h=280&fit=crop&auto=format',
@@ -189,7 +191,11 @@ function KategoriIkon({ ad, boyut = 18 }) {
 
 export default function KategoriKart({ kategori }) {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const gorsel = GORSELLER[kategori.ad] || GORSELLER['default']
+  const katAd = i18n.language === 'en' ? (KAT_EN[kategori.ad] || kategori.ad)
+              : i18n.language === 'ru' ? (KAT_RU[kategori.ad] || kategori.ad)
+              : kategori.ad
 
   return (
     <div
@@ -213,7 +219,7 @@ export default function KategoriKart({ kategori }) {
           <div className="absolute top-3 left-3 flex items-center gap-1 bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-full shadow-sm"
             style={{ fontSize: 11 }}>
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
-            {kategori.usta_sayisi} USTA AKTİF
+            {kategori.usta_sayisi} {t('common.ustaAktif')}
           </div>
         )}
       </div>
@@ -223,12 +229,12 @@ export default function KategoriKart({ kategori }) {
         {/* İkon + Ad */}
         <div className="flex items-center gap-2.5 mb-1.5">
           <KategoriIkon ad={kategori.ad} boyut={16} />
-          <span className="font-bold text-gray-900 text-sm leading-snug">{kategori.ad}</span>
+          <span className="font-bold text-gray-900 text-sm leading-snug">{katAd}</span>
         </div>
 
         {/* HEMEN TEKLİF AL */}
         <p className="text-blue-600 font-bold mb-2" style={{ fontSize: 10.5, letterSpacing: '0.04em' }}>
-          HEMEN TEKLİF AL
+          {t('common.hemenTeklif')}
         </p>
 
         {/* Açıklama */}
@@ -238,7 +244,7 @@ export default function KategoriKart({ kategori }) {
 
         {/* İncele → */}
         <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-gray-100">
-          <span className="text-sm font-semibold text-gray-700">İncele</span>
+          <span className="text-sm font-semibold text-gray-700">{t('common.incele')}</span>
           <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center">
             <ArrowRight size={13} className="text-white" />
           </div>

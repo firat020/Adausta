@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ustaDetay, yorumEkle } from '../api'
 
 export default function UstaDetay() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [usta, setUsta] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [yorumForm, setYorumForm] = useState({ musteri_adi: '', puan: 5, yorum: '' })
@@ -46,14 +48,14 @@ export default function UstaDetay() {
   )
 
   if (!usta) return (
-    <div className="text-center py-24 text-gray-400">Usta bulunamadı</div>
+    <div className="text-center py-24 text-gray-400">{t('ustaDetay.ustaBulunamadi')}</div>
   )
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors">
-        <ArrowLeft size={16} /> Geri
+        <ArrowLeft size={16} /> {t('ustaDetay.geri')}
       </button>
 
       {/* Profil kartı */}
@@ -75,7 +77,7 @@ export default function UstaDetay() {
               <div className="flex items-center gap-2 mt-3">
                 <Yildizlar puan={usta.puan} />
                 <span className="text-sm text-gray-500">
-                  {usta.puan > 0 ? usta.puan.toFixed(1) : 'Yorum yok'} · {usta.yorum_sayisi} yorum
+                  {usta.puan > 0 ? usta.puan.toFixed(1) : t('ustaDetay.yorumYok')} · {usta.yorum_sayisi} {t('ustaDetay.yorum')}
                 </span>
               </div>
               <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
@@ -86,7 +88,7 @@ export default function UstaDetay() {
                 {usta.deneyim_yil > 0 && (
                   <span className="flex items-center gap-1.5">
                     <Clock size={13} />
-                    {usta.deneyim_yil} yıl deneyim
+                    {usta.deneyim_yil} {t('ustaDetay.yilDeneyim')}
                   </span>
                 )}
               </div>
@@ -112,7 +114,7 @@ export default function UstaDetay() {
           {/* Açıklama */}
           {usta.aciklama && (
             <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-800 mb-2">Hakkında</h3>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">{t('ustaDetay.hakkinda')}</h3>
               <p className="text-gray-600 text-sm leading-relaxed">{usta.aciklama}</p>
             </div>
           )}
@@ -124,11 +126,11 @@ export default function UstaDetay() {
         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-5">
           <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Image size={18} className="text-gray-400" />
-            Is Fotograflari
+            {t('ustaDetay.isFotograflari')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {usta.fotograflar.map(f => (
-              <img key={f.id} src={`http://localhost:5000${f.url}`} alt="Is fotografi"
+              <img key={f.id} src={`http://localhost:5000${f.url}`} alt={t('ustaDetay.isFotograflari')}
                 className="w-full h-40 object-cover rounded-xl border border-gray-100" />
             ))}
           </div>
@@ -138,13 +140,13 @@ export default function UstaDetay() {
       {/* Yorumlar */}
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-5">
         <h2 className="font-bold text-gray-900 mb-5">
-          Musteri Yorumlari
+          {t('ustaDetay.musteriYorumlari')}
           {usta.yorumlar?.length > 0 && (
             <span className="ml-2 text-sm font-normal text-gray-400">({usta.yorumlar.length})</span>
           )}
         </h2>
         {!usta.yorumlar?.length ? (
-          <p className="text-gray-400 text-sm py-4 text-center">Henuz yorum yapilmamis</p>
+          <p className="text-gray-400 text-sm py-4 text-center">{t('ustaDetay.henuzYorum')}</p>
         ) : (
           <div className="space-y-5">
             {usta.yorumlar.map(y => (
@@ -163,37 +165,37 @@ export default function UstaDetay() {
 
       {/* Yorum formu */}
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-        <h2 className="font-bold text-gray-900 mb-5">Yorum Yap</h2>
+        <h2 className="font-bold text-gray-900 mb-5">{t('ustaDetay.yorumYap')}</h2>
         {yorumGonderildi ? (
           <div className="text-center py-8">
             <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Star size={24} className="text-emerald-500" />
             </div>
-            <p className="font-semibold text-emerald-700">Yorumunuz alindi, onay bekliyor</p>
+            <p className="font-semibold text-emerald-700">{t('ustaDetay.yorumAlindi')}</p>
           </div>
         ) : (
           <form onSubmit={yorumGonder} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Adiniz</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.adinizSoyadiniz')}</label>
               <input type="text" required value={yorumForm.musteri_adi}
                 onChange={e => setYorumForm(f => ({ ...f, musteri_adi: e.target.value }))}
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400"
-                placeholder="Adiniz Soyadiniz" />
+                placeholder={t('ustaDetay.adinizSoyadiniz')} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Puaniniz</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.puaniniz')}</label>
               <Yildizlar puan={yorumForm.puan} tikla={(p) => setYorumForm(f => ({ ...f, puan: p }))} boyut={28} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Yorumunuz</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.yorumunuz')}</label>
               <textarea value={yorumForm.yorum}
                 onChange={e => setYorumForm(f => ({ ...f, yorum: e.target.value }))}
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-                rows={3} placeholder="Deneyiminizi paylasIn..." />
+                rows={3} placeholder={t('ustaDetay.deneyimPaylas')} />
             </div>
             <button type="submit"
               className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-sm">
-              Yorum Gonder
+              {t('ustaDetay.yorumGonder')}
             </button>
           </form>
         )}

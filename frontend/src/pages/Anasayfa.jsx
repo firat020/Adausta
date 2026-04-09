@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { kategorileriGetir, ustaListele, sehirleriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
 
 const HIZLI_KATEGORILER = [
-  { ad: 'Tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
-  { ad: 'Elektrik',  ikon: <Zap size={15} />,          arama: 'Elektrikçi' },
-  { ad: 'Tesisat',   ikon: <Droplets size={15} />,     arama: 'Su Tesisatı' },
-  { ad: 'Boya',      ikon: <Paintbrush size={15} />,   arama: 'Boya Badana' },
-  { ad: 'Temizlik',  ikon: <Sparkles size={15} />,     arama: 'Ev Temizliği' },
-  { ad: 'Klima',     ikon: <Wind size={15} />,          arama: 'Klima Servisi' },
-  { ad: 'Nakliyat',  ikon: <Truck size={15} />,         arama: 'Evden Eve Nakliyat' },
-  { ad: 'Mobilya',   ikon: <Armchair size={15} />,      arama: 'Mobilya Montaj' },
-  { ad: 'Bahçe',     ikon: <Leaf size={15} />,           arama: 'Bahçe Bakımı' },
-  { ad: 'Tamir',     ikon: <Wrench size={15} />,         arama: 'Beyaz Eşya Servisi' },
-  { ad: 'Fotoğraf',  ikon: <Camera size={15} />,         arama: 'Fotoğrafçı' },
-  { ad: 'İlaçlama',  ikon: <Bug size={15} />,            arama: 'Böcek İlaçlama' },
+  { key: 'tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
+  { key: 'elektrik',  ikon: <Zap size={15} />,          arama: 'Elektrikçi' },
+  { key: 'tesisat',   ikon: <Droplets size={15} />,     arama: 'Su Tesisatı' },
+  { key: 'boya',      ikon: <Paintbrush size={15} />,   arama: 'Boya Badana' },
+  { key: 'temizlik',  ikon: <Sparkles size={15} />,     arama: 'Ev Temizliği' },
+  { key: 'klima',     ikon: <Wind size={15} />,          arama: 'Klima Servisi' },
+  { key: 'nakliyat',  ikon: <Truck size={15} />,         arama: 'Evden Eve Nakliyat' },
+  { key: 'mobilya',   ikon: <Armchair size={15} />,      arama: 'Mobilya Montaj' },
+  { key: 'bahce',     ikon: <Leaf size={15} />,           arama: 'Bahçe Bakımı' },
+  { key: 'tamir',     ikon: <Wrench size={15} />,         arama: 'Beyaz Eşya Servisi' },
+  { key: 'fotograf',  ikon: <Camera size={15} />,         arama: 'Fotoğrafçı' },
+  { key: 'ilaclama',  ikon: <Bug size={15} />,            arama: 'Böcek İlaçlama' },
 ]
 
 const YORUMLAR = [
@@ -29,13 +30,24 @@ const YORUMLAR = [
 
 const AVATAR_RENK = ['bg-blue-600', 'bg-sky-500', 'bg-cyan-600', 'bg-indigo-600', 'bg-blue-800']
 
-const OZELLIKLER = [
-  { ikon: <ShieldCheck size={20} className="text-blue-400" />, baslik: 'Güvenilir Ustalar', aciklama: 'Kimlik doğrulamalı profiller' },
-  { ikon: <Zap size={20} className="text-yellow-400" />,        baslik: 'Hızlı Yanıt',       aciklama: 'Ort. 15 dakikada usta bulun' },
-  { ikon: <CheckCircle2 size={20} className="text-green-400" />, baslik: 'Ücretsiz',          aciklama: 'Platform kullanımı ücretsiz' },
+const OZELLIKLER_IKONLAR = [
+  <ShieldCheck size={20} className="text-blue-400" />,
+  <Zap size={20} className="text-yellow-400" />,
+  <CheckCircle2 size={20} className="text-green-400" />,
+]
+const OZELLIKLER_KEYS = ['guvenilir', 'hizli', 'ucretsiz']
+
+const HERO_CHIPLER = [
+  { key: 'elektrik',  ikon: <Zap size={12} /> },
+  { key: 'tesisat',   ikon: <Droplets size={12} /> },
+  { key: 'tadilat',   ikon: <Hammer size={12} /> },
+  { key: 'nakliyat',  ikon: <Truck size={12} /> },
+  { key: 'temizlik',  ikon: <Sparkles size={12} /> },
+  { key: 'klima',     ikon: <Wind size={12} /> },
 ]
 
 export default function Anasayfa() {
+  const { t } = useTranslation()
   const [kategoriler, setKategoriler] = useState([])
   const [sehirler, setSehirler]       = useState([])
   const [enIyiUstalar, setEnIyiUstalar] = useState([])
@@ -92,37 +104,30 @@ export default function Anasayfa() {
           {/* Üst rozet */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/20">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            HIZLI · GÜVENLİ · USTA
+            {t('hero.rozet')}
           </div>
 
           {/* Başlık */}
           <h1 className="font-extrabold leading-tight mb-4">
-            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Kuzey Kıbrıs'ta</span>
-            <span className="text-yellow-400 text-4xl md:text-6xl block my-1" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>En İyi Ustayı</span>
-            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Bulun</span>
+            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>{t('hero.baslik1')}</span>
+            <span className="text-yellow-400 text-4xl md:text-6xl block my-1" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>{t('hero.baslik2')}</span>
+            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>{t('hero.baslik3')}</span>
           </h1>
 
           {/* Hizmet chip'leri */}
           <div className="flex flex-wrap justify-center gap-2 mb-3">
-            {[
-              { ikon: <Zap size={12} />,        ad: 'Elektrik' },
-              { ikon: <Droplets size={12} />,   ad: 'Tesisat' },
-              { ikon: <Hammer size={12} />,     ad: 'Tadilat' },
-              { ikon: <Truck size={12} />,      ad: 'Nakliyat' },
-              { ikon: <Sparkles size={12} />,   ad: 'Temizlik' },
-              { ikon: <Wind size={12} />,       ad: 'Klima' },
-            ].map(h => (
-              <span key={h.ad} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/20"
+            {HERO_CHIPLER.map(h => (
+              <span key={h.key} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/20"
                 style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}>
-                {h.ikon} {h.ad}
+                {h.ikon} {t(`heroChipler.${h.key}`)}
               </span>
             ))}
             <span className="flex items-center gap-1 bg-yellow-400/20 backdrop-blur-sm text-yellow-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-yellow-400/30">
-              <Plus size={11} /> 50+ hizmet
+              <Plus size={11} /> {t('heroChipler.artiBes')}
             </span>
           </div>
           <p className="text-white/80 text-xs mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
-            KKTC genelinde <span className="text-white font-semibold">onaylı ustalar</span> arasından ihtiyacınıza uygun olanı bulun.
+            {t('hero.aciklama')}
           </p>
 
           {/* Arama kutusu */}
@@ -133,7 +138,7 @@ export default function Anasayfa() {
                 type="text"
                 value={arama}
                 onChange={e => setArama(e.target.value)}
-                placeholder="Hizmet ara... (Boya, Su Tesisatı, Elektrik...)"
+                placeholder={t('hero.aramaPlaceholder')}
                 className="w-full pl-11 pr-4 py-4 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
@@ -144,24 +149,30 @@ export default function Anasayfa() {
                 onChange={e => setSecilenSehir(e.target.value)}
                 className="w-full pl-9 pr-4 py-4 rounded-xl bg-white text-gray-600 text-sm outline-none focus:ring-2 focus:ring-yellow-400 appearance-none"
               >
-                <option value="">Şehir Seçin</option>
+                <option value="">{t('hero.sehirSec')}</option>
                 {sehirler.map(s => <option key={s.id} value={s.ad}>{s.ad}</option>)}
               </select>
             </div>
             <button type="submit"
               className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-extrabold px-8 py-4 rounded-xl transition-colors text-sm whitespace-nowrap shadow-lg">
-              Hemen Bul
+              {t('hero.hemenBul')}
             </button>
           </form>
 
           {/* Hızlı etiketler */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-            <span className="text-blue-200 text-xs font-medium">Popüler:</span>
-            {['Elektrikçi', 'Su Tesisatı', 'Boya Badana', 'Klima', 'Temizlik'].map(tag => (
-              <button key={tag}
-                onClick={() => navigate(`/ustalar?arama=${tag}`)}
+            <span className="text-blue-200 text-xs font-medium">{t('hero.populer')}</span>
+            {[
+              { key: 'elektrikci',  arama: 'Elektrikçi' },
+              { key: 'suTesisati',  arama: 'Su Tesisatı' },
+              { key: 'boyaBadana',  arama: 'Boya Badana' },
+              { key: 'klima',       arama: 'Klima' },
+              { key: 'temizlik',    arama: 'Temizlik' },
+            ].map(tag => (
+              <button key={tag.key}
+                onClick={() => navigate(`/ustalar?arama=${tag.arama}`)}
                 className="text-xs text-white bg-white/10 hover:bg-white/20 border border-white/25 px-3 py-1 rounded-full transition-colors">
-                {tag}
+                {t(`heroTaglar.${tag.key}`)}
               </button>
             ))}
           </div>
@@ -174,12 +185,12 @@ export default function Anasayfa() {
       <section className="bg-blue-900 py-5 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
-            {OZELLIKLER.map((o, i) => (
-              <div key={i} className="flex items-center gap-3">
-                {o.ikon}
+            {OZELLIKLER_KEYS.map((key, i) => (
+              <div key={key} className="flex items-center gap-3">
+                {OZELLIKLER_IKONLAR[i]}
                 <div>
-                  <p className="text-white font-bold text-sm">{o.baslik}</p>
-                  <p className="text-blue-300 text-xs">{o.aciklama}</p>
+                  <p className="text-white font-bold text-sm">{t(`ozellikler.${key}`)}</p>
+                  <p className="text-blue-300 text-xs">{t(`ozellikler.${key}Alt`)}</p>
                 </div>
               </div>
             ))}
@@ -195,12 +206,12 @@ export default function Anasayfa() {
           <div className="flex gap-2 px-4 pb-0.5" style={{ width: 'max-content' }}>
             {HIZLI_KATEGORILER.map(k => (
               <button
-                key={k.ad}
+                key={k.key}
                 onClick={() => navigate(`/ustalar?arama=${k.arama}`)}
                 className="group flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 transition-all whitespace-nowrap"
               >
                 <span className="text-gray-400 group-hover:text-blue-500 transition-colors">{k.ikon}</span>
-                {k.ad}
+                {t(`pills.${k.key}`)}
               </button>
             ))}
             <button
@@ -208,7 +219,7 @@ export default function Anasayfa() {
               className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors whitespace-nowrap"
             >
               <Plus size={13} />
-              Tümü
+              {t('common.tumuBtn')}
             </button>
           </div>
         </div>
@@ -222,13 +233,13 @@ export default function Anasayfa() {
           <div className="flex items-center gap-3">
             <div className="w-1 h-8 bg-yellow-400 rounded-full" />
             <div>
-              <h2 className="text-xl font-extrabold text-gray-900">Popüler ve Aktif Hizmetler</h2>
-              <p className="text-gray-500 text-xs mt-0.5">Şu an aktif usta bulunan kategoriler</p>
+              <h2 className="text-xl font-extrabold text-gray-900">{t('kategoriler.baslik')}</h2>
+              <p className="text-gray-500 text-xs mt-0.5">{t('kategoriler.alt')}</p>
             </div>
           </div>
           <button onClick={() => navigate('/kategoriler')}
             className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold border border-blue-100 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors">
-            Tümünü Gör <ChevronRight size={15} />
+            {t('kategoriler.tumunu')} <ChevronRight size={15} />
           </button>
         </div>
 
@@ -246,7 +257,7 @@ export default function Anasayfa() {
           </div>
         ) : populer.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <p className="text-sm">Henüz aktif usta bulunan kategori yok.</p>
+            <p className="text-sm">{t('ustalar.henuzYok')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -263,11 +274,11 @@ export default function Anasayfa() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <div className="w-1 h-6 bg-blue-300 rounded-full" />
-              <h2 className="text-lg font-bold text-gray-700">Diğer Kategoriler</h2>
+              <h2 className="text-lg font-bold text-gray-700">{t('kategoriler.diger')}</h2>
             </div>
             <button onClick={() => navigate('/kategoriler')}
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
-              Tümünü Gör <ArrowRight size={14} />
+              {t('kategoriler.tumunu')} <ArrowRight size={14} />
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -289,10 +300,10 @@ export default function Anasayfa() {
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-2">
               <div className="w-1 h-6 bg-yellow-400 rounded-full" />
-              <h2 className="text-2xl font-bold text-gray-900">Müşteri Yorumları</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('yorumlar.baslik')}</h2>
               <div className="w-1 h-6 bg-yellow-400 rounded-full" />
             </div>
-            <p className="text-gray-500 text-sm mt-1">KKTC genelinde binlerce mutlu müşteri</p>
+            <p className="text-gray-500 text-sm mt-1">{t('yorumlar.alt')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {YORUMLAR.map((y, i) => (
@@ -329,11 +340,11 @@ export default function Anasayfa() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <div className="w-1 h-6 bg-blue-600 rounded-full" />
-            <h2 className="text-2xl font-bold text-gray-900">En İyi Ustalarımız</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('ustalar.enIyi')}</h2>
           </div>
           <button onClick={() => navigate('/ustalar')}
             className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-sm font-semibold">
-            Tümünü Gör <ArrowRight size={15} />
+            {t('ustalar.tumunu')} <ArrowRight size={15} />
           </button>
         </div>
 
@@ -371,7 +382,7 @@ export default function Anasayfa() {
                           className={s < Math.round(u.puan) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'} />
                       ))}
                     </div>
-                    <span className="text-xs text-gray-500">{u.yorum_sayisi} yorum</span>
+                    <span className="text-xs text-gray-500">{u.yorum_sayisi} {t('ustalar.yorum')}</span>
                   </div>
                   <div className="flex gap-2">
                     <a href={`tel:${u.telefon}`}
@@ -401,13 +412,13 @@ export default function Anasayfa() {
       ══════════════════════════════════════════ */}
       <section className="py-14 px-4" style={{ background: 'linear-gradient(135deg, #0f2554 0%, #1a4aad 100%)' }}>
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-white text-2xl font-bold mb-2">Usta mısınız veya Firmanız mı var?</h2>
+          <h2 className="text-white text-2xl font-bold mb-2">{t('cta.baslik')}</h2>
           <p className="text-blue-300 text-sm mb-8">
-            Profilinizi oluşturun, KKTC genelinde müşterilere ücretsiz ulaşın.
+            {t('cta.alt')}
           </p>
           <button onClick={() => navigate('/usta-kayit')}
             className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-10 py-3.5 rounded-xl transition-colors text-sm">
-            Usta Olarak Kaydol →
+            {t('cta.buton')}
           </button>
         </div>
       </section>

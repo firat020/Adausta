@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ustaListele, kategorileriGetir, sehirleriGetir } from '../api'
 import UstaKart from '../components/UstaKart'
 import SEO from '../components/SEO'
 
 export default function UstaListesi() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const [ustalar, setUstalar] = useState([])
   const [kategoriler, setKategoriler] = useState([])
@@ -50,8 +52,8 @@ export default function UstaListesi() {
       ? `${sehirTerimi}'da Usta Bul — KKTC`
       : 'Kuzey Kıbrıs\'ta Usta Bul — Tüm Ustalar'
   const seoAciklama = aramaTerimi
-    ? `KKTC'de ${aramaTerimi} için onaylı, güvenilir usta bul. Lefkoşa, Girne, Gazimağusa ve tüm Kuzey Kıbrıs genelinde hizmet.`
-    : 'Kuzey Kıbrıs\'ta 80+ hizmet kategorisinde onaylı usta bul. KKTC genelinde hızlı, güvenilir hizmet.'
+    ? `KKTC'de ${aramaTerimi} için onaylı, güvenilir usta bul.`
+    : 'Kuzey Kıbrıs\'ta 80+ hizmet kategorisinde onaylı usta bul.'
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
@@ -59,22 +61,22 @@ export default function UstaListesi() {
         baslik={seoBaslik}
         aciklama={seoAciklama}
         url={`/ustalar${aramaTerimi ? `?arama=${aramaTerimi}` : ''}`}
-        anahtar={`${aramaTerimi} KKTC, ${aramaTerimi} Kuzey Kıbrıs, ${aramaTerimi} Lefkoşa, ${aramaTerimi} Girne, KKTC usta`}
+        anahtar={`${aramaTerimi} KKTC, ${aramaTerimi} Kuzey Kıbrıs, KKTC usta`}
       />
       {/* Başlık */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {kategoriAd || 'Tüm Ustalar'}
+            {kategoriAd || t('ustaListesi.baslik')}
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            {yukleniyor ? 'Yükleniyor...' : `${toplam} usta bulundu`}
+            {yukleniyor ? t('common.yukleniyor') : `${toplam} ${t('ustaListesi.ustaFound')}`}
           </p>
         </div>
         <button onClick={() => setFiltrePaneli(!filtrePaneli)}
           className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 hover:border-orange-400 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
           <SlidersHorizontal size={16} />
-          Filtrele
+          {t('ustaListesi.filtrele')}
           {aktifFiltre && <span className="w-2 h-2 bg-orange-500 rounded-full" />}
         </button>
       </div>
@@ -83,30 +85,30 @@ export default function UstaListesi() {
       {filtrePaneli && (
         <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Arama</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.arama')}</label>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input type="text" value={filtreler.arama}
                 onChange={e => setFiltreler(f => ({ ...f, arama: e.target.value }))}
-                placeholder="Usta adı veya hizmet..."
+                placeholder={t('ustaListesi.aramaPlaceholder')}
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Hizmet Türü</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.hizmetTuru')}</label>
             <select value={filtreler.kategori_id}
               onChange={e => setFiltreler(f => ({ ...f, kategori_id: e.target.value }))}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-              <option value="">Tüm Hizmetler</option>
+              <option value="">{t('ustaListesi.tumHizmetler')}</option>
               {kategoriler.map(k => <option key={k.id} value={k.id}>{k.ad}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Şehir</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.sehir')}</label>
             <select value={filtreler.sehir_id}
               onChange={e => setFiltreler(f => ({ ...f, sehir_id: e.target.value }))}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-              <option value="">Tüm Şehirler</option>
+              <option value="">{t('ustaListesi.tumSehirler')}</option>
               {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
             </select>
           </div>
@@ -114,7 +116,7 @@ export default function UstaListesi() {
             <div className="md:col-span-3 flex justify-end">
               <button onClick={temizle}
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors">
-                <X size={14} /> Filtreleri temizle
+                <X size={14} /> {t('ustaListesi.filtreleriTemizle')}
               </button>
             </div>
           )}
@@ -131,8 +133,8 @@ export default function UstaListesi() {
       ) : ustalar.length === 0 ? (
         <div className="text-center py-24 text-gray-400">
           <Search size={40} className="mx-auto mb-4 opacity-30" />
-          <p className="font-medium text-gray-500">Usta bulunamadı</p>
-          <p className="text-sm mt-1">Farklı filtreler deneyin</p>
+          <p className="font-medium text-gray-500">{t('ustaListesi.ustaBulunamadi')}</p>
+          <p className="text-sm mt-1">{t('ustaListesi.farkliFiltre')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
