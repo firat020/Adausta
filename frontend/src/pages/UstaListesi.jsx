@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { ustaListele, kategorileriGetir, sehirleriGetir } from '../api'
 import UstaKart from '../components/UstaKart'
+import SEO from '../components/SEO'
 
 export default function UstaListesi() {
   const [searchParams] = useSearchParams()
@@ -41,8 +42,25 @@ export default function UstaListesi() {
   const temizle = () => setFiltreler({ kategori_id: '', sehir_id: '', arama: '' })
   const aktifFiltre = filtreler.kategori_id || filtreler.sehir_id || filtreler.arama
 
+  const aramaTerimi = searchParams.get('arama') || ''
+  const sehirTerimi = searchParams.get('sehir') || ''
+  const seoBaslik = aramaTerimi
+    ? `Kuzey Kıbrıs'ta ${aramaTerimi} Ustası Bul`
+    : sehirTerimi
+      ? `${sehirTerimi}'da Usta Bul — KKTC`
+      : 'Kuzey Kıbrıs\'ta Usta Bul — Tüm Ustalar'
+  const seoAciklama = aramaTerimi
+    ? `KKTC'de ${aramaTerimi} için onaylı, güvenilir usta bul. Lefkoşa, Girne, Gazimağusa ve tüm Kuzey Kıbrıs genelinde hizmet.`
+    : 'Kuzey Kıbrıs\'ta 80+ hizmet kategorisinde onaylı usta bul. KKTC genelinde hızlı, güvenilir hizmet.'
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
+      <SEO
+        baslik={seoBaslik}
+        aciklama={seoAciklama}
+        url={`/ustalar${aramaTerimi ? `?arama=${aramaTerimi}` : ''}`}
+        anahtar={`${aramaTerimi} KKTC, ${aramaTerimi} Kuzey Kıbrıs, ${aramaTerimi} Lefkoşa, ${aramaTerimi} Girne, KKTC usta`}
+      />
       {/* Başlık */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>

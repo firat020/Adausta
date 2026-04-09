@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, TrendingUp } from 'lucide-react'
 import { kategorileriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
+import SEO from '../components/SEO'
 
 export default function Kategoriler() {
   const [gruplar, setGruplar] = useState({})
@@ -37,6 +38,12 @@ export default function Kategoriler() {
 
   return (
     <div>
+      <SEO
+        baslik="Tüm Hizmet Kategorileri — Kuzey Kıbrıs'ta Usta Bul"
+        aciklama="KKTC'de 80+ hizmet kategorisinde onaylı usta bul. Elektrik, tesisat, boya, klima, nakliyat, temizlik, tadilat ve çok daha fazlası."
+        url="/kategoriler"
+        anahtar="KKTC hizmet kategorileri, Kuzey Kıbrıs elektrikçi, KKTC tesisatçı, Kuzey Kıbrıs boyacı, KKTC klima, Kuzey Kıbrıs nakliyat, KKTC temizlik"
+      />
       {/* Hero arama */}
       <div className="relative px-4 py-10 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f2554 0%, #1a4aad 100%)' }}>
         <div className="absolute inset-0 bg-cover bg-center opacity-[0.08]"

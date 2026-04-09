@@ -1,10 +1,123 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+
+    <!-- ═══ Temel SEO ═══════════════════════════════════════════════════════ -->
+    <title>Ada Usta | Kuzey Kıbrıs'ta En İyi Usta Bul — KKTC Usta Platformu</title>
+    <meta name="description" content="Kuzey Kıbrıs'ın #1 usta ve hizmet platformu. KKTC'de elektrikçi, tesisatçı, boyacı, klima servisi, nakliyat, temizlik ve 80+ hizmet kategorisinde onaylı usta bul. Hızlı · Güvenli · Usta." />
+    <meta name="keywords" content="KKTC usta bul, Kuzey Kıbrıs usta, Kuzey Kıbrıs elektrikçi, KKTC tesisatçı, Kuzey Kıbrıs boyacı, KKTC klima servisi, Kuzey Kıbrıs nakliyat, KKTC temizlik, Lefkoşa usta, Girne usta, Gazimağusa usta, Güzelyurt usta, İskele usta, KKTC tadilat, Kuzey Kıbrıs tamir, KKTC hizmet platformu, ada usta, adausta" />
+    <meta name="author" content="Ada Usta KKTC" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Turkish" />
+    <meta name="geo.region" content="CY-01" />
+    <meta name="geo.placename" content="Kuzey Kıbrıs" />
+    <link rel="canonical" href="https://adausta.com/" />
+
+    <!-- ═══ Open Graph (Facebook / WhatsApp paylaşım) ═══════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://adausta.com/" />
+    <meta property="og:title" content="Ada Usta | Kuzey Kıbrıs'ta En İyi Usta Bul" />
+    <meta property="og:description" content="KKTC'de elektrikçi, tesisatçı, boyacı, klima, nakliyat ve 80+ hizmet kategorisinde onaylı usta bul. Hızlı · Güvenli · Usta." />
+    <meta property="og:image" content="https://adausta.com/ada-usta-logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Ada Usta KKTC" />
+    <meta property="og:locale" content="tr_CY" />
+
+    <!-- ═══ Twitter Card ════════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ada Usta | Kuzey Kıbrıs'ta En İyi Usta Bul" />
+    <meta name="twitter:description" content="KKTC'de elektrikçi, tesisatçı, boyacı, klima, nakliyat ve 80+ hizmet kategorisinde onaylı usta bul." />
+    <meta name="twitter:image" content="https://adausta.com/ada-usta-logo.png" />
+
+    <!-- ═══ JSON-LD Structured Data ═════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://adausta.com/#organization",
+          "name": "Ada Usta",
+          "alternateName": "AdaUsta KKTC",
+          "url": "https://adausta.com",
+          "logo": "https://adausta.com/ada-usta-logo.png",
+          "description": "Kuzey Kıbrıs Türk Cumhuriyeti'nin en büyük usta ve hizmet platformu.",
+          "areaServed": {
+            "@type": "Place",
+            "name": "Kuzey Kıbrıs Türk Cumhuriyeti"
+          },
+          "slogan": "Hızlı · Güvenli · Usta"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://adausta.com/#website",
+          "url": "https://adausta.com",
+          "name": "Ada Usta",
+          "description": "Kuzey Kıbrıs'ta usta ve hizmet platformu",
+          "inLanguage": "tr",
+          "publisher": { "@id": "https://adausta.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://adausta.com/ustalar?arama={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://adausta.com/#localbusiness",
+          "name": "Ada Usta",
+          "image": "https://adausta.com/ada-usta-logo.png",
+          "url": "https://adausta.com",
+          "telephone": "+905338001111",
+          "description": "Kuzey Kıbrıs'ta elektrikçi, tesisatçı, boyacı, klima, nakliyat ve 80+ hizmet kategorisinde onaylı usta bulma platformu.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Lefkoşa",
+            "addressCountry": "CY"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 35.1856,
+            "longitude": 33.3823
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+            "opens": "00:00",
+            "closes": "23:59"
+          },
+          "areaServed": [
+            { "@type": "City", "name": "Lefkoşa" },
+            { "@type": "City", "name": "Girne" },
+            { "@type": "City", "name": "Gazimağusa" },
+            { "@type": "City", "name": "Güzelyurt" },
+            { "@type": "City", "name": "İskele" }
+          ],
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Hizmet Kategorileri",
+            "itemListElement": [
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Elektrikçi", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Su Tesisatı", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Boya Badana", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Klima Servisi", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Evden Eve Nakliyat", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ev Temizliği", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Anahtar Teslim Tadilat", "areaServed": "Kuzey Kıbrıs" } },
+              { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Bahçe Bakımı", "areaServed": "Kuzey Kıbrıs" } }
+            ]
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ═══ Favicon & Icons ══════════════════════════════════════════════════ -->
+    <link rel="icon" type="image/png" href="/ada-usta-logo.png" />
+    <link rel="apple-touch-icon" href="/ada-usta-logo.png" />
   </head>
   <body>
     <div id="root"></div>

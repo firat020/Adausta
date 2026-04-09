@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Ana Sayfa -->
+  <url>
+    <loc>https://adausta.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Ustalar -->
+  <url>
+    <loc>https://adausta.com/ustalar</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Kategoriler -->
+  <url>
+    <loc>https://adausta.com/kategoriler</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- En Yakın Usta -->
+  <url>
+    <loc>https://adausta.com/en-yakin</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Usta Kayıt -->
+  <url>
+    <loc>https://adausta.com/usta-kayit</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Şehir bazlı usta sayfaları -->
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Gazima%C4%9Fusa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=G%C3%BCzelyurt</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=%C4%B0skele</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Kategori bazlı arama sayfaları (en çok aranan) -->
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Elektrik%C3%A7i</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Su+Tesisat%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Boya+Badana</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Klima+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Evden+Eve+Nakliyat</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Ev+Temizli%C4%9Fi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Anahtar+Teslim+Tadilat</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Bah%C3%A7e+Bak%C4%B1m%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=G%C3%BCvenlik+Kamera</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Kombi+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>

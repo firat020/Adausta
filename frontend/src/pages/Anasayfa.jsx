@@ -4,6 +4,7 @@ import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, 
 import { kategorileriGetir, ustaListele, sehirleriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
+import SEO from '../components/SEO'
 
 const HIZLI_KATEGORILER = [
   { ad: 'Tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
@@ -69,6 +70,10 @@ export default function Anasayfa() {
 
   return (
     <div className="bg-white">
+      <SEO
+        url="/"
+        anahtar="KKTC usta bul, Kuzey Kıbrıs usta, KKTC elektrikçi, Kuzey Kıbrıs tesisatçı, KKTC boyacı, Kuzey Kıbrıs klima servisi, KKTC nakliyat, Kuzey Kıbrıs temizlik, Lefkoşa usta, Girne usta, Gazimağusa usta, KKTC tadilat"
+      />
 
       {/* ══════════════════════════════════════════
           HERO — Gerçek arka plan fotoğrafı
@@ -92,7 +97,7 @@ export default function Anasayfa() {
 
           {/* Başlık */}
           <h1 className="font-extrabold leading-tight mb-4">
-            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Her İş İçin</span>
+            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Kuzey Kıbrıs'ta</span>
             <span className="text-yellow-400 text-4xl md:text-6xl block my-1" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>En İyi Ustayı</span>
             <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Bulun</span>
           </h1>

@@ -1,0 +1,46 @@
+import { Helmet } from 'react-helmet-async'
+
+const BASE = 'https://adausta.com'
+const DEFAULT_IMG = `${BASE}/ada-usta-logo.png`
+
+export default function SEO({
+  baslik,
+  aciklama,
+  anahtar,
+  url = '',
+  gorsel = DEFAULT_IMG,
+  tip = 'website',
+}) {
+  const tamBaslik = baslik
+    ? `${baslik} | Ada Usta KKTC`
+    : 'Ada Usta | Kuzey Kıbrıs\'ta En İyi Usta Bul — KKTC Usta Platformu'
+
+  const tamAciklama = aciklama ||
+    'Kuzey Kıbrıs\'ın #1 usta platformu. KKTC\'de elektrikçi, tesisatçı, boyacı, klima, nakliyat ve 80+ hizmet kategorisinde onaylı usta bul.'
+
+  const tamUrl = `${BASE}${url}`
+
+  return (
+    <Helmet>
+      <title>{tamBaslik}</title>
+      <meta name="description" content={tamAciklama} />
+      {anahtar && <meta name="keywords" content={anahtar} />}
+      <link rel="canonical" href={tamUrl} />
+
+      {/* Open Graph */}
+      <meta property="og:title" content={tamBaslik} />
+      <meta property="og:description" content={tamAciklama} />
+      <meta property="og:url" content={tamUrl} />
+      <meta property="og:image" content={gorsel} />
+      <meta property="og:type" content={tip} />
+      <meta property="og:site_name" content="Ada Usta KKTC" />
+      <meta property="og:locale" content="tr_CY" />
+
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={tamBaslik} />
+      <meta name="twitter:description" content={tamAciklama} />
+      <meta name="twitter:image" content={gorsel} />
+    </Helmet>
+  )
+}
