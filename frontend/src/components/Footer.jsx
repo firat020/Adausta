@@ -1,36 +1,34 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Phone, Instagram, Facebook, Twitter } from 'lucide-react'
+import { MapPin, Phone, AtSign, Globe, Send } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-400">
+    <footer className="bg-blue-950 text-blue-200">
       <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
 
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AU</span>
-              </div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <img src="/ada-usta-logo.png" alt="Ada Usta" className="w-10 h-10 rounded-xl object-cover" />
               <div>
-                <div className="text-white font-bold text-lg leading-none">AdaUsta</div>
-                <div className="text-orange-400 text-[10px] font-semibold tracking-widest uppercase">KKTC</div>
+                <div className="text-white font-bold text-lg leading-none">Ada Usta</div>
+                <div className="text-blue-400 text-[10px] font-semibold tracking-widest uppercase">HIZLI · GÜVENLİ · USTA</div>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-500 mb-5">
+            <p className="text-sm leading-relaxed text-blue-300 mb-5">
               Kuzey Kıbrıs Türk Cumhuriyeti'nin en güvenilir usta ve hizmet platformu.
             </p>
             {/* Sosyal medya */}
             <div className="flex items-center gap-3">
-              <a href="#" className="w-8 h-8 bg-gray-800 hover:bg-orange-500 rounded-lg flex items-center justify-center transition-colors">
-                <Instagram size={15} className="text-gray-300" />
+              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
+                <AtSign size={15} className="text-blue-200" />
               </a>
-              <a href="#" className="w-8 h-8 bg-gray-800 hover:bg-orange-500 rounded-lg flex items-center justify-center transition-colors">
-                <Facebook size={15} className="text-gray-300" />
+              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
+                <Globe size={15} className="text-blue-200" />
               </a>
-              <a href="#" className="w-8 h-8 bg-gray-800 hover:bg-orange-500 rounded-lg flex items-center justify-center transition-colors">
-                <Twitter size={15} className="text-gray-300" />
+              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
+                <Send size={15} className="text-blue-200" />
               </a>
             </div>
           </div>
@@ -67,12 +65,12 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li>
                 <a href="tel:+905334265890" className="flex items-center gap-2 hover:text-white transition-colors">
-                  <Phone size={14} className="text-orange-400" />
+                  <Phone size={14} className="text-blue-400" />
                   +90 533 426 58 90
                 </a>
               </li>
-              <li className="flex items-start gap-2 text-gray-500 text-xs leading-relaxed">
-                <MapPin size={14} className="text-orange-400 mt-0.5 flex-shrink-0" />
+              <li className="flex items-start gap-2 text-blue-300 text-xs leading-relaxed">
+                <MapPin size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                 KKTC genelinde hizmet
               </li>
             </ul>
@@ -84,7 +82,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+        <div className="border-t border-blue-900 pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-blue-400">
           <span>© 2026 AdaUsta.com — Tüm hakları saklıdır.</span>
           <span>Kuzey Kıbrıs Türk Cumhuriyeti</span>
         </div>

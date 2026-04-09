@@ -7,20 +7,20 @@ export default function UstaKart({ usta }) {
   return (
     <div
       onClick={() => navigate(`/usta/${usta.id}`)}
-      className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group"
+      className="bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group"
     >
       {/* Üst şerit */}
-      <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
+      <div className="h-1.5 bg-gradient-to-r from-blue-600 to-cyan-400" />
 
       <div className="p-5">
         {/* Başlık */}
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
             {usta.ad.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">{usta.ad_soyad}</h3>
-            <span className="inline-block mt-0.5 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">
+            <span className="inline-block mt-0.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
               {usta.kategori}
             </span>
           </div>
@@ -37,7 +37,7 @@ export default function UstaKart({ usta }) {
           <div className="flex">
             {Array.from({ length: 5 }, (_, i) => (
               <Star key={i} size={13}
-                className={i < Math.round(usta.puan) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                className={i < Math.round(usta.puan) ? 'text-blue-400 fill-blue-400' : 'text-gray-200 fill-gray-200'} />
             ))}
           </div>
           <span className="text-xs text-gray-500">
@@ -68,7 +68,7 @@ export default function UstaKart({ usta }) {
           <a
             href={`tel:${usta.telefon}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
           >
             <Phone size={12} />
             Ara

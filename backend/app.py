@@ -12,7 +12,13 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-CORS(app, supports_credentials=True, origins=['http://localhost:5173', 'http://localhost:3000'])
+CORS(app, supports_credentials=True, origins=[
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:3000',
+])
 
 db.init_app(app)
 

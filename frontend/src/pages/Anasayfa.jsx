@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus } from 'lucide-react'
+import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug } from 'lucide-react'
 import { kategorileriGetir, ustaListele, sehirleriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
+import ReklamBanner from '../components/ReklamBanner'
 
 const HIZLI_KATEGORILER = [
-  { ad: 'Tadilat',   ikon: <Hammer size={28} />,     renk: 'bg-orange-100 text-orange-600',  arama: 'Anahtar Teslim Tadilat' },
-  { ad: 'Elektrik',  ikon: <Zap size={28} />,         renk: 'bg-blue-100 text-blue-600',      arama: 'Elektrikçi' },
-  { ad: 'Tesisat',   ikon: <Droplets size={28} />,    renk: 'bg-cyan-100 text-cyan-600',      arama: 'Su Tesisatı' },
-  { ad: 'Boya',      ikon: <Paintbrush size={28} />,  renk: 'bg-red-100 text-red-500',        arama: 'Boya Badana' },
-  { ad: 'Temizlik',  ikon: <Sparkles size={28} />,    renk: 'bg-green-100 text-green-600',    arama: 'Ev Temizliği' },
+  { ad: 'Tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
+  { ad: 'Elektrik',  ikon: <Zap size={15} />,          arama: 'Elektrikçi' },
+  { ad: 'Tesisat',   ikon: <Droplets size={15} />,     arama: 'Su Tesisatı' },
+  { ad: 'Boya',      ikon: <Paintbrush size={15} />,   arama: 'Boya Badana' },
+  { ad: 'Temizlik',  ikon: <Sparkles size={15} />,     arama: 'Ev Temizliği' },
+  { ad: 'Klima',     ikon: <Wind size={15} />,          arama: 'Klima Servisi' },
+  { ad: 'Nakliyat',  ikon: <Truck size={15} />,         arama: 'Evden Eve Nakliyat' },
+  { ad: 'Mobilya',   ikon: <Armchair size={15} />,      arama: 'Mobilya Montaj' },
+  { ad: 'Bahçe',     ikon: <Leaf size={15} />,           arama: 'Bahçe Bakımı' },
+  { ad: 'Tamir',     ikon: <Wrench size={15} />,         arama: 'Beyaz Eşya Servisi' },
+  { ad: 'Fotoğraf',  ikon: <Camera size={15} />,         arama: 'Fotoğrafçı' },
+  { ad: 'İlaçlama',  ikon: <Bug size={15} />,            arama: 'Böcek İlaçlama' },
 ]
 
 const YORUMLAR = [
@@ -18,7 +26,13 @@ const YORUMLAR = [
   { ad: 'Zeynep S.',  sehir: 'Gazimağusa',  puan: 4, yorum: 'Tesisatçı aynı gün geldi, sorunu hemen çözdü. Teşekkürler AdaUsta!', avatar: 'Z' },
 ]
 
-const AVATAR_RENK = ['bg-orange-500', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-rose-500']
+const AVATAR_RENK = ['bg-blue-600', 'bg-sky-500', 'bg-cyan-600', 'bg-indigo-600', 'bg-blue-800']
+
+const OZELLIKLER = [
+  { ikon: <ShieldCheck size={20} className="text-blue-400" />, baslik: 'Güvenilir Ustalar', aciklama: 'Kimlik doğrulamalı profiller' },
+  { ikon: <Zap size={20} className="text-yellow-400" />,        baslik: 'Hızlı Yanıt',       aciklama: 'Ort. 15 dakikada usta bulun' },
+  { ikon: <CheckCircle2 size={20} className="text-green-400" />, baslik: 'Ücretsiz',          aciklama: 'Platform kullanımı ücretsiz' },
+]
 
 export default function Anasayfa() {
   const [kategoriler, setKategoriler] = useState([])
@@ -57,130 +71,227 @@ export default function Anasayfa() {
     <div className="bg-white">
 
       {/* ══════════════════════════════════════════
-          HERO
+          HERO — Gerçek arka plan fotoğrafı
       ══════════════════════════════════════════ */}
-      <section className="bg-gray-900 px-4 py-14">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-white font-extrabold text-3xl md:text-4xl leading-tight mb-2">
-            ADA USTA: GÜVENLİ VE HIZLI
-          </h1>
-          <h2 className="text-orange-400 font-extrabold text-3xl md:text-4xl leading-tight mb-8">
-            ÇÖZÜMLERİNİZİN MERKEZİ
-          </h2>
+      <section className="relative overflow-hidden min-h-[480px] flex items-center">
+        {/* Arka plan fotoğrafı */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/hero-bg.png')"
+          }}
+        />
+        {/* Koyu overlay */}
 
-          {/* Arama */}
-          <form onSubmit={aramayaGit} className="flex flex-col sm:flex-row gap-2">
+        <div className="relative w-full max-w-3xl mx-auto text-center px-4 py-16 md:py-20">
+          {/* Üst rozet */}
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/20">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            HIZLI · GÜVENLİ · USTA
+          </div>
+
+          {/* Başlık */}
+          <h1 className="font-extrabold leading-tight mb-4">
+            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Her İş İçin</span>
+            <span className="text-yellow-400 text-4xl md:text-6xl block my-1" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>En İyi Ustayı</span>
+            <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>Bulun</span>
+          </h1>
+
+          {/* Hizmet chip'leri */}
+          <div className="flex flex-wrap justify-center gap-2 mb-3">
+            {[
+              { ikon: <Zap size={12} />,        ad: 'Elektrik' },
+              { ikon: <Droplets size={12} />,   ad: 'Tesisat' },
+              { ikon: <Hammer size={12} />,     ad: 'Tadilat' },
+              { ikon: <Truck size={12} />,      ad: 'Nakliyat' },
+              { ikon: <Sparkles size={12} />,   ad: 'Temizlik' },
+              { ikon: <Wind size={12} />,       ad: 'Klima' },
+            ].map(h => (
+              <span key={h.ad} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/20"
+                style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}>
+                {h.ikon} {h.ad}
+              </span>
+            ))}
+            <span className="flex items-center gap-1 bg-yellow-400/20 backdrop-blur-sm text-yellow-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-yellow-400/30">
+              <Plus size={11} /> 50+ hizmet
+            </span>
+          </div>
+          <p className="text-white/80 text-xs mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
+            KKTC genelinde <span className="text-white font-semibold">onaylı ustalar</span> arasından ihtiyacınıza uygun olanı bulun.
+          </p>
+
+          {/* Arama kutusu */}
+          <form onSubmit={aramayaGit} className="flex flex-col sm:flex-row gap-2 shadow-2xl">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 value={arama}
                 onChange={e => setArama(e.target.value)}
-                placeholder="Hizmet ara... (Örn: Boya, Su Tesisatı, Elektrik...)"
-                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Hizmet ara... (Boya, Su Tesisatı, Elektrik...)"
+                className="w-full pl-11 pr-4 py-4 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
-            <select
-              value={secilenSehir}
-              onChange={e => setSecilenSehir(e.target.value)}
-              className="sm:w-44 px-4 py-3.5 rounded-xl bg-white text-gray-600 text-sm outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Şehir Seçin</option>
-              {sehirler.map(s => <option key={s.id} value={s.ad}>{s.ad}</option>)}
-            </select>
+            <div className="relative sm:w-44">
+              <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                value={secilenSehir}
+                onChange={e => setSecilenSehir(e.target.value)}
+                className="w-full pl-9 pr-4 py-4 rounded-xl bg-white text-gray-600 text-sm outline-none focus:ring-2 focus:ring-yellow-400 appearance-none"
+              >
+                <option value="">Şehir Seçin</option>
+                {sehirler.map(s => <option key={s.id} value={s.ad}>{s.ad}</option>)}
+              </select>
+            </div>
             <button type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 py-3.5 rounded-xl transition-colors text-sm">
-              ARA
+              className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-extrabold px-8 py-4 rounded-xl transition-colors text-sm whitespace-nowrap shadow-lg">
+              Hemen Bul
             </button>
           </form>
+
+          {/* Hızlı etiketler */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+            <span className="text-blue-200 text-xs font-medium">Popüler:</span>
+            {['Elektrikçi', 'Su Tesisatı', 'Boya Badana', 'Klima', 'Temizlik'].map(tag => (
+              <button key={tag}
+                onClick={() => navigate(`/ustalar?arama=${tag}`)}
+                className="text-xs text-white bg-white/10 hover:bg-white/20 border border-white/25 px-3 py-1 rounded-full transition-colors">
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════
-          HIZLI - GÜVENLİ - USTA
+          ÖZELLİKLER ŞERİDİ
       ══════════════════════════════════════════ */}
-      <section className="bg-white py-10 px-4 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-center font-extrabold text-gray-900 text-lg mb-8 tracking-wide">
-            HIZLI — GÜVENLİ — USTA
-          </h2>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            {HIZLI_KATEGORILER.map(k => (
-              <button key={k.ad}
-                onClick={() => navigate(`/ustalar?arama=${k.arama}`)}
-                className="flex flex-col items-center gap-2 group">
-                <div className={`w-16 h-16 rounded-2xl ${k.renk} flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-sm`}>
-                  {k.ikon}
+      <section className="bg-blue-900 py-5 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+            {OZELLIKLER.map((o, i) => (
+              <div key={i} className="flex items-center gap-3">
+                {o.ikon}
+                <div>
+                  <p className="text-white font-bold text-sm">{o.baslik}</p>
+                  <p className="text-blue-300 text-xs">{o.aciklama}</p>
                 </div>
-                <span className="text-xs font-semibold text-gray-700">{k.ad}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          HIZLI KATEGORİ BUTONLARI
+      ══════════════════════════════════════════ */}
+      <section className="bg-white py-4 border-b border-gray-100">
+        <div className="overflow-x-auto scrollbar-hide"  style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex gap-2 px-4 pb-0.5" style={{ width: 'max-content' }}>
+            {HIZLI_KATEGORILER.map(k => (
+              <button
+                key={k.ad}
+                onClick={() => navigate(`/ustalar?arama=${k.arama}`)}
+                className="group flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 transition-all whitespace-nowrap"
+              >
+                <span className="text-gray-400 group-hover:text-blue-500 transition-colors">{k.ikon}</span>
+                {k.ad}
               </button>
             ))}
-            <button onClick={() => navigate('/kategoriler')}
-              className="flex flex-col items-center gap-2 group">
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-sm">
-                <Plus size={28} />
-              </div>
-              <span className="text-xs font-semibold text-gray-700">Tümü</span>
+            <button
+              onClick={() => navigate('/kategoriler')}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors whitespace-nowrap"
+            >
+              <Plus size={13} />
+              Tümü
             </button>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════
-          KATEGORİ GRİDİ
+          POPÜLER VE AKTİF HİZMETLER — RESİMLİ
       ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex items-center gap-2 mb-5">
-          <Star size={18} className="text-yellow-500 fill-yellow-500" />
-          <h2 className="text-lg font-bold text-gray-900">Popüler ve Aktif Hizmetler</h2>
+      <section className="max-w-7xl mx-auto px-4 py-14">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 bg-yellow-400 rounded-full" />
+            <div>
+              <h2 className="text-xl font-extrabold text-gray-900">Popüler ve Aktif Hizmetler</h2>
+              <p className="text-gray-500 text-xs mt-0.5">Şu an aktif usta bulunan kategoriler</p>
+            </div>
+          </div>
+          <button onClick={() => navigate('/kategoriler')}
+            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold border border-blue-100 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors">
+            Tümünü Gör <ChevronRight size={15} />
+          </button>
         </div>
 
         {yukleniyor ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
-                <div className="h-44 bg-gray-100 animate-pulse" />
+              <div key={i} className="rounded-2xl overflow-hidden border border-gray-100">
+                <div className="h-48 bg-gray-100 animate-pulse" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
                   <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
-                  <div className="h-3 bg-gray-100 rounded animate-pulse w-full" />
                 </div>
               </div>
             ))}
           </div>
+        ) : populer.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-sm">Henüz aktif usta bulunan kategori yok.</p>
+          </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
-              {populer.map(k => <KategoriKart key={k.id} kategori={k} />)}
-            </div>
-
-            {diger.length > 0 && (
-              <>
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-gray-900">Diğer Kategoriler</h2>
-                  <button onClick={() => navigate('/kategoriler')}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 text-sm font-semibold">
-                    Tümünü Gör <ArrowRight size={14} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {diger.map(k => <KategoriKart key={k.id} kategori={k} />)}
-                </div>
-              </>
-            )}
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {populer.map(k => <KategoriKart key={k.id} kategori={k} />)}
+          </div>
         )}
       </section>
 
       {/* ══════════════════════════════════════════
+          DİĞER KATEGORİLER
+      ══════════════════════════════════════════ */}
+      {!yukleniyor && diger.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 pb-14">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-blue-300 rounded-full" />
+              <h2 className="text-lg font-bold text-gray-700">Diğer Kategoriler</h2>
+            </div>
+            <button onClick={() => navigate('/kategoriler')}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
+              Tümünü Gör <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {diger.map(k => <KategoriKart key={k.id} kategori={k} />)}
+          </div>
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════
+          REKLAM ALANI
+      ══════════════════════════════════════════ */}
+      <ReklamBanner />
+
+      {/* ══════════════════════════════════════════
           MÜŞTERİ YORUMLARI
       ══════════════════════════════════════════ */}
-      <section className="bg-gray-50 border-y border-gray-100 py-14 px-4">
+      <section className="bg-blue-50 border-y border-blue-100 py-14 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">Müşteri Yorumları</h2>
+          <div className="text-center mb-10">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-1 h-6 bg-yellow-400 rounded-full" />
+              <h2 className="text-2xl font-bold text-gray-900">Müşteri Yorumları</h2>
+              <div className="w-1 h-6 bg-yellow-400 rounded-full" />
+            </div>
+            <p className="text-gray-500 text-sm mt-1">KKTC genelinde binlerce mutlu müşteri</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {YORUMLAR.map((y, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100">
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-full ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
                     {y.avatar}
@@ -195,7 +306,7 @@ export default function Anasayfa() {
                   <div className="ml-auto flex">
                     {Array.from({ length: 5 }, (_, s) => (
                       <Star key={s} size={13}
-                        className={s < y.puan ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                        className={s < y.puan ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'} />
                     ))}
                   </div>
                 </div>
@@ -211,84 +322,87 @@ export default function Anasayfa() {
       ══════════════════════════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 py-14">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">En İyi Ustalarımız</h2>
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-blue-600 rounded-full" />
+            <h2 className="text-2xl font-bold text-gray-900">En İyi Ustalarımız</h2>
+          </div>
           <button onClick={() => navigate('/ustalar')}
-            className="flex items-center gap-1.5 text-orange-500 hover:text-orange-600 text-sm font-semibold">
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-sm font-semibold">
             Tümünü Gör <ArrowRight size={15} />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {enIyiUstalar.map((u, i) => (
-            <div key={u.id}
-              onClick={() => navigate(`/usta/${u.id}`)}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
-              {/* Renkli üst şerit */}
-              <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
-              <div className="p-6">
-                {/* Avatar + bilgi */}
-                <div className="flex items-start gap-4 mb-5">
-                  <div className={`w-16 h-16 rounded-2xl ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-2xl flex-shrink-0`}>
-                    {u.ad.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-base">{u.ad_soyad}</h3>
-                    <p className="text-orange-500 text-sm font-medium mt-0.5">{u.kategori}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-xs text-gray-500 truncate">
-                        {u.ilce ? `${u.ilce}, ` : ''}{u.sehir}
-                      </span>
+        {enIyiUstalar.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <p className="text-sm">Henüz usta kaydı yok.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {enIyiUstalar.map((u, i) => (
+              <div key={u.id}
+                onClick={() => navigate(`/usta/${u.id}`)}
+                className="bg-white rounded-2xl border border-blue-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5">
+                <div className="h-1.5 bg-gradient-to-r from-blue-600 to-yellow-400" />
+                <div className="p-6">
+                  <div className="flex items-start gap-4 mb-5">
+                    <div className={`w-16 h-16 rounded-2xl ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-2xl flex-shrink-0`}>
+                      {u.ad.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-base">{u.ad_soyad}</h3>
+                      <p className="text-blue-600 text-sm font-medium mt-0.5">{u.kategori}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="text-xs text-gray-500 truncate">
+                          {u.ilce ? `${u.ilce}, ` : ''}{u.sehir}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Puan */}
-                <div className="flex items-center gap-2 mb-5">
-                  <div className="flex">
-                    {Array.from({ length: 5 }, (_, s) => (
-                      <Star key={s} size={14}
-                        className={s < Math.round(u.puan) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
-                    ))}
+                  <div className="flex items-center gap-2 mb-5">
+                    <div className="flex">
+                      {Array.from({ length: 5 }, (_, s) => (
+                        <Star key={s} size={14}
+                          className={s < Math.round(u.puan) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">{u.yorum_sayisi} yorum</span>
                   </div>
-                  <span className="text-xs text-gray-500">{u.yorum_sayisi} yorum</span>
-                </div>
-
-                {/* Butonlar */}
-                <div className="flex gap-2">
-                  <a href={`tel:${u.telefon}`}
-                    onClick={e => e.stopPropagation()}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl transition-colors">
-                    <Phone size={13} />
-                    {u.telefon}
-                  </a>
-                  {u.whatsapp && (
-                    <a href={`https://wa.me/${u.whatsapp.replace(/\D/g, '')}`}
-                      target="_blank" rel="noreferrer"
+                  <div className="flex gap-2">
+                    <a href={`tel:${u.telefon}`}
                       onClick={e => e.stopPropagation()}
-                      className="w-10 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors">
-                      <MessageCircle size={14} />
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors">
+                      <Phone size={13} />
+                      {u.telefon}
                     </a>
-                  )}
+                    {u.whatsapp && (
+                      <a href={`https://wa.me/${u.whatsapp.replace(/\D/g, '')}`}
+                        target="_blank" rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="w-10 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors">
+                        <MessageCircle size={14} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ══════════════════════════════════════════
           USTA CTA
       ══════════════════════════════════════════ */}
-      <section className="bg-gray-900 text-white py-14 px-4">
+      <section className="py-14 px-4" style={{ background: 'linear-gradient(135deg, #0f2554 0%, #1a4aad 100%)' }}>
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-2">Usta mısınız veya Firmanız mı var?</h2>
-          <p className="text-gray-400 text-sm mb-6">
+          <h2 className="text-white text-2xl font-bold mb-2">Usta mısınız veya Firmanız mı var?</h2>
+          <p className="text-blue-300 text-sm mb-8">
             Profilinizi oluşturun, KKTC genelinde müşterilere ücretsiz ulaşın.
           </p>
           <button onClick={() => navigate('/usta-kayit')}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-3.5 rounded-xl transition-colors">
-            Usta Olarak Kaydol
+            className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-10 py-3.5 rounded-xl transition-colors text-sm">
+            Usta Olarak Kaydol →
           </button>
         </div>
       </section>
