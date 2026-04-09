@@ -1,10 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const katAd = i18n.language === 'en' ? (KAT_EN[usta.kategori] || usta.kategori)
+              : i18n.language === 'ru' ? (KAT_RU[usta.kategori] || usta.kategori)
+              : usta.kategori
 
   return (
     <div
@@ -23,7 +27,7 @@ export default function UstaKart({ usta }) {
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">{usta.ad_soyad}</h3>
             <span className="inline-block mt-0.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-              {usta.kategori}
+              {katAd}
             </span>
           </div>
           {usta.mesafe != null && (

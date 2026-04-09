@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaDetay, yorumEkle } from '../api'
 
 export default function UstaDetay() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [usta, setUsta] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [yorumForm, setYorumForm] = useState({ musteri_adi: '', puan: 5, yorum: '' })
@@ -72,7 +73,9 @@ export default function UstaDetay() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-gray-900">{usta.ad_soyad}</h1>
               <span className="inline-block mt-1 text-sm font-semibold text-orange-600 bg-orange-50 px-3 py-1 rounded-lg">
-                {usta.kategori}
+                {i18n.language === 'en' ? (KAT_EN[usta.kategori] || usta.kategori)
+                : i18n.language === 'ru' ? (KAT_RU[usta.kategori] || usta.kategori)
+                : usta.kategori}
               </span>
               <div className="flex items-center gap-2 mt-3">
                 <Yildizlar puan={usta.puan} />
