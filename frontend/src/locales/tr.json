@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "hizmetler": "Hizmetler",
+    "ustalar": "Ustalar",
+    "enYakin": "En Yakın Usta",
+    "ustaKayit": "Usta Kaydı"
+  },
+  "hero": {
+    "rozet": "HIZLI · GÜVENLİ · USTA",
+    "baslik1": "Kuzey Kıbrıs'ta",
+    "baslik2": "En İyi Ustayı",
+    "baslik3": "Bulun",
+    "aciklama": "KKTC genelinde onaylı ustalar arasından ihtiyacınıza uygun olanı bulun.",
+    "aramaPlaceholder": "Hizmet ara... (Boya, Su Tesisatı, Elektrik...)",
+    "sehirSec": "Şehir Seçin",
+    "hemenBul": "Hemen Bul",
+    "populer": "Popüler:"
+  },
+  "ozellikler": {
+    "guvenilir": "Güvenilir Ustalar",
+    "guvenilirAlt": "Kimlik doğrulamalı profiller",
+    "hizli": "Hızlı Yanıt",
+    "hizliAlt": "Ort. 15 dakikada usta bulun",
+    "ucretsiz": "Ücretsiz",
+    "ucretsizAlt": "Platform kullanımı ücretsiz"
+  },
+  "kategoriler": {
+    "baslik": "Popüler ve Aktif Hizmetler",
+    "alt": "Şu an aktif usta bulunan kategoriler",
+    "tumunu": "Tümünü Gör",
+    "diger": "Diğer Kategoriler",
+    "hizliBaslik": "Hangi hizmete ihtiyacın var?"
+  },
+  "ustalar": {
+    "enIyi": "En İyi Ustalarımız",
+    "tumunu": "Tümünü Gör",
+    "yorum": "yorum",
+    "henuzYok": "Henüz usta kaydı yok."
+  },
+  "cta": {
+    "baslik": "Usta mısınız veya Firmanız mı var?",
+    "alt": "Profilinizi oluşturun, KKTC genelinde müşterilere ücretsiz ulaşın.",
+    "buton": "Usta Olarak Kaydol →"
+  },
+  "footer": {
+    "aciklama": "Kuzey Kıbrıs Türk Cumhuriyeti'nin en güvenilir usta ve hizmet platformu.",
+    "hizmetler": "Hizmetler",
+    "sehirler": "Şehirler",
+    "iletisim": "İletişim",
+    "tumHizmetler": "Tüm Hizmetler",
+    "ustaKayit": "Usta Olarak Kaydol",
+    "enYakin": "En Yakın Usta",
+    "yasal": "Yasal",
+    "gizlilik": "Gizlilik Politikası",
+    "kullanim": "Kullanım Şartları",
+    "iade": "İade Politikası",
+    "mesafeli": "Mesafeli Satış Sözleşmesi",
+    "cerez": "Çerez Politikası",
+    "telif": "Tüm hakları saklıdır.",
+    "firma": "Adissa Enterprises Ltd. tarafından işletilmektedir."
+  },
+  "common": {
+    "incele": "İncele",
+    "hemenTeklif": "HEMEN TEKLİF AL",
+    "ustaAktif": "USTA AKTİF",
+    "yukleniyor": "Yükleniyor..."
+  }
+}

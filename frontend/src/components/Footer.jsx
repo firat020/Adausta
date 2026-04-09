@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { MapPin, Phone, AtSign, Globe, Send } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function Footer() {
+  const { t } = useTranslation()
   return (
     <footer className="bg-blue-950 text-blue-200">
       <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
@@ -17,7 +19,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-sm leading-relaxed text-blue-300 mb-5">
-              Kuzey Kıbrıs Türk Cumhuriyeti'nin en güvenilir usta ve hizmet platformu.
+              {t('footer.aciklama')}
             </p>
             {/* Sosyal medya */}
             <div className="flex items-center gap-3">
@@ -35,7 +37,7 @@ export default function Footer() {
 
           {/* Hizmetler */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Hizmetler</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">{t('footer.hizmetler')}</h4>
             <ul className="space-y-2.5 text-sm">
               {['Elektrikçi', 'Su Tesisatı', 'Boya Badana', 'Klima Servisi', 'Mobilya Montaj', 'Demirci'].map(h => (
                 <li key={h}>
@@ -47,7 +49,7 @@ export default function Footer() {
 
           {/* Şehirler */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Şehirler</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">{t('footer.sehirler')}</h4>
             <ul className="space-y-2.5 text-sm">
               {['Lefkoşa', 'Girne', 'Gazimağusa', 'Güzelyurt', 'İskele'].map(s => (
                 <li key={s}>
@@ -59,10 +61,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* İletişim */}
+          {/* İletişim + Yasal */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">İletişim</h4>
-            <ul className="space-y-3 text-sm">
+            <h4 className="text-white font-semibold text-sm mb-4">{t('footer.iletisim')}</h4>
+            <ul className="space-y-3 text-sm mb-5">
               <li>
                 <a href="tel:+905334265890" className="flex items-center gap-2 hover:text-white transition-colors">
                   <Phone size={14} className="text-blue-400" />
@@ -74,17 +76,25 @@ export default function Footer() {
                 KKTC genelinde hizmet
               </li>
             </ul>
-            <div className="mt-6 space-y-2">
-              <Link to="/kategoriler" className="block hover:text-white text-sm transition-colors">Tüm Hizmetler</Link>
-              <Link to="/usta-kayit" className="block hover:text-white text-sm transition-colors">Usta Olarak Kaydol</Link>
-              <Link to="/en-yakin" className="block hover:text-white text-sm transition-colors">En Yakın Usta</Link>
+
+            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.yasal')}</h4>
+            <div className="space-y-2 text-sm">
+              <Link to="/gizlilik" className="block hover:text-white transition-colors">{t('footer.gizlilik')}</Link>
+              <Link to="/kullanim-sartlari" className="block hover:text-white transition-colors">{t('footer.kullanim')}</Link>
+              <Link to="/iade-politikasi" className="block hover:text-white transition-colors">{t('footer.iade')}</Link>
+              <Link to="/mesafeli-satis" className="block hover:text-white transition-colors">{t('footer.mesafeli')}</Link>
+              <Link to="/cerez-politikasi" className="block hover:text-white transition-colors">{t('footer.cerez')}</Link>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-blue-900 pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-blue-400">
-          <span>© 2026 AdaUsta.com — Tüm hakları saklıdır.</span>
-          <span>Kuzey Kıbrıs Türk Cumhuriyeti</span>
+        {/* Alt şerit */}
+        <div className="border-t border-blue-900 pt-5 space-y-2 text-xs text-blue-400 text-center md:text-left">
+          <p className="font-semibold text-blue-300">{t('footer.firma')}</p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-1">
+            <span>© 2026 Ada Usta — {t('footer.telif')}</span>
+            <span>Kuzey Kıbrıs Türk Cumhuriyeti</span>
+          </div>
         </div>
       </div>
     </footer>

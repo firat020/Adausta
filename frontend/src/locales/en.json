@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "hizmetler": "Services",
+    "ustalar": "Craftsmen",
+    "enYakin": "Nearest Craftsman",
+    "ustaKayit": "Register as Pro"
+  },
+  "hero": {
+    "rozet": "FAST · SAFE · SKILLED",
+    "baslik1": "In North Cyprus",
+    "baslik2": "Find the Best",
+    "baslik3": "Craftsman",
+    "aciklama": "Find verified craftsmen across North Cyprus for any service you need.",
+    "aramaPlaceholder": "Search service... (Paint, Plumbing, Electric...)",
+    "sehirSec": "Select City",
+    "hemenBul": "Find Now",
+    "populer": "Popular:"
+  },
+  "ozellikler": {
+    "guvenilir": "Trusted Craftsmen",
+    "guvenilirAlt": "Identity-verified profiles",
+    "hizli": "Fast Response",
+    "hizliAlt": "Find a pro in avg. 15 min",
+    "ucretsiz": "Free",
+    "ucretsizAlt": "Platform is free to use"
+  },
+  "kategoriler": {
+    "baslik": "Popular & Active Services",
+    "alt": "Categories with active craftsmen now",
+    "tumunu": "See All",
+    "diger": "Other Categories",
+    "hizliBaslik": "What service do you need?"
+  },
+  "ustalar": {
+    "enIyi": "Our Top Craftsmen",
+    "tumunu": "See All",
+    "yorum": "reviews",
+    "henuzYok": "No craftsmen registered yet."
+  },
+  "cta": {
+    "baslik": "Are you a Craftsman or a Company?",
+    "alt": "Create your profile and reach customers across North Cyprus for free.",
+    "buton": "Register as Pro →"
+  },
+  "footer": {
+    "aciklama": "The most trusted craftsman and service platform in Northern Cyprus.",
+    "hizmetler": "Services",
+    "sehirler": "Cities",
+    "iletisim": "Contact",
+    "tumHizmetler": "All Services",
+    "ustaKayit": "Register as Pro",
+    "enYakin": "Nearest Craftsman",
+    "yasal": "Legal",
+    "gizlilik": "Privacy Policy",
+    "kullanim": "Terms of Service",
+    "iade": "Refund Policy",
+    "mesafeli": "Distance Sales Agreement",
+    "cerez": "Cookie Policy",
+    "telif": "All rights reserved.",
+    "firma": "Operated by Adissa Enterprises Ltd."
+  },
+  "common": {
+    "incele": "View",
+    "hemenTeklif": "GET A QUOTE",
+    "ustaAktif": "PRO ACTIVE",
+    "yukleniyor": "Loading..."
+  }
+}

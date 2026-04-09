@@ -7,6 +7,11 @@ import UstaListesi from './pages/UstaListesi'
 import UstaDetay from './pages/UstaDetay'
 import UstaKayit from './pages/UstaKayit'
 import EnYakin from './pages/EnYakin'
+import GizlilikPolitikasi from './pages/yasal/GizlilikPolitikasi'
+import KullanimSartlari from './pages/yasal/KullanimSartlari'
+import IadePolitikasi from './pages/yasal/IadePolitikasi'
+import MesafeliSatis from './pages/yasal/MesafeliSatis'
+import CerezPolitikasi from './pages/yasal/CerezPolitikasi'
 
 export default function App() {
   return (
@@ -20,6 +25,11 @@ export default function App() {
           <Route path="/usta/:id" element={<UstaDetay />} />
           <Route path="/usta-kayit" element={<UstaKayit />} />
           <Route path="/en-yakin" element={<EnYakin />} />
+          <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
+          <Route path="/kullanim-sartlari" element={<KullanimSartlari />} />
+          <Route path="/iade-politikasi" element={<IadePolitikasi />} />
+          <Route path="/mesafeli-satis" element={<MesafeliSatis />} />
+          <Route path="/cerez-politikasi" element={<CerezPolitikasi />} />
         </Routes>
       </main>
       <Footer />
