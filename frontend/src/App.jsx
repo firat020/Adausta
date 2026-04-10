@@ -12,8 +12,15 @@ import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
 import MesafeliSatis from './pages/yasal/MesafeliSatis'
 import CerezPolitikasi from './pages/yasal/CerezPolitikasi'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUstalar from './pages/admin/AdminUstalar'
+import AdminYorumlar from './pages/admin/AdminYorumlar'
+import AdminKategoriler from './pages/admin/AdminKategoriler'
+import AdminLoglar from './pages/admin/AdminLoglar'
 
-export default function App() {
+function PublicSite() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50" style={{width:'100%', textAlign:'left'}}>
       <Navbar />
@@ -34,5 +41,24 @@ export default function App() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Admin — kendi layout'u var, Navbar/Footer yok */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="ustalar" element={<AdminUstalar />} />
+        <Route path="yorumlar" element={<AdminYorumlar />} />
+        <Route path="kategoriler" element={<AdminKategoriler />} />
+        <Route path="loglar" element={<AdminLoglar />} />
+      </Route>
+
+      {/* Public site */}
+      <Route path="/*" element={<PublicSite />} />
+    </Routes>
   )
 }

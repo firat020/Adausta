@@ -13,6 +13,8 @@ class Kullanici(db.Model):
     rol = db.Column(db.String(20), default='musteri')  # admin / usta / musteri
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     aktif = db.Column(db.Boolean, default=True)
+    giris_deneme = db.Column(db.Integer, default=0)
+    kilitli_kadar = db.Column(db.DateTime, nullable=True)
 
     def sifre_set(self, sifre):
         self.sifre_hash = generate_password_hash(sifre)
@@ -20,8 +22,34 @@ class Kullanici(db.Model):
     def sifre_kontrol(self, sifre):
         return check_password_hash(self.sifre_hash, sifre)
 
+    def kilitli_mi(self):
+        if self.kilitli_kadar and self.kilitli_kadar > datetime.utcnow():
+            return True
+        return False
+
     def to_dict(self):
         return {'id': self.id, 'email': self.email, 'rol': self.rol}
+
+
+class AdminLog(db.Model):
+    __tablename__ = 'admin_log'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    kullanici_email = db.Column(db.String(150), default='')
+    islem = db.Column(db.String(100), nullable=False)
+    detay = db.Column(db.Text, default='')
+    ip = db.Column(db.String(50), default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'kullanici_email': self.kullanici_email,
+            'islem': self.islem,
+            'detay': self.detay,
+            'ip': self.ip,
+            'tarih': self.tarih.strftime('%d.%m.%Y %H:%M')
+        }
 
 
 class Sehir(db.Model):
