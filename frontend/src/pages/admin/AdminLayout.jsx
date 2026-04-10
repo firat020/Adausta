@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
@@ -9,19 +9,41 @@ const API = 'http://localhost:5000'
 
 const menuItems = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/ustalar', icon: Users, label: 'Usta Yönetimi' },
-  { to: '/admin/yorumlar', icon: Star, label: 'Yorumlar' },
-  { to: '/admin/kategoriler', icon: Tag, label: 'Kategoriler' },
-  { to: '/admin/loglar', icon: FileText, label: 'İşlem Logu' },
+  { to: '/admin/ustalar',   icon: Users,           label: 'Usta Yönetimi' },
+  { to: '/admin/yorumlar',  icon: Star,            label: 'Yorumlar' },
+  { to: '/admin/kategoriler', icon: Tag,           label: 'Kategoriler' },
+  { to: '/admin/loglar',    icon: FileText,        label: 'İşlem Logu' },
 ]
 
 export default function AdminLayout() {
   const [acik, setAcik] = useState(false)
+  const [kontrol, setKontrol] = useState(true) // session kontrol ediyor
   const navigate = useNavigate()
+
+  // Sayfa yüklenince session kontrol et
+  useEffect(() => {
+    axios.get(`${API}/api/auth/ben`, { withCredentials: true })
+      .then(r => {
+        if (r.data.kullanici?.rol !== 'admin') {
+          navigate('/admin/login', { replace: true })
+        } else {
+          setKontrol(false)
+        }
+      })
+      .catch(() => navigate('/admin/login', { replace: true }))
+  }, [navigate])
 
   const cikis = async () => {
     await axios.post(`${API}/api/auth/cikis`, {}, { withCredentials: true })
     navigate('/admin/login')
+  }
+
+  if (kontrol) {
+    return (
+      <div className="min-h-screen bg-[#D6DEE8] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0052CC]" />
+      </div>
+    )
   }
 
   return (
@@ -32,7 +54,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setAcik(false)} />
       )}
 
-      {/* Sidebar — Delardesk teması */}
+      {/* Sidebar */}
       <aside className={`
         w-60 bg-[#0d1322] border-r-2 border-[#1a2744] flex flex-col flex-shrink-0
         fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out
@@ -88,7 +110,6 @@ export default function AdminLayout() {
 
       {/* Ana içerik */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobil üst bar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3.5 bg-[#0d1322] border-b-2 border-[#1a2744]">
           <button onClick={() => setAcik(true)} className="text-[#6a7ea0] hover:text-white transition p-1.5 rounded-lg hover:bg-[#121929]">
             <Menu size={22} />
