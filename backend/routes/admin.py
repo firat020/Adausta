@@ -80,6 +80,7 @@ def istatistik():
 def ustalar():
     filtre = request.args.get('filtre', 'hepsi')  # hepsi / bekleyen / onaylandi / pasif
     arama = request.args.get('arama', '')
+    kategori_id = request.args.get('kategori_id', type=int)
 
     q = Usta.query
     if filtre == 'bekleyen':
@@ -88,6 +89,9 @@ def ustalar():
         q = q.filter_by(onaylanmis=True, aktif=True)
     elif filtre == 'pasif':
         q = q.filter_by(aktif=False)
+
+    if kategori_id:
+        q = q.filter_by(kategori_id=kategori_id)
 
     if arama:
         q = q.filter(
