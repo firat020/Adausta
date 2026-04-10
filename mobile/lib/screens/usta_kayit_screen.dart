@@ -12,6 +12,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
   final _formKey = GlobalKey<FormState>();
   final _api = ApiService();
   bool _yukleniyor = false;
+  bool _kategorilerYukleniyor = true;
 
   final _adCtrl = TextEditingController();
   final _soyadCtrl = TextEditingController();
@@ -21,12 +22,25 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
   final _sehirCtrl = TextEditingController();
   final _ilceCtrl = TextEditingController();
   String? _kategori;
+  List<String> _kategoriler = [];
 
-  final _kategoriler = [
-    'Elektrikçi', 'Tesisatçı', 'Boyacı', 'Marangoz', 'Çilingir',
-    'Kaynakçı', 'Klimacı', 'Cam Ustası', 'Çatı Ustası', 'Bahçıvan',
-    'Fayansçı', 'Sıvacı', 'Nakliyat', 'Temizlik', 'Diğer',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _kategorileriYukle();
+  }
+
+  Future<void> _kategorileriYukle() async {
+    try {
+      final list = await _api.getKategoriler();
+      setState(() {
+        _kategoriler = list.map((k) => k.ad).toList();
+        _kategorilerYukleniyor = false;
+      });
+    } catch (_) {
+      setState(() => _kategorilerYukleniyor = false);
+    }
+  }
 
   Future<void> _kaydet() async {
     if (!_formKey.currentState!.validate()) return;
@@ -101,15 +115,22 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
                 const Text('Meslek & Konum',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _kategori,
-                  decoration: _inputDeco('Kategori *'),
-                  items: _kategoriler
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _kategori = v),
-                  validator: (v) => v == null ? 'Kategori seçin' : null,
-                ),
+                _kategorilerYukleniyor
+                    ? const SizedBox(
+                        height: 56,
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : DropdownButtonFormField<String>(
+                        value: _kategori,
+                        decoration: _inputDeco('Kategori *'),
+                        isExpanded: true,
+                        menuMaxHeight: 350,
+                        items: _kategoriler
+                            .map((k) => DropdownMenuItem(value: k, child: Text(k, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _kategori = v),
+                        validator: (v) => v == null ? 'Kategori seçin' : null,
+                      ),
                 const SizedBox(height: 12),
                 _alan(_sehirCtrl, 'Şehir'),
                 _alan(_ilceCtrl, 'İlçe'),

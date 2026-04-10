@@ -6,15 +6,15 @@ const API = 'http://localhost:5000'
 
 const FILTRELER = [
   { key: 'hepsi', label: 'Hepsi' },
-  { key: 'bekleyen', label: 'Onay Bekleyen' },
+  { key: 'bekleyen', label: 'Bekleyen' },
   { key: 'onaylandi', label: 'Onaylı' },
-  { key: 'pasif', label: 'Pasif / Yasaklı' },
+  { key: 'pasif', label: 'Yasaklı' },
 ]
 
 function Rozet({ onaylanmis, aktif }) {
-  if (!aktif) return <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">Yasaklı</span>
-  if (onaylanmis) return <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">Onaylı</span>
-  return <span className="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700">Bekliyor</span>
+  if (!aktif) return <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-medium">Yasaklı</span>
+  if (onaylanmis) return <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Onaylı</span>
+  return <span className="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700 font-medium">Bekliyor</span>
 }
 
 export default function AdminUstalar() {
@@ -28,15 +28,10 @@ export default function AdminUstalar() {
   const yukle = useCallback(async () => {
     setYukleniyor(true)
     try {
-      const r = await axios.get(`${API}/api/admin/ustalar`, {
-        params: { filtre, arama },
-        withCredentials: true
-      })
+      const r = await axios.get(`${API}/api/admin/ustalar`, { params: { filtre, arama }, withCredentials: true })
       setUstalar(r.data.ustalar)
       setSecili([])
-    } catch (e) {
-      console.error(e)
-    }
+    } catch (e) { console.error(e) }
     setYukleniyor(false)
   }, [filtre, arama])
 
@@ -45,15 +40,13 @@ export default function AdminUstalar() {
   const islem = async (id, tip) => {
     try {
       if (tip === 'sil') {
-        if (!confirm('Bu ustayı silmek istediğinize emin misiniz?')) return
+        if (!confirm('Bu ustayı kalıcı olarak silmek istiyor musunuz?')) return
         await axios.delete(`${API}/api/admin/ustalar/${id}`, { withCredentials: true })
       } else {
         await axios.post(`${API}/api/admin/ustalar/${id}/${tip}`, {}, { withCredentials: true })
       }
       yukle()
-    } catch (e) {
-      alert(e.response?.data?.hata || 'İşlem başarısız')
-    }
+    } catch (e) { alert(e.response?.data?.hata || 'İşlem başarısız') }
   }
 
   const topluIslem = async (tip) => {
@@ -62,42 +55,36 @@ export default function AdminUstalar() {
     try {
       await axios.post(`${API}/api/admin/ustalar/toplu`, { islem: tip, idler: secili }, { withCredentials: true })
       yukle()
-    } catch (e) {
-      alert('İşlem başarısız')
-    }
+    } catch { alert('İşlem başarısız') }
   }
 
-  const hepsiniSec = (e) => {
-    setSecili(e.target.checked ? ustalar.map(u => u.id) : [])
-  }
-
-  const toggleSec = (id) => {
-    setSecili(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
+  const hepsiniSec = (e) => setSecili(e.target.checked ? ustalar.map(u => u.id) : [])
+  const toggleSec = (id) => setSecili(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
   return (
     <div className="space-y-4">
+      {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Usta Yönetimi</h2>
+          <h2 className="text-xl font-bold text-[#1e293b]">Usta Yönetimi</h2>
           <p className="text-gray-500 text-sm">{ustalar.length} kayıt</p>
         </div>
-        <button onClick={yukle} className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#1e3a5f]">
-          <RefreshCw size={16} /> Yenile
+        <button onClick={yukle} className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#0052CC] transition">
+          <RefreshCw size={15} /> Yenile
         </button>
       </div>
 
       {/* Filtreler + Arama */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1">
+      <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-center">
+        <div className="flex gap-1.5 flex-wrap">
           {FILTRELER.map(f => (
             <button
               key={f.key}
               onClick={() => setFiltre(f.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition border ${
                 filtre === f.key
-                  ? 'bg-[#1e3a5f] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-[#003d99] text-white border-[#0052CC] shadow-sm'
+                  : 'bg-[#F8F9FA] text-gray-600 border-[#E0E0E0] hover:border-[#0052CC] hover:text-[#0052CC]'
               }`}
             >
               {f.label}
@@ -105,112 +92,76 @@ export default function AdminUstalar() {
           ))}
         </div>
         <div className="flex-1 min-w-[200px] relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={arama}
             onChange={e => setArama(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && yukle()}
             placeholder="Ad, soyad veya telefon..."
-            className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#1e3a5f]"
+            className="w-full pl-9 pr-4 py-2 border border-[#C8CDD4] rounded-lg text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]/20 bg-[#F8F9FA]"
           />
         </div>
       </div>
 
       {/* Toplu işlem */}
       {secili.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-blue-700">{secili.length} usta seçildi</span>
-          <button onClick={() => topluIslem('onayla')} className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">Toplu Onayla</button>
-          <button onClick={() => topluIslem('reddet')} className="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">Toplu Reddet</button>
-          <button onClick={() => topluIslem('sil')} className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Toplu Sil</button>
-          <button onClick={() => setSecili([])} className="ml-auto text-blue-500 text-sm">Seçimi Kaldır</button>
+        <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-semibold text-[#1D4ED8]">{secili.length} usta seçildi</span>
+          <button onClick={() => topluIslem('onayla')} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700">Toplu Onayla</button>
+          <button onClick={() => topluIslem('reddet')} className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600">Toplu Reddet</button>
+          <button onClick={() => topluIslem('sil')} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700">Toplu Sil</button>
+          <button onClick={() => setSecili([])} className="ml-auto text-[#1D4ED8] text-xs hover:underline">Seçimi Kaldır</button>
         </div>
       )}
 
       {/* Tablo */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm overflow-hidden">
         {yukleniyor ? (
           <div className="flex items-center justify-center h-48">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1e3a5f]" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
           </div>
         ) : ustalar.length === 0 ? (
-          <div className="text-center text-gray-400 py-16">Kayıt bulunamadı</div>
+          <div className="text-center text-gray-400 py-16 text-sm">Kayıt bulunamadı</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[#F8F9FA] border-b border-[#C8CDD4]">
                 <tr>
                   <th className="px-4 py-3 text-left">
-                    <input type="checkbox" onChange={hepsiniSec} checked={secili.length === ustalar.length && ustalar.length > 0} className="rounded" />
+                    <input type="checkbox" onChange={hepsiniSec} checked={secili.length === ustalar.length && ustalar.length > 0} className="rounded border-gray-300" />
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Ad Soyad</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Kategori</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Şehir</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Telefon</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Puan</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Durum</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Tarih</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">İşlem</th>
+                  {['Ad Soyad', 'Kategori', 'Şehir', 'Telefon', 'Puan', 'Durum', 'Tarih', 'İşlem'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#F0F4F8]">
                 {ustalar.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition">
+                  <tr key={u.id} className="hover:bg-[#F8FAFC] transition">
                     <td className="px-4 py-3">
-                      <input type="checkbox" checked={secili.includes(u.id)} onChange={() => toggleSec(u.id)} className="rounded" />
+                      <input type="checkbox" checked={secili.includes(u.id)} onChange={() => toggleSec(u.id)} className="rounded border-gray-300" />
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{u.ad_soyad || `${u.ad} ${u.soyad}`}</td>
+                    <td className="px-4 py-3 font-semibold text-[#1e293b]">{u.ad_soyad || `${u.ad} ${u.soyad}`}</td>
                     <td className="px-4 py-3 text-gray-600">{u.kategori}</td>
-                    <td className="px-4 py-3 text-gray-600">{u.sehir || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{u.telefon}</td>
+                    <td className="px-4 py-3 text-gray-500">{u.sehir || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 font-mono">{u.telefon}</td>
                     <td className="px-4 py-3">
-                      {u.puan > 0 ? (
-                        <span className="flex items-center gap-1">
-                          <span className="text-yellow-500">★</span>
-                          {u.puan}
-                        </span>
-                      ) : '—'}
+                      {u.puan > 0 ? <span className="flex items-center gap-1 text-amber-600 font-semibold"><span>★</span>{u.puan}</span> : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-4 py-3">
-                      <Rozet onaylanmis={u.onaylanmis} aktif={u.aktif} />
-                    </td>
+                    <td className="px-4 py-3"><Rozet onaylanmis={u.onaylanmis} aktif={u.aktif} /></td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {u.olusturma ? new Date(u.olusturma).toLocaleDateString('tr-TR') : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setDetay(u)}
-                          title="Detay"
-                          className="p-1.5 rounded hover:bg-blue-50 text-blue-500"
-                        >
-                          <Eye size={15} />
-                        </button>
+                        <button onClick={() => setDetay(u)} title="Detay" className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"><Eye size={14} /></button>
                         {!u.onaylanmis && u.aktif && (
-                          <button
-                            onClick={() => islem(u.id, 'onayla')}
-                            title="Onayla"
-                            className="p-1.5 rounded hover:bg-green-50 text-green-600"
-                          >
-                            <Check size={15} />
-                          </button>
+                          <button onClick={() => islem(u.id, 'onayla')} title="Onayla" className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 transition"><Check size={14} /></button>
                         )}
                         {u.aktif && (
-                          <button
-                            onClick={() => islem(u.id, 'reddet')}
-                            title="Reddet / Yasakla"
-                            className="p-1.5 rounded hover:bg-orange-50 text-orange-500"
-                          >
-                            <X size={15} />
-                          </button>
+                          <button onClick={() => islem(u.id, 'reddet')} title="Yasakla" className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500 transition"><X size={14} /></button>
                         )}
-                        <button
-                          onClick={() => islem(u.id, 'sil')}
-                          title="Sil"
-                          className="p-1.5 rounded hover:bg-red-50 text-red-500"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        <button onClick={() => islem(u.id, 'sil')} title="Sil" className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -224,40 +175,37 @@ export default function AdminUstalar() {
       {/* Detay Modal */}
       {detay && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetay(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">{detay.ad_soyad || `${detay.ad} ${detay.soyad}`}</h3>
-              <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <div className="bg-white border border-[#C8CDD4] rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4]">
+              <h3 className="font-bold text-[#1e293b]">{detay.ad_soyad || `${detay.ad} ${detay.soyad}`}</h3>
+              <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
             </div>
-            <div className="space-y-2 text-sm text-gray-700">
-              <div className="flex gap-2"><span className="font-medium w-28">Kategori:</span><span>{detay.kategori}</span></div>
-              <div className="flex gap-2"><span className="font-medium w-28">Telefon:</span><span>{detay.telefon}</span></div>
-              {detay.email && <div className="flex gap-2"><span className="font-medium w-28">E-posta:</span><span>{detay.email}</span></div>}
-              <div className="flex gap-2"><span className="font-medium w-28">Şehir:</span><span>{detay.sehir || '—'}</span></div>
-              <div className="flex gap-2"><span className="font-medium w-28">Puan:</span><span>{detay.puan || '—'} ({detay.yorum_sayisi} yorum)</span></div>
-              {detay.aciklama && <div className="flex gap-2"><span className="font-medium w-28">Açıklama:</span><span>{detay.aciklama}</span></div>}
-            </div>
-            <div className="flex gap-2 mt-5">
-              {!detay.onaylanmis && detay.aktif && (
-                <button
-                  onClick={() => { islem(detay.id, 'onayla'); setDetay(null) }}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm hover:bg-green-700"
-                >
-                  Onayla
-                </button>
+            <div className="px-6 py-4 space-y-3 text-sm text-gray-700">
+              {[
+                ['Kategori', detay.kategori],
+                ['Telefon', detay.telefon],
+                ['E-posta', detay.email],
+                ['Şehir', detay.sehir],
+                ['Puan', detay.puan ? `${detay.puan} / 5.0 (${detay.yorum_sayisi} yorum)` : null],
+                ['Deneyim', detay.deneyim_yil ? `${detay.deneyim_yil} yıl` : null],
+              ].filter(([, v]) => v).map(([k, v]) => (
+                <div key={k} className="flex gap-2">
+                  <span className="font-semibold text-gray-500 w-24 shrink-0">{k}:</span>
+                  <span>{v}</span>
+                </div>
+              ))}
+              {detay.aciklama && (
+                <div className="bg-[#F8F9FA] border border-[#E0E0E0] rounded-lg p-3 text-gray-600 text-xs mt-2">
+                  {detay.aciklama}
+                </div>
               )}
-              <button
-                onClick={() => { islem(detay.id, 'reddet'); setDetay(null) }}
-                className="flex-1 bg-orange-500 text-white py-2 rounded-lg text-sm hover:bg-orange-600"
-              >
-                Reddet
-              </button>
-              <button
-                onClick={() => { islem(detay.id, 'sil'); setDetay(null) }}
-                className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm hover:bg-red-700"
-              >
-                Sil
-              </button>
+            </div>
+            <div className="flex gap-2 px-6 pb-5">
+              {!detay.onaylanmis && detay.aktif && (
+                <button onClick={() => { islem(detay.id, 'onayla'); setDetay(null) }} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700">Onayla</button>
+              )}
+              <button onClick={() => { islem(detay.id, 'reddet'); setDetay(null) }} className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600">Yasakla</button>
+              <button onClick={() => { islem(detay.id, 'sil'); setDetay(null) }} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700">Sil</button>
             </div>
           </div>
         </div>
