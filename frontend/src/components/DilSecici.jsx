@@ -6,6 +6,9 @@ const DILLER = [
   { kod: 'tr', ad: 'Türkçe', bayrak: '🇹🇷' },
   { kod: 'en', ad: 'English', bayrak: '🇬🇧' },
   { kod: 'ru', ad: 'Русский', bayrak: '🇷🇺' },
+  { kod: 'de', ad: 'Deutsch', bayrak: '🇩🇪' },
+  { kod: 'ur', ad: 'اردو', bayrak: '🇵🇰' },
+  { kod: 'fa', ad: 'فارسی', bayrak: '🇮🇷' },
 ]
 
 export default function DilSecici() {

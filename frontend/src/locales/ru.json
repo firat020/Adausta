@@ -3,7 +3,9 @@
     "hizmetler": "Услуги",
     "ustalar": "Мастера",
     "enYakin": "Ближайший мастер",
-    "ustaKayit": "Стать мастером"
+    "ustaKayit": "Стать мастером",
+    "girisYap": "Войти",
+    "kayitOl": "Регистрация"
   },
   "hero": {
     "rozet": "БЫСТРО · НАДЁЖНО · ПРОФИ",
@@ -65,7 +67,24 @@
     "ustaAktif": "МАСТЕР АКТИВЕН",
     "yukleniyor": "Загрузка...",
     "tumuBtn": "Все",
-    "ara": "Позвонить"
+    "ara": "Позвонить",
+    "logoTagline": "БЫСТРО · НАДЁЖНО · ПРОФИ",
+    "kktcGenelHizmet": "Услуги по всему Северному Кипру",
+    "kuzeyKibris": "Турецкая Республика Северного Кипра"
+  },
+  "ads": {
+    "sponsorlu": "РЕКЛАМА",
+    "oneCikanFirmalar": "Ведущие компании Северного Кипра",
+    "reklamVer": "Разместить рекламу →",
+    "firmanitTanit": "Чтобы продвигать вашу компанию здесь",
+    "fiyat": "Цена: $49/мес"
+  },
+  "errors": {
+    "konumDesteklemiyor": "Ваш браузер не поддерживает геолокацию.",
+    "konumAlinamadi": "Местоположение недоступно, используется центр Никосии.",
+    "ustalarYuklenemedi": "Не удалось загрузить мастеров.",
+    "kodHatali": "Неверный код, попробуйте снова.",
+    "birHataOlustu": "Произошла ошибка."
   },
   "pills": {
     "tadilat": "Ремонт",
@@ -135,6 +154,14 @@
   },
   "kayit": {
     "baslik": "Зарегистрироваться как мастер",
+    "adPlaceholder": "Имя",
+    "soyadLabel": "Фамилия",
+    "soyadPlaceholder": "Фамилия",
+    "ilceLabel": "Район",
+    "ilceSecin": "Выберите район...",
+    "kategoriSecin": "Выберите категорию...",
+    "deneyimLabel": "Опыт (лет)",
+    "epostaLabel": "Эл. почта",
     "alt": "Выберите план для привлечения клиентов по всему Северному Кипру",
     "planAdim": "Тариф",
     "dogrulamaAdim": "Подтверждение",
@@ -202,6 +229,30 @@
     "konumAlindi": "Местоположение получено",
     "bulunamadi": "Мастера рядом не найдены",
     "farkliKategori": "Попробуйте другую категорию"
+  },
+  "musteriGiris": {
+    "baslik": "Добро пожаловать",
+    "altBaslik": "Войдите в аккаунт для поиска услуг",
+    "tabGiris": "Войти",
+    "tabKayit": "Регистрация",
+    "emailLabel": "Эл. почта",
+    "emailPlaceholder": "example@email.com",
+    "sifreLabel": "Пароль",
+    "sifrePlaceholder": "Ваш пароль",
+    "girisBtn": "Войти",
+    "kayitBtn": "Создать аккаунт",
+    "googleIle": "Продолжить через Google",
+    "facebookIle": "Продолжить через Facebook",
+    "veya": "или",
+    "hesapYok": "Нет аккаунта?",
+    "hesapVar": "Уже есть аккаунт?",
+    "girisYap": "Войти",
+    "kayitOl": "Зарегистрироваться",
+    "hosgeldiniz": "Добро пожаловать!",
+    "basariliGiris": "Вы успешно вошли.",
+    "basariliKayit": "Аккаунт создан.",
+    "cikisYap": "Выйти",
+    "hesabim": "Мой аккаунт"
   },
   "kategorilerSayfa": {
     "tumHizmetler": "Все наши услуги",

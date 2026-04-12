@@ -77,8 +77,9 @@ export default function Anasayfa() {
     navigate(`/ustalar?${params.toString()}`)
   }
 
-  const populer = [...kategoriler].sort((a, b) => b.usta_sayisi - a.usta_sayisi).filter(k => k.usta_sayisi > 0)
-  const diger   = [...kategoriler].sort((a, b) => b.usta_sayisi - a.usta_sayisi).filter(k => k.usta_sayisi === 0)
+  const sirali  = [...kategoriler].sort((a, b) => (a.sira || 99) - (b.sira || 99))
+  const populer = sirali.slice(0, 8)
+  const diger   = sirali.slice(8)
 
   return (
     <div className="bg-white">

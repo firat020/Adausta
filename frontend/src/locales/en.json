@@ -3,7 +3,9 @@
     "hizmetler": "Services",
     "ustalar": "Craftsmen",
     "enYakin": "Nearest Craftsman",
-    "ustaKayit": "Register as Pro"
+    "ustaKayit": "Register as Pro",
+    "girisYap": "Sign In",
+    "kayitOl": "Sign Up"
   },
   "hero": {
     "rozet": "FAST · SAFE · SKILLED",
@@ -26,7 +28,7 @@
   },
   "kategoriler": {
     "baslik": "Popular & Active Services",
-    "alt": "Categories with active craftsmen now",
+    "alt": "Most requested service categories across North Cyprus",
     "tumunu": "See All",
     "diger": "Other Categories",
     "hizliBaslik": "What service do you need?"
@@ -65,7 +67,24 @@
     "ustaAktif": "PRO ACTIVE",
     "yukleniyor": "Loading...",
     "tumuBtn": "All",
-    "ara": "Call"
+    "ara": "Call",
+    "logoTagline": "FAST · SAFE · SKILLED",
+    "kktcGenelHizmet": "Serving all of North Cyprus",
+    "kuzeyKibris": "Turkish Republic of Northern Cyprus"
+  },
+  "ads": {
+    "sponsorlu": "SPONSORED",
+    "oneCikanFirmalar": "Featured Companies in North Cyprus",
+    "reklamVer": "Advertise with us →",
+    "firmanitTanit": "To promote your company here",
+    "fiyat": "Price: $49/mo"
+  },
+  "errors": {
+    "konumDesteklemiyor": "Your browser does not support geolocation.",
+    "konumAlinamadi": "Location unavailable, using Nicosia center.",
+    "ustalarYuklenemedi": "Could not load craftsmen.",
+    "kodHatali": "Incorrect code, please try again.",
+    "birHataOlustu": "An error occurred."
   },
   "pills": {
     "tadilat": "Renovation",
@@ -135,6 +154,14 @@
   },
   "kayit": {
     "baslik": "Register as a Craftsman",
+    "adPlaceholder": "First Name",
+    "soyadLabel": "Last Name",
+    "soyadPlaceholder": "Last Name",
+    "ilceLabel": "District",
+    "ilceSecin": "Select district...",
+    "kategoriSecin": "Select category...",
+    "deneyimLabel": "Experience (years)",
+    "epostaLabel": "Email",
     "alt": "Choose a plan to reach customers across North Cyprus",
     "planAdim": "Plan",
     "dogrulamaAdim": "Verify",
@@ -202,6 +229,30 @@
     "konumAlindi": "Location obtained",
     "bulunamadi": "No craftsmen found nearby",
     "farkliKategori": "Try a different category"
+  },
+  "musteriGiris": {
+    "baslik": "Welcome",
+    "altBaslik": "Sign in to your account to find services",
+    "tabGiris": "Sign In",
+    "tabKayit": "Sign Up",
+    "emailLabel": "Email",
+    "emailPlaceholder": "example@email.com",
+    "sifreLabel": "Password",
+    "sifrePlaceholder": "Your password",
+    "girisBtn": "Sign In",
+    "kayitBtn": "Create Account",
+    "googleIle": "Continue with Google",
+    "facebookIle": "Continue with Facebook",
+    "veya": "or",
+    "hesapYok": "Don't have an account?",
+    "hesapVar": "Already have an account?",
+    "girisYap": "Sign in",
+    "kayitOl": "Sign up",
+    "hosgeldiniz": "Welcome!",
+    "basariliGiris": "Successfully signed in.",
+    "basariliKayit": "Account created successfully.",
+    "cikisYap": "Sign Out",
+    "hesabim": "My Account"
   },
   "kategorilerSayfa": {
     "tumHizmetler": "All Our Services",

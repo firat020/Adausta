@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
-  LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, Shield
+  LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, Shield, ShieldOff
 } from 'lucide-react'
 
 const API = 'http://localhost:5000'
 
 const menuItems = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/ustalar',   icon: Users,           label: 'Usta Yönetimi' },
-  { to: '/admin/yorumlar',  icon: Star,            label: 'Yorumlar' },
-  { to: '/admin/kategoriler', icon: Tag,           label: 'Kategoriler' },
-  { to: '/admin/loglar',    icon: FileText,        label: 'İşlem Logu' },
+  { to: '/admin/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/ustalar',     icon: Users,           label: 'Usta Yönetimi' },
+  { to: '/admin/kara-liste',  icon: ShieldOff,       label: 'Kara Liste' },
+  { to: '/admin/yorumlar',    icon: Star,            label: 'Yorumlar' },
+  { to: '/admin/kategoriler', icon: Tag,             label: 'Kategoriler' },
+  { to: '/admin/loglar',      icon: FileText,        label: 'İşlem Logu' },
 ]
 
 export default function AdminLayout() {

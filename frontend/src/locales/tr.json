@@ -3,7 +3,9 @@
     "hizmetler": "Hizmetler",
     "ustalar": "Ustalar",
     "enYakin": "En Yakın Usta",
-    "ustaKayit": "Usta Kaydı"
+    "ustaKayit": "Usta Kaydı",
+    "girisYap": "Giriş Yap",
+    "kayitOl": "Kayıt Ol"
   },
   "hero": {
     "rozet": "HIZLI · GÜVENLİ · USTA",
@@ -26,7 +28,7 @@
   },
   "kategoriler": {
     "baslik": "Popüler ve Aktif Hizmetler",
-    "alt": "Şu an aktif usta bulunan kategoriler",
+    "alt": "KKTC genelinde en çok talep gören hizmet kategorileri",
     "tumunu": "Tümünü Gör",
     "diger": "Diğer Kategoriler",
     "hizliBaslik": "Hangi hizmete ihtiyacın var?"
@@ -65,7 +67,24 @@
     "ustaAktif": "USTA AKTİF",
     "yukleniyor": "Yükleniyor...",
     "tumuBtn": "Tümü",
-    "ara": "Ara"
+    "ara": "Ara",
+    "logoTagline": "HIZLI · GÜVENLİ · USTA",
+    "kktcGenelHizmet": "KKTC genelinde hizmet",
+    "kuzeyKibris": "Kuzey Kıbrıs Türk Cumhuriyeti"
+  },
+  "ads": {
+    "sponsorlu": "SPONSORLU",
+    "oneCikanFirmalar": "KKTC'de Öne Çıkan Firmalar",
+    "reklamVer": "Reklam vermek istiyorum →",
+    "firmanitTanit": "Firmanızı burada tanıtmak için",
+    "fiyat": "Fiyat: $49/ay"
+  },
+  "errors": {
+    "konumDesteklemiyor": "Tarayıcınız konum desteklemiyor.",
+    "konumAlinamadi": "Konumunuz alınamadı, Lefkoşa merkezi kullanıldı.",
+    "ustalarYuklenemedi": "Ustalar yüklenemedi.",
+    "kodHatali": "Kod hatalı, tekrar deneyin.",
+    "birHataOlustu": "Bir hata oluştu."
   },
   "pills": {
     "tadilat": "Tadilat",
@@ -135,6 +154,14 @@
   },
   "kayit": {
     "baslik": "Usta Olarak Kaydol",
+    "adPlaceholder": "Adınız",
+    "soyadLabel": "Soyad",
+    "soyadPlaceholder": "Soyadınız",
+    "ilceLabel": "İlçe",
+    "ilceSecin": "İlçe seçin...",
+    "kategoriSecin": "Kategori seçin...",
+    "deneyimLabel": "Deneyim (yıl)",
+    "epostaLabel": "E-posta",
     "alt": "KKTC genelinde müşterilere ulaşmak için plan seçin",
     "planAdim": "Plan",
     "dogrulamaAdim": "Doğrulama",
@@ -202,6 +229,30 @@
     "konumAlindi": "Konum alındı",
     "bulunamadi": "Yakınında usta bulunamadı",
     "farkliKategori": "Farklı kategori seçin"
+  },
+  "musteriGiris": {
+    "baslik": "Hoş Geldiniz",
+    "altBaslik": "Hizmet bulmak için hesabınıza giriş yapın",
+    "tabGiris": "Giriş Yap",
+    "tabKayit": "Kayıt Ol",
+    "emailLabel": "E-posta",
+    "emailPlaceholder": "ornek@email.com",
+    "sifreLabel": "Şifre",
+    "sifrePlaceholder": "Şifreniz",
+    "girisBtn": "Giriş Yap",
+    "kayitBtn": "Hesap Oluştur",
+    "googleIle": "Google ile Devam",
+    "facebookIle": "Facebook ile Devam",
+    "veya": "veya",
+    "hesapYok": "Hesabınız yok mu?",
+    "hesapVar": "Zaten hesabınız var mı?",
+    "girisYap": "Giriş yapın",
+    "kayitOl": "Kayıt olun",
+    "hosgeldiniz": "Hoş geldiniz!",
+    "basariliGiris": "Başarıyla giriş yapıldı.",
+    "basariliKayit": "Hesabınız oluşturuldu.",
+    "cikisYap": "Çıkış Yap",
+    "hesabim": "Hesabım"
   },
   "kategorilerSayfa": {
     "tumHizmetler": "Tüm Hizmetlerimiz",

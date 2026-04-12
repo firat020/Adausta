@@ -1,6 +1,6 @@
 import { ExternalLink, Phone } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-// Reklam slotları — gerçek firma logosu/bilgisi buraya gelecek
 const REKLAMLAR = [
   {
     id: 1,
@@ -35,6 +35,8 @@ const REKLAMLAR = [
 ]
 
 export default function ReklamBanner() {
+  const { t } = useTranslation()
+
   return (
     <section className="bg-gray-50 border-y border-gray-100 py-10 px-4">
       <div className="max-w-7xl mx-auto">
@@ -43,13 +45,13 @@ export default function ReklamBanner() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border border-gray-300 px-2 py-0.5 rounded">
-              SPONSORLU
+              {t('ads.sponsorlu')}
             </span>
-            <span className="text-base font-bold text-gray-800">KKTC'de Öne Çıkan Firmalar</span>
+            <span className="text-base font-bold text-gray-800">{t('ads.oneCikanFirmalar')}</span>
           </div>
           <a href="mailto:reklam@adausta.com"
             className="text-xs text-blue-600 hover:underline font-medium">
-            Reklam vermek istiyorum →
+            {t('ads.reklamVer')}
           </a>
         </div>
 
@@ -97,11 +99,11 @@ export default function ReklamBanner() {
 
         {/* Alt bilgi */}
         <p className="text-center text-xs text-gray-400 mt-5">
-          Firmanızı burada tanıtmak için{' '}
+          {t('ads.firmanitTanit')}{' '}
           <a href="mailto:reklam@adausta.com" className="text-blue-500 hover:underline">
             reklam@adausta.com
           </a>{' '}
-          adresine yazın · Fiyat: $49/ay
+          · {t('ads.fiyat')}
         </p>
       </div>
     </section>

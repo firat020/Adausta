@@ -101,7 +101,7 @@ export default function UstaKayit() {
       setForm(f => ({ ...f, telefon: telefonGirdi }))
       setTimeout(() => setAdim(3), 600)
     } else {
-      setKodHata('Kod hatalı, tekrar deneyin.')
+      setKodHata(t('errors.kodHatali'))
     }
   }
 
@@ -131,7 +131,7 @@ export default function UstaKayit() {
       })
       setBasarili(true)
     } catch (err) {
-      setHata(err.response?.data?.hata || 'Bir hata oluştu.')
+      setHata(err.response?.data?.hata || t('errors.birHataOlustu'))
     } finally {
       setYukleniyor(false)
     }
@@ -388,13 +388,13 @@ export default function UstaKayit() {
               <label className={labelCls}>{t('nav.ustalar').slice(0, 2)} *</label>
               <input type="text" required value={form.ad}
                 onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
-                className={inputCls} placeholder="Adınız" />
+                className={inputCls} placeholder={t('kayit.adPlaceholder')} />
             </div>
             <div>
-              <label className={labelCls}>Soyad</label>
+              <label className={labelCls}>{t('kayit.soyadLabel')}</label>
               <input type="text" value={form.soyad}
                 onChange={e => setForm(f => ({ ...f, soyad: e.target.value }))}
-                className={inputCls} placeholder="Soyadınız" />
+                className={inputCls} placeholder={t('kayit.soyadPlaceholder')} />
             </div>
           </div>
         </div>
@@ -418,7 +418,7 @@ export default function UstaKayit() {
                 className={inputCls} placeholder="+90 548 000 0000" />
             </div>
             <div className="sm:col-span-2">
-              <label className={labelCls}>E-posta *</label>
+              <label className={labelCls}>{t('kayit.epostaLabel')} *</label>
               <input type="email" required value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className={inputCls} placeholder="ornek@email.com" />
@@ -443,12 +443,12 @@ export default function UstaKayit() {
               </select>
             </div>
             <div>
-              <label className={labelCls}>İlçe</label>
+              <label className={labelCls}>{t('kayit.ilceLabel')}</label>
               <select value={form.ilce_id}
                 onChange={e => setForm(f => ({ ...f, ilce_id: e.target.value }))}
                 disabled={!form.sehir_id}
                 className={`${inputCls} disabled:bg-gray-50 disabled:cursor-not-allowed`}>
-                <option value="">İlçe seçin...</option>
+                <option value="">{t('kayit.ilceSecin')}</option>
                 {ilceler.map(i => <option key={i.id} value={i.id}>{i.ad}</option>)}
               </select>
             </div>
@@ -467,12 +467,12 @@ export default function UstaKayit() {
               <select required value={form.kategori_id}
                 onChange={e => setForm(f => ({ ...f, kategori_id: e.target.value }))}
                 className={inputCls}>
-                <option value="">Kategori seçin...</option>
+                <option value="">{t('kayit.kategoriSecin')}</option>
                 {kategoriler.map(k => <option key={k.id} value={k.id}>{k.ad}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Deneyim (yıl)</label>
+              <label className={labelCls}>{t('kayit.deneyimLabel')}</label>
               <input type="number" min="0" max="50" value={form.deneyim_yil}
                 onChange={e => setForm(f => ({ ...f, deneyim_yil: e.target.value }))}
                 className={inputCls} placeholder="0" />

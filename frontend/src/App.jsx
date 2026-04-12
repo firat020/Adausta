@@ -7,6 +7,7 @@ import UstaListesi from './pages/UstaListesi'
 import UstaDetay from './pages/UstaDetay'
 import UstaKayit from './pages/UstaKayit'
 import EnYakin from './pages/EnYakin'
+import MusteriGiris from './pages/MusteriGiris'
 import GizlilikPolitikasi from './pages/yasal/GizlilikPolitikasi'
 import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
@@ -19,6 +20,7 @@ import AdminUstalar from './pages/admin/AdminUstalar'
 import AdminYorumlar from './pages/admin/AdminYorumlar'
 import AdminKategoriler from './pages/admin/AdminKategoriler'
 import AdminLoglar from './pages/admin/AdminLoglar'
+import AdminKaraListe from './pages/admin/AdminKaraListe'
 
 function PublicSite() {
   return (
@@ -32,6 +34,7 @@ function PublicSite() {
           <Route path="/usta/:id" element={<UstaDetay />} />
           <Route path="/usta-kayit" element={<UstaKayit />} />
           <Route path="/en-yakin" element={<EnYakin />} />
+          <Route path="/giris" element={<MusteriGiris />} />
           <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
           <Route path="/kullanim-sartlari" element={<KullanimSartlari />} />
           <Route path="/iade-politikasi" element={<IadePolitikasi />} />
@@ -55,6 +58,7 @@ export default function App() {
         <Route path="yorumlar" element={<AdminYorumlar />} />
         <Route path="kategoriler" element={<AdminKategoriler />} />
         <Route path="loglar" element={<AdminLoglar />} />
+        <Route path="kara-liste" element={<AdminKaraListe />} />
       </Route>
 
       {/* Public site */}

@@ -82,6 +82,7 @@ class Kategori(db.Model):
     ad = db.Column(db.String(100), nullable=False)
     ikon = db.Column(db.String(50), default='🔧')
     aciklama = db.Column(db.Text, default='')
+    seo_keywords = db.Column(db.Text, default='')
     grup = db.Column(db.String(100), default='Genel')
     sira = db.Column(db.Integer, default=0)
     aktif = db.Column(db.Boolean, default=True)
@@ -93,6 +94,7 @@ class Kategori(db.Model):
             'ad': self.ad,
             'ikon': self.ikon,
             'aciklama': self.aciklama,
+            'seo_keywords': self.seo_keywords,
             'grup': self.grup,
             'sira': self.sira,
             'usta_sayisi': usta_sayisi if usta_sayisi is not None else len([u for u in self.ustalar if u.onaylanmis])

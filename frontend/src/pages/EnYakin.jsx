@@ -22,7 +22,7 @@ export default function EnYakin() {
     setYukleniyor(true)
     setHata('')
     if (!navigator.geolocation) {
-      setHata('Tarayıcınız konum desteklemiyor.')
+      setHata(t('errors.konumDesteklemiyor'))
       setYukleniyor(false)
       return
     }
@@ -38,7 +38,7 @@ export default function EnYakin() {
         setKonum({ lat, lng })
         setKonumAlindi(true)
         araUstalar(lat, lng, secilenKategori)
-        setHata('Konumunuz alınamadı, Lefkoşa merkezi kullanıldı.')
+        setHata(t('errors.konumAlinamadi'))
       },
       { timeout: 8000 }
     )
@@ -50,7 +50,7 @@ export default function EnYakin() {
     if (kategori_id) params.kategori_id = kategori_id
     enYakinUstalar(params)
       .then(r => setUstalar(r.data.ustalar || []))
-      .catch(() => setHata('Ustalar yüklenemedi.'))
+      .catch(() => setHata(t('errors.ustalarYuklenemedi')))
       .finally(() => setYukleniyor(false))
   }
 

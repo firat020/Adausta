@@ -15,7 +15,7 @@ export default function Footer() {
               <img src="/ada-usta-logo.png" alt="Ada Usta" className="w-10 h-10 rounded-xl object-cover" />
               <div>
                 <div className="text-white font-bold text-lg leading-none">Ada Usta</div>
-                <div className="text-blue-400 text-[10px] font-semibold tracking-widest uppercase">HIZLI · GÜVENLİ · USTA</div>
+                <div className="text-blue-400 text-[10px] font-semibold tracking-widest uppercase">{t('common.logoTagline')}</div>
               </div>
             </div>
             <p className="text-sm leading-relaxed text-blue-300 mb-5">
@@ -39,9 +39,16 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm mb-4">{t('footer.hizmetler')}</h4>
             <ul className="space-y-2.5 text-sm">
-              {['Elektrikçi', 'Su Tesisatı', 'Boya Badana', 'Klima Servisi', 'Mobilya Montaj', 'Demirci'].map(h => (
-                <li key={h}>
-                  <Link to={`/ustalar?arama=${h}`} className="hover:text-white transition-colors">{h}</Link>
+              {[
+                { arama: 'Elektrikçi',     label: t('heroTaglar.elektrikci') },
+                { arama: 'Su Tesisatı',    label: t('heroTaglar.suTesisati') },
+                { arama: 'Boya Badana',    label: t('heroTaglar.boyaBadana') },
+                { arama: 'Klima Servisi',  label: t('heroTaglar.klima') },
+                { arama: 'Mobilya Montaj', label: t('pills.mobilya') },
+                { arama: 'Demirci',        label: 'Demirci' },
+              ].map(h => (
+                <li key={h.arama}>
+                  <Link to={`/ustalar?arama=${h.arama}`} className="hover:text-white transition-colors">{h.label}</Link>
                 </li>
               ))}
             </ul>
@@ -73,7 +80,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2 text-blue-300 text-xs leading-relaxed">
                 <MapPin size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                KKTC genelinde hizmet
+                {t('common.kktcGenelHizmet')}
               </li>
             </ul>
 
@@ -93,7 +100,7 @@ export default function Footer() {
           <p className="font-semibold text-blue-300">{t('footer.firma')}</p>
           <div className="flex flex-col md:flex-row items-center justify-between gap-1">
             <span>© 2026 Ada Usta — {t('footer.telif')}</span>
-            <span>Kuzey Kıbrıs Türk Cumhuriyeti</span>
+            <span>{t('common.kuzeyKibris')}</span>
           </div>
         </div>
       </div>

@@ -1,25 +1,45 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image } from 'lucide-react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
-import { ustaDetay, yorumEkle } from '../api'
+import { ustaDetay, yorumEkle, benimBilgilerim } from '../api'
 
 export default function UstaDetay() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, i18n } = useTranslation()
   const [usta, setUsta] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [kullanici, setKullanici] = useState(null)
   const [yorumForm, setYorumForm] = useState({ musteri_adi: '', puan: 5, yorum: '' })
   const [yorumGonderildi, setYorumGonderildi] = useState(false)
+  const [teklifModal, setTeklifModal] = useState(false)
+  const [teklifGonderildi, setTeklifGonderildi] = useState(false)
+  const [teklifMesaj, setTeklifMesaj] = useState('')
 
   useEffect(() => {
     ustaDetay(id)
       .then(r => setUsta(r.data))
       .catch(() => {})
       .finally(() => setYukleniyor(false))
+    benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
   }, [id])
+
+  const teklifAlTikla = () => {
+    if (!kullanici) {
+      navigate('/giris', { state: { from: location.pathname } })
+      return
+    }
+    setTeklifModal(true)
+  }
+
+  const teklifGonder = (e) => {
+    e.preventDefault()
+    // Şimdilik frontend'de göster — backend entegrasyonu sonraya
+    setTeklifGonderildi(true)
+  }
 
   const yorumGonder = async (e) => {
     e.preventDefault()
@@ -99,6 +119,12 @@ export default function UstaDetay() {
 
             {/* İletişim */}
             <div className="flex flex-col gap-2.5 w-full sm:w-auto">
+              <button
+                onClick={teklifAlTikla}
+                className="flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-6 py-3 rounded-xl transition-colors shadow-sm">
+                <FileText size={16} />
+                {t('common.hemenTeklif')}
+              </button>
               <a href={`tel:${usta.telefon}`}
                 className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
                 <Phone size={16} />
@@ -203,6 +229,65 @@ export default function UstaDetay() {
           </form>
         )}
       </div>
+      {/* Teklif Modal */}
+      {teklifModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-gray-900">{t('common.hemenTeklif')}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{usta.ad_soyad}</p>
+              </div>
+              <button onClick={() => { setTeklifModal(false); setTeklifGonderildi(false); setTeklifMesaj('') }}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                <X size={16} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6">
+              {teklifGonderildi ? (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={26} className="text-emerald-500" />
+                  </div>
+                  <p className="font-bold text-gray-900 mb-1">Talebiniz İletildi!</p>
+                  <p className="text-sm text-gray-500">Usta en kısa sürede sizinle iletişime geçecektir.</p>
+                  <button onClick={() => { setTeklifModal(false); setTeklifGonderildi(false) }}
+                    className="mt-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-2.5 rounded-xl text-sm transition-colors">
+                    Tamam
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={teklifGonder} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Hesap E-postası</label>
+                    <input
+                      type="text"
+                      value={kullanici?.email || ''}
+                      disabled
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Mesajınız</label>
+                    <textarea
+                      value={teklifMesaj}
+                      onChange={e => setTeklifMesaj(e.target.value)}
+                      placeholder="İhtiyacınızı kısaca anlatın..."
+                      required
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+                    />
+                  </div>
+                  <button type="submit"
+                    className="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-3 rounded-xl transition-colors text-sm">
+                    Teklif Talebi Gönder
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

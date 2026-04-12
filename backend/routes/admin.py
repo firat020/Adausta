@@ -125,6 +125,17 @@ def reddet(id):
     return jsonify({'mesaj': 'Usta reddedildi'})
 
 
+@admin_bp.route('/ustalar/<int:id>/aktifet', methods=['POST'])
+@admin_gerekli
+def aktifet(id):
+    u = Usta.query.get_or_404(id)
+    u.aktif = True
+    u.onaylanmis = False  # Tekrar incelemeye alınır
+    db.session.commit()
+    log_kaydet('USTA_YASAK_KALDIR', f'Usta #{id} {u.ad} {u.soyad} yasağı kaldırıldı, beklemede')
+    return jsonify({'mesaj': 'Yasak kaldırıldı, usta bekleme listesine alındı'})
+
+
 @admin_bp.route('/ustalar/<int:id>', methods=['PUT'])
 @admin_gerekli
 def guncelle(id):
