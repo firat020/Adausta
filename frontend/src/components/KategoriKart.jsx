@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
+import axios from 'axios'
 
 const GORSELLER = {
   'Elektrikçi':              'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&h=280&fit=crop&auto=format',
@@ -197,9 +198,14 @@ export default function KategoriKart({ kategori }) {
               : i18n.language === 'ru' ? (KAT_RU[kategori.ad] || kategori.ad)
               : kategori.ad
 
+  const tikla = () => {
+    axios.post('http://localhost:5000/api/analitik/kategori-goruntule', { kategori_id: kategori.id }, { withCredentials: false }).catch(() => {})
+    navigate(`/ustalar?kategori_id=${kategori.id}&kategori_ad=${encodeURIComponent(kategori.ad)}`)
+  }
+
   return (
     <div
-      onClick={() => navigate(`/ustalar?kategori_id=${kategori.id}&kategori_ad=${encodeURIComponent(kategori.ad)}`)}
+      onClick={tikla}
       className="bg-white rounded-xl overflow-hidden cursor-pointer border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col"
     >
       {/* Fotoğraf */}

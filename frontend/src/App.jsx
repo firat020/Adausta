@@ -21,6 +21,7 @@ import AdminYorumlar from './pages/admin/AdminYorumlar'
 import AdminKategoriler from './pages/admin/AdminKategoriler'
 import AdminLoglar from './pages/admin/AdminLoglar'
 import AdminKaraListe from './pages/admin/AdminKaraListe'
+import AdminAnalitik from './pages/admin/AdminAnalitik'
 
 function PublicSite() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="kategoriler" element={<AdminKategoriler />} />
         <Route path="loglar" element={<AdminLoglar />} />
         <Route path="kara-liste" element={<AdminKaraListe />} />
+        <Route path="analitik" element={<AdminAnalitik />} />
       </Route>
 
       {/* Public site */}

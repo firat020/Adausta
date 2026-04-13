@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog
+from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme
 from functools import wraps
 from datetime import datetime, timedelta
+from sqlalchemy import func
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -270,6 +271,195 @@ def kategori_sil(id):
     db.session.commit()
     log_kaydet('KATEGORİ_SIL', f'#{id} {ad} silindi')
     return jsonify({'mesaj': 'Silindi'})
+
+
+# ─── ANALİTİK & ABONELER ──────────────────────────────────────
+
+@admin_bp.route('/analitik', methods=['GET'])
+@admin_gerekli
+def analitik():
+    aralik = request.args.get('aralik', '30')  # 7 / 30 / 90
+    try:
+        gun = int(aralik)
+    except ValueError:
+        gun = 30
+    baslangic = datetime.utcnow() - timedelta(days=gun)
+
+    # ── En çok iletişim kurulan ustalar ──
+    iletisim_q = (
+        db.session.query(
+            IletisimLog.usta_id,
+            IletisimLog.tur,
+            func.count(IletisimLog.id).label('sayi')
+        )
+        .filter(IletisimLog.tarih >= baslangic)
+        .group_by(IletisimLog.usta_id, IletisimLog.tur)
+        .all()
+    )
+
+    # Usta bazlı topla
+    usta_iletisim = {}
+    for row in iletisim_q:
+        if row.usta_id not in usta_iletisim:
+            usta_iletisim[row.usta_id] = {'ara': 0, 'whatsapp': 0, 'goruntule': 0, 'teklif': 0, 'toplam': 0}
+        usta_iletisim[row.usta_id][row.tur] = usta_iletisim[row.usta_id].get(row.tur, 0) + row.sayi
+        usta_iletisim[row.usta_id]['toplam'] += row.sayi
+
+    top_ustalar = []
+    for uid, bilgi in sorted(usta_iletisim.items(), key=lambda x: x[1]['toplam'], reverse=True)[:15]:
+        u = Usta.query.get(uid)
+        if u:
+            top_ustalar.append({
+                'id': uid,
+                'ad_soyad': f'{u.ad} {u.soyad}',
+                'kategori': u.kategori.ad if u.kategori else '',
+                'sehir': u.sehir.ad if u.sehir else '',
+                **bilgi,
+            })
+
+    # ── Kategori yönelimi (iletişim loglarından) ──
+    kat_q = (
+        db.session.query(
+            IletisimLog.kategori_id,
+            func.count(IletisimLog.id).label('sayi')
+        )
+        .filter(IletisimLog.tarih >= baslangic, IletisimLog.kategori_id.isnot(None))
+        .group_by(IletisimLog.kategori_id)
+        .order_by(func.count(IletisimLog.id).desc())
+        .limit(12)
+        .all()
+    )
+    kategori_yonelim = []
+    for row in kat_q:
+        k = Kategori.query.get(row.kategori_id)
+        if k:
+            kategori_yonelim.append({'kategori': k.ad, 'ikon': k.ikon, 'sayi': row.sayi})
+
+    # ── Kategori sayfa görüntülemeleri ──
+    kat_goruntuleme_q = (
+        db.session.query(
+            KategoriGoruntuleme.kategori_id,
+            func.count(KategoriGoruntuleme.id).label('sayi')
+        )
+        .filter(KategoriGoruntuleme.tarih >= baslangic)
+        .group_by(KategoriGoruntuleme.kategori_id)
+        .order_by(func.count(KategoriGoruntuleme.id).desc())
+        .limit(12)
+        .all()
+    )
+    kategori_goruntuleme = []
+    for row in kat_goruntuleme_q:
+        k = Kategori.query.get(row.kategori_id)
+        if k:
+            kategori_goruntuleme.append({'kategori': k.ad, 'ikon': k.ikon, 'sayi': row.sayi})
+
+    # ── İletişim türü dağılımı ──
+    tur_q = (
+        db.session.query(
+            IletisimLog.tur,
+            func.count(IletisimLog.id).label('sayi')
+        )
+        .filter(IletisimLog.tarih >= baslangic)
+        .group_by(IletisimLog.tur)
+        .all()
+    )
+    tur_dagilim = [{'tur': r.tur, 'sayi': r.sayi} for r in tur_q]
+
+    # ── Şehir bazlı ilgi ──
+    sehir_q = (
+        db.session.query(
+            IletisimLog.sehir,
+            func.count(IletisimLog.id).label('sayi')
+        )
+        .filter(IletisimLog.tarih >= baslangic, IletisimLog.sehir != '')
+        .group_by(IletisimLog.sehir)
+        .order_by(func.count(IletisimLog.id).desc())
+        .all()
+    )
+    sehir_dagilim = [{'sehir': r.sehir, 'sayi': r.sayi} for r in sehir_q]
+
+    # ── Günlük iletişim trendi ──
+    gunluk_trend = []
+    gun_sayisi = min(gun, 30)
+    for i in range(gun_sayisi - 1, -1, -1):
+        g = datetime.utcnow() - timedelta(days=i)
+        g_bas = datetime(g.year, g.month, g.day)
+        g_bit = g_bas + timedelta(days=1)
+        ara_s = IletisimLog.query.filter(
+            IletisimLog.tarih >= g_bas, IletisimLog.tarih < g_bit, IletisimLog.tur == 'ara'
+        ).count()
+        wa_s = IletisimLog.query.filter(
+            IletisimLog.tarih >= g_bas, IletisimLog.tarih < g_bit, IletisimLog.tur == 'whatsapp'
+        ).count()
+        gor_s = IletisimLog.query.filter(
+            IletisimLog.tarih >= g_bas, IletisimLog.tarih < g_bit, IletisimLog.tur == 'goruntule'
+        ).count()
+        gunluk_trend.append({
+            'tarih': g.strftime('%d.%m'),
+            'ara': ara_s,
+            'whatsapp': wa_s,
+            'goruntule': gor_s,
+            'toplam': ara_s + wa_s + gor_s,
+        })
+
+    # ── Toplam sayılar ──
+    toplam_iletisim = IletisimLog.query.filter(IletisimLog.tarih >= baslangic).count()
+    toplam_abone = Abone.query.filter_by(aktif=True).count()
+    yeni_abone = Abone.query.filter(Abone.tarih >= baslangic).count()
+
+    # ── Son aboneler ──
+    son_aboneler = [a.to_dict() for a in Abone.query.order_by(Abone.tarih.desc()).limit(10).all()]
+
+    return jsonify({
+        'aralik_gun': gun,
+        'toplam_iletisim': toplam_iletisim,
+        'toplam_abone': toplam_abone,
+        'yeni_abone': yeni_abone,
+        'top_ustalar': top_ustalar,
+        'kategori_yonelim': kategori_yonelim,
+        'kategori_goruntuleme': kategori_goruntuleme,
+        'tur_dagilim': tur_dagilim,
+        'sehir_dagilim': sehir_dagilim,
+        'gunluk_trend': gunluk_trend,
+        'son_aboneler': son_aboneler,
+    })
+
+
+@admin_bp.route('/aboneler', methods=['GET'])
+@admin_gerekli
+def aboneler():
+    arama = request.args.get('arama', '')
+    q = Abone.query
+    if arama:
+        q = q.filter(Abone.email.ilike(f'%{arama}%') | Abone.ad.ilike(f'%{arama}%'))
+    liste = q.order_by(Abone.tarih.desc()).all()
+    return jsonify({
+        'aboneler': [a.to_dict() for a in liste],
+        'toplam': len(liste),
+        'aktif': sum(1 for a in liste if a.aktif),
+    })
+
+
+@admin_bp.route('/aboneler/<int:id>', methods=['DELETE'])
+@admin_gerekli
+def abone_sil(id):
+    a = Abone.query.get_or_404(id)
+    email = a.email
+    db.session.delete(a)
+    db.session.commit()
+    log_kaydet('ABONE_SIL', f'{email} silindi')
+    return jsonify({'mesaj': 'Abone silindi'})
+
+
+@admin_bp.route('/aboneler/<int:id>/durum', methods=['POST'])
+@admin_gerekli
+def abone_durum(id):
+    a = Abone.query.get_or_404(id)
+    a.aktif = not a.aktif
+    db.session.commit()
+    durum = 'aktifleştirildi' if a.aktif else 'devre dışı bırakıldı'
+    log_kaydet('ABONE_DURUM', f'{a.email} {durum}')
+    return jsonify({'aktif': a.aktif, 'mesaj': f'Abone {durum}'})
 
 
 # ─── ADMIN LOG ────────────────────────────────────────────────

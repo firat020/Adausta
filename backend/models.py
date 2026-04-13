@@ -200,3 +200,53 @@ class Yorum(db.Model):
             'yorum': self.yorum,
             'tarih': self.tarih.strftime('%d.%m.%Y')
         }
+
+
+class Abone(db.Model):
+    __tablename__ = 'aboneler'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    ad = db.Column(db.String(100), default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    aktif = db.Column(db.Boolean, default=True)
+    kaynak = db.Column(db.String(50), default='footer')  # footer / popup / mobil
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'ad': self.ad,
+            'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
+            'aktif': self.aktif,
+            'kaynak': self.kaynak,
+        }
+
+
+class IletisimLog(db.Model):
+    """Kullanıcıların ustalarla iletişime geçme olaylarını kaydeder."""
+    __tablename__ = 'iletisim_log'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    tur = db.Column(db.String(20), nullable=False)  # ara / whatsapp / goruntule / teklif
+    ip = db.Column(db.String(60), default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    kategori_id = db.Column(db.Integer, nullable=True)
+    sehir = db.Column(db.String(100), default='')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'tur': self.tur,
+            'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
+            'sehir': self.sehir,
+        }
+
+
+class KategoriGoruntuleme(db.Model):
+    """Kategori sayfası ziyaretlerini kaydeder."""
+    __tablename__ = 'kategori_goruntuleme'
+    id = db.Column(db.Integer, primary_key=True)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id', ondelete='CASCADE'), nullable=False)
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    ip = db.Column(db.String(60), default='')

@@ -1,9 +1,32 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Phone, AtSign, Globe, Send } from 'lucide-react'
+import { MapPin, Phone, AtSign, Globe, Send, Bell, CheckCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import axios from 'axios'
 
 export default function Footer() {
   const { t } = useTranslation()
+  const [aboneEmail, setAboneEmail] = useState('')
+  const [aboneDurum, setAboneDurum] = useState(null) // null / 'yukleniyor' / 'basarili' / 'hata'
+  const [aboneMesaj, setAboneMesaj] = useState('')
+
+  const aboneOl = async (e) => {
+    e.preventDefault()
+    if (!aboneEmail) return
+    setAboneDurum('yukleniyor')
+    try {
+      const r = await axios.post('http://localhost:5000/api/analitik/abone', {
+        email: aboneEmail, kaynak: 'footer'
+      })
+      setAboneMesaj(r.data.mesaj || 'Başarıyla abone oldunuz!')
+      setAboneDurum('basarili')
+      setAboneEmail('')
+    } catch (err) {
+      setAboneMesaj(err.response?.data?.hata || 'Bir hata oluştu')
+      setAboneDurum('hata')
+    }
+  }
+
   return (
     <footer className="bg-blue-950 text-blue-200">
       <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
@@ -92,6 +115,53 @@ export default function Footer() {
               <Link to="/mesafeli-satis" className="block hover:text-white transition-colors">{t('footer.mesafeli')}</Link>
               <Link to="/cerez-politikasi" className="block hover:text-white transition-colors">{t('footer.cerez')}</Link>
             </div>
+          </div>
+        </div>
+
+        {/* Abone Ol Bölümü */}
+        <div className="border-t border-blue-900 pt-8 pb-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Bell size={18} className="text-blue-300" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">Bültenimize Abone Olun</p>
+                <p className="text-blue-400 text-xs">Yeni ustalar ve kampanyalardan haberdar olun</p>
+              </div>
+            </div>
+            {aboneDurum === 'basarili' ? (
+              <div className="flex items-center gap-2 bg-green-900/30 border border-green-800 rounded-xl px-4 py-2.5">
+                <CheckCircle size={16} className="text-green-400" />
+                <span className="text-green-300 text-sm">{aboneMesaj}</span>
+              </div>
+            ) : (
+              <form onSubmit={aboneOl} className="flex gap-2 w-full md:w-auto">
+                <input
+                  type="email"
+                  value={aboneEmail}
+                  onChange={e => { setAboneEmail(e.target.value); setAboneDurum(null) }}
+                  placeholder="E-posta adresiniz..."
+                  required
+                  className="flex-1 md:w-64 bg-blue-900/50 border border-blue-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-blue-500 outline-none focus:border-blue-500 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={aboneDurum === 'yukleniyor'}
+                  className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap"
+                >
+                  {aboneDurum === 'yukleniyor' ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send size={14} />
+                  )}
+                  Abone Ol
+                </button>
+              </form>
+            )}
+            {aboneDurum === 'hata' && (
+              <p className="text-red-400 text-xs">{aboneMesaj}</p>
+            )}
           </div>
         </div>
 

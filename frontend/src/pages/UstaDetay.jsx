@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -19,15 +20,21 @@ export default function UstaDetay() {
   const [teklifGonderildi, setTeklifGonderildi] = useState(false)
   const [teklifMesaj, setTeklifMesaj] = useState('')
 
+  const logIletisim = (tur) => {
+    axios.post('http://localhost:5000/api/analitik/iletisim', { usta_id: parseInt(id), tur }, { withCredentials: false })
+      .catch(() => {})
+  }
+
   useEffect(() => {
     ustaDetay(id)
-      .then(r => setUsta(r.data))
+      .then(r => { setUsta(r.data); logIletisim('goruntule') })
       .catch(() => {})
       .finally(() => setYukleniyor(false))
     benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
   }, [id])
 
   const teklifAlTikla = () => {
+    logIletisim('teklif')
     if (!kullanici) {
       navigate('/giris', { state: { from: location.pathname } })
       return
@@ -126,12 +133,14 @@ export default function UstaDetay() {
                 {t('common.hemenTeklif')}
               </button>
               <a href={`tel:${usta.telefon}`}
+                onClick={() => logIletisim('ara')}
                 className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
                 <Phone size={16} />
                 {usta.telefon}
               </a>
               {usta.whatsapp && (
                 <a href={`https://wa.me/${usta.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+                  onClick={() => logIletisim('whatsapp')}
                   className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
                   <MessageCircle size={16} />
                   WhatsApp
