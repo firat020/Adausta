@@ -83,29 +83,11 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               ScaleTransition(
                 scale: _scaleAnim,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.accent,
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accent.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.build_circle_rounded,
-                    size: 60,
-                    color: AppColors.accent,
-                  ),
+                child: Image.asset(
+                  'assets/images/ada-usta-logo.png',
+                  width: 160,
+                  height: 160,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 28),

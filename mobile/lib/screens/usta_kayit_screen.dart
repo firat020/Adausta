@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import '../models/kategori.dart';
+import '../models/sehir.dart';
 
 class UstaKayitScreen extends StatefulWidget {
   const UstaKayitScreen({super.key});
@@ -16,17 +17,20 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
   int _adim = 0;
   bool _yukleniyor = false;
   bool _kategorilerYukleniyor = true;
+  bool _sehirlerYukleniyor = true;
 
   final _adCtrl = TextEditingController();
   final _soyadCtrl = TextEditingController();
   final _telefonCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _aciklamaCtrl = TextEditingController();
-  final _sehirCtrl = TextEditingController();
-  final _ilceCtrl = TextEditingController();
 
   Kategori? _secilenKategori;
   List<Kategori> _kategoriler = [];
+
+  List<Sehir> _sehirler = [];
+  Sehir? _secilenSehir;
+  Ilce? _secilenIlce;
 
   @override
   void initState() {
@@ -41,22 +45,30 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
     _telefonCtrl.dispose();
     _emailCtrl.dispose();
     _aciklamaCtrl.dispose();
-    _sehirCtrl.dispose();
-    _ilceCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _kategorileriYukle() async {
     try {
-      final list = await _api.getKategoriler();
+      final results = await Future.wait([
+        _api.getKategoriler(),
+        _api.getSehirler(),
+      ]);
       if (mounted) {
         setState(() {
-          _kategoriler = list;
+          _kategoriler = results[0] as List<Kategori>;
+          _sehirler = results[1] as List<Sehir>;
           _kategorilerYukleniyor = false;
+          _sehirlerYukleniyor = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _kategorilerYukleniyor = false);
+      if (mounted) {
+        setState(() {
+          _kategorilerYukleniyor = false;
+          _sehirlerYukleniyor = false;
+        });
+      }
     }
   }
 
@@ -70,8 +82,10 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
         'telefon': _telefonCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'aciklama': _aciklamaCtrl.text.trim(),
-        'sehir': _sehirCtrl.text.trim(),
-        'ilce': _ilceCtrl.text.trim(),
+        'sehir': _secilenSehir?.ad ?? '',
+        'sehir_id': _secilenSehir?.id,
+        'ilce': _secilenIlce?.ad ?? '',
+        'ilce_id': _secilenIlce?.id,
         'kategori': _secilenKategori?.ad ?? '',
         'kategori_id': _secilenKategori?.id,
       });
@@ -389,8 +403,45 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
                           v == null ? 'Kategori seçin' : null,
                     ),
               const SizedBox(height: 12),
-              _alan(_sehirCtrl, 'Şehir', Icons.location_city_outlined),
-              _alan(_ilceCtrl, 'İlçe', Icons.map_outlined),
+              _sehirlerYukleniyor
+                  ? Container(
+                      height: 56,
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.primary),
+                    )
+                  : DropdownButtonFormField<Sehir>(
+                      value: _secilenSehir,
+                      decoration: _inputDeco('Şehir *', Icons.location_city_outlined),
+                      isExpanded: true,
+                      menuMaxHeight: 300,
+                      items: _sehirler
+                          .map((s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(s.ad),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() {
+                        _secilenSehir = v;
+                        _secilenIlce = null;
+                      }),
+                      validator: (v) => v == null ? 'Şehir seçin' : null,
+                    ),
+              const SizedBox(height: 12),
+              if (_secilenSehir != null && _secilenSehir!.ilceler.isNotEmpty)
+                DropdownButtonFormField<Ilce>(
+                  value: _secilenIlce,
+                  decoration: _inputDeco('İlçe', Icons.map_outlined),
+                  isExpanded: true,
+                  menuMaxHeight: 300,
+                  items: _secilenSehir!.ilceler
+                      .map((i) => DropdownMenuItem(
+                            value: i,
+                            child: Text(i.ad),
+                          ))
+                      .toList(),
+                  onChanged: (v) => setState(() => _secilenIlce = v),
+                ),
             ],
           ),
         ],

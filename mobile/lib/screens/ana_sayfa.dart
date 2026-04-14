@@ -147,17 +147,18 @@ class _AnaSayfaState extends State<AnaSayfa> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.2),
+                          color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: AppColors.accent.withOpacity(0.4)),
+                              color: AppColors.accent.withOpacity(0.5)),
                         ),
-                        child: const Icon(
-                          Icons.build_rounded,
-                          color: AppColors.accent,
-                          size: 24,
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/images/ada-usta-logo.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ],

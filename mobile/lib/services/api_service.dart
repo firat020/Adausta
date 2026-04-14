@@ -4,6 +4,7 @@ import '../config/api_config.dart';
 import '../models/usta.dart';
 import '../models/kategori.dart';
 import '../models/yorum.dart';
+import '../models/sehir.dart';
 
 class ApiService {
   static final Map<String, String> _headers = {
@@ -92,6 +93,19 @@ class ApiService {
       body: jsonEncode(formData),
     );
     return res.statusCode == 201 || res.statusCode == 200;
+  }
+
+  Future<List<Sehir>> getSehirler() async {
+    final res = await http.get(
+      Uri.parse(ApiConfig.sehirler),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      final list = data is List ? data : (data['sehirler'] ?? []);
+      return (list as List).map((e) => Sehir.fromJson(e)).toList();
+    }
+    return [];
   }
 
   Future<bool> yorumEkle(
