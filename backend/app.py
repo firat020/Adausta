@@ -27,12 +27,16 @@ from routes.ustalar import ustalar_bp
 from routes.kategoriler import kategoriler_bp
 from routes.admin import admin_bp
 from routes.analitik import analitik_bp
+from routes.usta_panel import usta_panel_bp
+from routes.reklamlar import reklamlar_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
 app.register_blueprint(kategoriler_bp, url_prefix='/api/kategoriler')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(analitik_bp, url_prefix='/api/analitik')
+app.register_blueprint(usta_panel_bp, url_prefix='/api/usta')
+app.register_blueprint(reklamlar_bp, url_prefix='/api/reklamlar')
 
 @app.route('/uploads/<path:dosya>')
 def uploads(dosya):

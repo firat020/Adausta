@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
-  LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, Shield, ShieldOff, BarChart2
+  LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, Shield, ShieldOff, BarChart2, Megaphone
 } from 'lucide-react'
 
 const API = 'http://localhost:5000'
@@ -14,6 +14,7 @@ const menuItems = [
   { to: '/admin/kara-liste',  icon: ShieldOff,        label: 'Kara Liste' },
   { to: '/admin/yorumlar',    icon: Star,             label: 'Yorumlar' },
   { to: '/admin/kategoriler', icon: Tag,              label: 'Kategoriler' },
+  { to: '/admin/reklamlar',   icon: Megaphone,        label: 'Reklam Yönetimi' },
   { to: '/admin/loglar',      icon: FileText,         label: 'İşlem Logu' },
 ]
 

@@ -22,6 +22,16 @@ import AdminKategoriler from './pages/admin/AdminKategoriler'
 import AdminLoglar from './pages/admin/AdminLoglar'
 import AdminKaraListe from './pages/admin/AdminKaraListe'
 import AdminAnalitik from './pages/admin/AdminAnalitik'
+import AdminReklamlar from './pages/admin/AdminReklamlar'
+// Usta Paneli
+import UstaGiris from './pages/usta-panel/UstaGiris'
+import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
+import UstaPanelDashboard from './pages/usta-panel/UstaPanelDashboard'
+import UstaPanelIsTalepleri from './pages/usta-panel/UstaPanelIsTalepleri'
+import UstaPanelMusteriler from './pages/usta-panel/UstaPanelMusteriler'
+import UstaPanelIstatistik from './pages/usta-panel/UstaPanelIstatistik'
+import UstaPanelYorumlar from './pages/usta-panel/UstaPanelYorumlar'
+import UstaPanelProfil from './pages/usta-panel/UstaPanelProfil'
 
 function PublicSite() {
   return (
@@ -51,7 +61,7 @@ function PublicSite() {
 export default function App() {
   return (
     <Routes>
-      {/* Admin — kendi layout'u var, Navbar/Footer yok */}
+      {/* Admin */}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
@@ -61,6 +71,18 @@ export default function App() {
         <Route path="loglar" element={<AdminLoglar />} />
         <Route path="kara-liste" element={<AdminKaraListe />} />
         <Route path="analitik" element={<AdminAnalitik />} />
+        <Route path="reklamlar" element={<AdminReklamlar />} />
+      </Route>
+
+      {/* Usta Paneli */}
+      <Route path="/usta/giris" element={<UstaGiris />} />
+      <Route path="/usta" element={<UstaPanelLayout />}>
+        <Route path="panel" element={<UstaPanelDashboard />} />
+        <Route path="panel/talepler" element={<UstaPanelIsTalepleri />} />
+        <Route path="panel/musteriler" element={<UstaPanelMusteriler />} />
+        <Route path="panel/istatistik" element={<UstaPanelIstatistik />} />
+        <Route path="panel/yorumlar" element={<UstaPanelYorumlar />} />
+        <Route path="panel/profil" element={<UstaPanelProfil />} />
       </Route>
 
       {/* Public site */}
