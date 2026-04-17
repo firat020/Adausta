@@ -58,28 +58,13 @@ export default function UstaGiris() {
       {/* ─── SOL PANEL ──────────────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-[52%] flex-col justify-between px-12 py-10 relative z-10">
 
-        {/* Üst: Logo büyük */}
-        <div className="flex flex-col items-start gap-5">
-          <div className="flex items-center gap-3">
-            <img src="/ada-usta-logo.png" alt="Ada Usta"
-              className="w-10 h-10 rounded-xl object-cover shadow-lg" />
-            <div>
-              <p className="text-white font-extrabold text-base leading-none">Ada Usta</p>
-              <p className="text-blue-400 text-xs font-medium tracking-widest uppercase">Usta Paneli</p>
-            </div>
-          </div>
-
-          {/* Logo büyük — gösterilen dikdörtgen alan */}
-          <div className="w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
-            style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(8px)' }}>
-            <div className="flex flex-col items-center justify-center py-10 px-8 gap-4">
-              <img src="/ada-usta-logo.png" alt="Ada Usta Logo"
-                className="w-24 h-24 rounded-3xl object-cover shadow-2xl ring-4 ring-white/10" />
-              <div className="text-center">
-                <p className="text-white font-black text-3xl tracking-tight">Ada Usta</p>
-                <p className="text-blue-300 text-sm font-medium mt-1 tracking-wide">Usta Paneline Hoş Geldiniz</p>
-              </div>
-            </div>
+        {/* Logo büyük — kutusuz */}
+        <div className="flex flex-col items-center gap-4 pt-4">
+          <img src="/ada-usta-logo.png" alt="Ada Usta Logo"
+            className="w-32 h-32 rounded-3xl object-cover shadow-2xl ring-4 ring-white/10" />
+          <div className="text-center">
+            <p className="text-white font-black text-3xl tracking-tight">Ada Usta</p>
+            <p className="text-blue-300 text-sm font-medium mt-1 tracking-wide">Usta Paneline Hoş Geldiniz</p>
           </div>
         </div>
 
