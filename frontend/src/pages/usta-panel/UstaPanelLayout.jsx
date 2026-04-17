@@ -71,15 +71,9 @@ export default function UstaPanelLayout() {
         ${acik ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="border-b border-gray-200 px-5 py-5">
+        <div className="border-b border-gray-200 px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Wrench size={18} className="text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 text-sm">Ada Usta</p>
-              <p className="text-xs text-gray-400">Usta Paneli</p>
-            </div>
+            <img src="/header-logo.png" alt="Ada Usta" className="h-9 w-auto object-contain" />
           </div>
           {kullanici && (
             <div className="mt-4 p-3 bg-blue-50 rounded-xl">

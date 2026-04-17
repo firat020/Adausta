@@ -65,14 +65,8 @@ export default function AdminLayout() {
         ${acik ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="border-b-2 border-[#1a2744] flex items-center justify-center gap-3 px-4 py-5">
-          <div className="w-9 h-9 bg-[#003d99] border border-[#0052CC] rounded-xl flex items-center justify-center shrink-0">
-            <Shield size={18} className="text-blue-300" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-base leading-tight">Adausta</p>
-            <p className="text-[#6a7ea0] text-xs">Admin Panel</p>
-          </div>
+        <div className="border-b-2 border-[#1a2744] flex items-center justify-center px-4 py-4">
+          <img src="/header-logo.png" alt="Ada Usta" className="h-8 w-auto object-contain brightness-0 invert" />
         </div>
 
         {/* Navigasyon */}
