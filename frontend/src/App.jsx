@@ -1,4 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import CokYakinda from './pages/CokYakinda'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Anasayfa from './pages/Anasayfa'
@@ -23,6 +26,9 @@ import AdminLoglar from './pages/admin/AdminLoglar'
 import AdminKaraListe from './pages/admin/AdminKaraListe'
 import AdminAnalitik from './pages/admin/AdminAnalitik'
 import AdminReklamlar from './pages/admin/AdminReklamlar'
+import AdminPlanlar from './pages/admin/AdminPlanlar'
+import AdminAbonelikler from './pages/admin/AdminAbonelikler'
+import AdminOdemeler from './pages/admin/AdminOdemeler'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
 import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
@@ -32,6 +38,11 @@ import UstaPanelMusteriler from './pages/usta-panel/UstaPanelMusteriler'
 import UstaPanelIstatistik from './pages/usta-panel/UstaPanelIstatistik'
 import UstaPanelYorumlar from './pages/usta-panel/UstaPanelYorumlar'
 import UstaPanelProfil from './pages/usta-panel/UstaPanelProfil'
+// Müşteri Paneli
+import MusteriPanelLayout from './pages/musteri-panel/MusteriPanelLayout'
+import MusteriPanelDashboard from './pages/musteri-panel/MusteriPanelDashboard'
+import MusteriPanelTalepler from './pages/musteri-panel/MusteriPanelTalepler'
+import MusteriPanelProfil from './pages/musteri-panel/MusteriPanelProfil'
 
 function PublicSite() {
   return (
@@ -58,7 +69,21 @@ function PublicSite() {
   )
 }
 
+const API = 'http://localhost:5000'
+
 export default function App() {
+  const [bakimModu, setBakimModu] = useState(false)
+  const [kontrol, setKontrol] = useState(true)
+
+  useEffect(() => {
+    axios.get(`${API}/api/ayarlar/bakim`)
+      .then(r => { setBakimModu(r.data.bakim_modu); setKontrol(false) })
+      .catch(() => setKontrol(false))
+  }, [])
+
+  if (kontrol) return null
+  if (bakimModu) return <CokYakinda />
+
   return (
     <Routes>
       {/* Admin */}
@@ -72,6 +97,9 @@ export default function App() {
         <Route path="kara-liste" element={<AdminKaraListe />} />
         <Route path="analitik" element={<AdminAnalitik />} />
         <Route path="reklamlar" element={<AdminReklamlar />} />
+        <Route path="planlar" element={<AdminPlanlar />} />
+        <Route path="abonelikler" element={<AdminAbonelikler />} />
+        <Route path="odemeler" element={<AdminOdemeler />} />
       </Route>
 
       {/* Usta Paneli */}
@@ -83,6 +111,13 @@ export default function App() {
         <Route path="panel/istatistik" element={<UstaPanelIstatistik />} />
         <Route path="panel/yorumlar" element={<UstaPanelYorumlar />} />
         <Route path="panel/profil" element={<UstaPanelProfil />} />
+      </Route>
+
+      {/* Müşteri Paneli */}
+      <Route path="/musteri" element={<MusteriPanelLayout />}>
+        <Route path="panel"          element={<MusteriPanelDashboard />} />
+        <Route path="panel/talepler" element={<MusteriPanelTalepler />} />
+        <Route path="panel/profil"   element={<MusteriPanelProfil />} />
       </Route>
 
       {/* Public site */}

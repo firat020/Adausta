@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench } from 'lucide-react'
+import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import AdaUstaLogo from './AdaUstaLogo'
 import DilSecici from './DilSecici'
@@ -95,7 +95,12 @@ export default function Navbar() {
                   <ChevronDown size={14} />
                 </button>
                 {profilAcik && (
-                  <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 w-44 z-50">
+                  <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 w-48 z-50">
+                    <Link to="/musteri/panel" onClick={() => setProfilAcik(false)}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <LayoutDashboard size={14} /> Panelim
+                    </Link>
+                    <div className="border-t border-gray-100 my-1" />
                     <button onClick={handleCikis}
                       className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
                       <LogOut size={14} />

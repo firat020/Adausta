@@ -1,6 +1,5 @@
 class ApiConfig {
-  static const String baseUrl =
-      'https://monogrammatical-preoriginally-maxim.ngrok-free.dev';
+  static const String baseUrl = 'http://192.168.88.253:5000';
 
   static const String ustalar = '$baseUrl/api/ustalar/';
   static const String kategoriler = '$baseUrl/api/kategoriler/';
@@ -10,4 +9,16 @@ class ApiConfig {
 
   static String ustaDetay(int id) => '$baseUrl/api/ustalar/$id';
   static String ustaYorumlar(int id) => '$baseUrl/api/ustalar/$id/yorumlar';
+
+  // Auth
+  static const String giris    = '$baseUrl/api/auth/giris';
+  static const String cikis    = '$baseUrl/api/auth/cikis';
+  static const String ben      = '$baseUrl/api/auth/ben';
+
+  // Usta Paneli
+  static const String ustaPanel           = '$baseUrl/api/usta/panel';
+  static const String ustaProfil          = '$baseUrl/api/usta/profil';
+  static const String ustaMusaitlik       = '$baseUrl/api/usta/musaitlik';
+  static const String ustaIsTalepleri     = '$baseUrl/api/usta/is-talepleri';
+  static String ustaTalepGuncelle(int id) => '$baseUrl/api/usta/is-talepleri/$id';
 }

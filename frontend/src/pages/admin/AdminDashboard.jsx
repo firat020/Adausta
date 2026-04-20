@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid
+  LineChart, Line, CartesianGrid, AreaChart, Area
 } from 'recharts'
-import { Users, Clock, Star, TrendingUp, TrendingDown, Tag } from 'lucide-react'
+import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle } from 'lucide-react'
 
 const API = 'http://localhost:5000'
 
@@ -43,12 +43,18 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AdminDashboard() {
   const [veri, setVeri] = useState(null)
+  const [mali, setMali] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
 
   useEffect(() => {
-    axios.get(`${API}/api/admin/istatistik`, { withCredentials: true })
-      .then(r => { setVeri(r.data); setYukleniyor(false) })
-      .catch(() => setYukleniyor(false))
+    Promise.all([
+      axios.get(`${API}/api/admin/istatistik`, { withCredentials: true }),
+      axios.get(`${API}/api/admin/mali/ozet`, { withCredentials: true }),
+    ]).then(([r1, r2]) => {
+      setVeri(r1.data)
+      setMali(r2.data)
+      setYukleniyor(false)
+    }).catch(() => setYukleniyor(false))
   }, [])
 
   if (yukleniyor) return (
@@ -74,6 +80,62 @@ export default function AdminDashboard() {
         <StatKart baslik="Bu Ay Kayıt" deger={veri.bu_ay_kayit} trend={trend} ikon={TrendingUp} renk="bg-green-500" />
         <StatKart baslik="Bekleyen Yorum" deger={veri.bekleyen_yorum} alt={`${veri.toplam_yorum} toplam`} ikon={Star} renk="bg-yellow-500" />
       </div>
+
+      {/* Finansal widget'lar */}
+      {mali && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-br from-[#0052CC] to-[#003d99] rounded-xl p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Toplam Ciro</p>
+              <div className="p-2 bg-white/10 rounded-lg"><DollarSign size={16} /></div>
+            </div>
+            <p className="text-3xl font-bold">{mali.toplam_ciro.toLocaleString('tr-TR')} ₺</p>
+            <p className="text-xs opacity-60 mt-1">Bu ay: {mali.bu_ay_ciro.toLocaleString('tr-TR')} ₺</p>
+          </div>
+          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Aktif Abonelik</p>
+              <div className="p-2 bg-white/10 rounded-lg"><CreditCard size={16} /></div>
+            </div>
+            <p className="text-3xl font-bold">{mali.aktif_abone}</p>
+            {mali.yaklasan_yenileme > 0 && (
+              <p className="text-xs mt-1 flex items-center gap-1 text-yellow-200">
+                <AlertCircle size={11} /> {mali.yaklasan_yenileme} abonelik 3 gün içinde yenileniyor
+              </p>
+            )}
+          </div>
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Bekleyen Tahsilat</p>
+              <div className="p-2 bg-white/10 rounded-lg"><AlertCircle size={16} /></div>
+            </div>
+            <p className="text-3xl font-bold">{mali.bekleyen_tahsilat.toLocaleString('tr-TR')} ₺</p>
+            <p className="text-xs opacity-60 mt-1">Geçen ay: {mali.gecen_ay_ciro.toLocaleString('tr-TR')} ₺</p>
+          </div>
+        </div>
+      )}
+
+      {/* Aylık gelir area chart */}
+      {mali && mali.aylik_gelir?.length > 0 && (
+        <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold text-[#1e293b] text-sm mb-4">Son 6 Ay Gelir Trendi</h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={mali.aylik_gelir}>
+              <defs>
+                <linearGradient id="gelirGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0052CC" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#0052CC" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f8" />
+              <XAxis dataKey="ay" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v) => [`${v.toLocaleString('tr-TR')} ₺`, 'Gelir']} />
+              <Area type="monotone" dataKey="gelir" stroke="#0052CC" strokeWidth={2.5} fill="url(#gelirGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Grafikler */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">

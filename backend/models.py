@@ -315,6 +315,81 @@ class IsTalebi(db.Model):
         }
 
 
+class Plan(db.Model):
+    __tablename__ = 'planlar'
+    id = db.Column(db.Integer, primary_key=True)
+    ad = db.Column(db.String(50), nullable=False)
+    fiyat = db.Column(db.Float, default=0.0)
+    sure_tip = db.Column(db.String(20), default='aylik')  # aylik / yillik
+    ilan_siniri = db.Column(db.Integer, default=1)
+    one_cikma = db.Column(db.Boolean, default=False)
+    aktif = db.Column(db.Boolean, default=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    abonelikler = db.relationship('Abonelik', backref='plan', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'ad': self.ad, 'fiyat': self.fiyat,
+            'sure_tip': self.sure_tip, 'ilan_siniri': self.ilan_siniri,
+            'one_cikma': self.one_cikma, 'aktif': self.aktif,
+            'abone_sayisi': len([a for a in self.abonelikler if a.durum == 'aktif']),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class Abonelik(db.Model):
+    __tablename__ = 'abonelikler'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('planlar.id'), nullable=False)
+    baslangic = db.Column(db.DateTime, default=datetime.utcnow)
+    bitis = db.Column(db.DateTime, nullable=True)
+    durum = db.Column(db.String(20), default='aktif')  # aktif / askida / iptal
+    yenileme_tarihi = db.Column(db.DateTime, nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+    odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'plan_id': self.plan_id,
+            'plan_ad': self.plan.ad if self.plan else '',
+            'plan_fiyat': self.plan.fiyat if self.plan else 0,
+            'baslangic': fmt(self.baslangic),
+            'bitis': fmt(self.bitis),
+            'durum': self.durum,
+            'yenileme_tarihi': fmt(self.yenileme_tarihi),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class Odeme(db.Model):
+    __tablename__ = 'odemeler'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    abonelik_id = db.Column(db.Integer, db.ForeignKey('abonelikler.id'), nullable=True)
+    tutar = db.Column(db.Float, nullable=False)
+    durum = db.Column(db.String(20), default='bekliyor')  # basarili / basarisiz / bekliyor
+    aciklama = db.Column(db.Text, default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'abonelik_id': self.abonelik_id,
+            'tutar': self.tutar,
+            'durum': self.durum,
+            'aciklama': self.aciklama,
+            'tarih': fmt(self.tarih),
+        }
+
+
 class Reklam(db.Model):
     """Kategori sayfalarında gösterilen reklamlar."""
     __tablename__ = 'reklamlar'

@@ -41,6 +41,13 @@ export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
 export const ustaPanelYorumlar = () => api.get('/usta/yorumlar');
 
+// ── Müşteri Paneli ───────────────────────────────────────
+export const musteriPanelDashboard = () => api.get('/musteri/panel');
+export const musteriPanelTalepler = (params) => api.get('/musteri/taleplerim', { params });
+export const musteriPanelTalepIptal = (id) => api.put(`/musteri/taleplerim/${id}/iptal`);
+export const musteriPanelProfil = () => api.get('/musteri/profil');
+export const musteriPanelProfilGuncelle = (data) => api.put('/musteri/profil', data);
+
 // ── Admin Reklamlar ──────────────────────────────────────
 export const adminReklamListele = () => api.get('/reklamlar/admin');
 export const adminReklamEkle = (data) => api.post('/reklamlar/admin', data);
