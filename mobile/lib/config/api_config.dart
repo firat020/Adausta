@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.88.253:5000';
+  static const String baseUrl = 'https://adausta.com';
 
   static const String ustalar = '$baseUrl/api/ustalar/';
   static const String kategoriler = '$baseUrl/api/kategoriler/';
