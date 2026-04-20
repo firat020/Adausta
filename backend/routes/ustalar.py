@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir
 from werkzeug.utils import secure_filename
 import os, uuid
 
@@ -13,14 +13,21 @@ def izin_verilen(dosya_adi):
 @ustalar_bp.route('/', methods=['GET'])
 def listele():
     kategori_id = request.args.get('kategori_id', type=int)
-    sehir_id = request.args.get('sehir_id', type=int)
-    ilce_id = request.args.get('ilce_id', type=int)
-    arama = request.args.get('arama', '')
-    lat = request.args.get('lat', type=float)
-    lng = request.args.get('lng', type=float)
-    yakin = request.args.get('yakin', type=int, default=0)  # km
+    sehir_id    = request.args.get('sehir_id', type=int)
+    sehir_ad    = request.args.get('sehir', '')
+    ilce_id     = request.args.get('ilce_id', type=int)
+    arama       = request.args.get('arama', '')
+    lat  = request.args.get('lat', type=float)
+    lng  = request.args.get('lng', type=float)
+    yakin = request.args.get('yakin', type=int, default=0)
     sayfa = request.args.get('sayfa', 1, type=int)
     limit = request.args.get('limit', 20, type=int)
+
+    # Şehir adından ID bul (hero search'ten gelen sehir= parametresi için)
+    if sehir_ad and not sehir_id:
+        s = Sehir.query.filter(Sehir.ad.ilike(f'{sehir_ad}%')).first()
+        if s:
+            sehir_id = s.id
 
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
 
@@ -31,7 +38,11 @@ def listele():
     if ilce_id:
         q = q.filter_by(ilce_id=ilce_id)
     if arama:
-        q = q.filter(Usta.ad.ilike(f'%{arama}%') | Usta.aciklama.ilike(f'%{arama}%'))
+        q = q.join(Kategori, Usta.kategori_id == Kategori.id, isouter=True).filter(
+            Usta.ad.ilike(f'%{arama}%') |
+            Usta.aciklama.ilike(f'%{arama}%') |
+            Kategori.ad.ilike(f'%{arama}%')
+        )
 
     ustalar = q.all()
 
