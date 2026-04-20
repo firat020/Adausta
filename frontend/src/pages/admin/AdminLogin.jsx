@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle } from 'lucide-react'
 import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir } from '../../api'
 
-const API_URL = 'http://localhost:5000'
+import API from '../../config.js'
+const API_URL = API
 
 export default function UstaPanelProfil() {
   const [usta, setUsta] = useState(null)

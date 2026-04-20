@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import { Check, Trash2, RefreshCw, Star, MessageSquare } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const FILTRELER = [
   { key: 'bekleyen', label: 'Bekleyen' },

@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import { Search, Trash2, ShieldOff, ShieldCheck, RefreshCw, Eye, X } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 export default function AdminKaraListe() {
   const [ustalar, setUstalar] = useState([])

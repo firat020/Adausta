@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { AlertCircle, Plus, X } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const durumRenk = {
   aktif: 'bg-green-100 text-green-700',

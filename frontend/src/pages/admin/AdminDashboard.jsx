@@ -6,7 +6,8 @@ import {
 } from 'recharts'
 import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 function StatKart({ baslik, deger, alt, ikon: Icon, renk, trend }) {
   return (

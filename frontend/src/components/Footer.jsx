@@ -1,3 +1,4 @@
+import API from '../config.js'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Phone, AtSign, Globe, Send, Bell, CheckCircle } from 'lucide-react'
@@ -15,7 +16,7 @@ export default function Footer() {
     if (!aboneEmail) return
     setAboneDurum('yukleniyor')
     try {
-      const r = await axios.post('http://localhost:5000/api/analitik/abone', {
+      const r = await axios.post(`${API}/api/analitik/abone`, {
         email: aboneEmail, kaynak: 'footer'
       })
       setAboneMesaj(r.data.mesaj || 'Başarıyla abone oldunuz!')

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import API from './config.js'
 import CokYakinda from './pages/CokYakinda'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -68,8 +69,6 @@ function PublicSite() {
     </div>
   )
 }
-
-const API = 'http://localhost:5000'
 
 export default function App() {
   const [bakimModu, setBakimModu] = useState(false)

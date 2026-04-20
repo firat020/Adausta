@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Plus, Pencil, Trash2, Check, X, Star, RefreshCw } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const bos = { ad: '', fiyat: '', sure_tip: 'aylik', ilan_siniri: 5, one_cikma: false }
 

@@ -1,3 +1,4 @@
+import API from '../config.js'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
@@ -26,7 +27,7 @@ export default function UstaDetay() {
   })
 
   const logIletisim = (tur) => {
-    axios.post('http://localhost:5000/api/analitik/iletisim', { usta_id: parseInt(id), tur }, { withCredentials: false })
+    axios.post(`${API}/api/analitik/iletisim`, { usta_id: parseInt(id), tur }, { withCredentials: false })
       .catch(() => {})
   }
 
@@ -184,7 +185,7 @@ export default function UstaDetay() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {usta.fotograflar.map(f => (
-              <img key={f.id} src={`http://localhost:5000${f.url}`} alt={t('ustaDetay.isFotograflari')}
+              <img key={f.id} src={`${API}${f.url}`} alt={t('ustaDetay.isFotograflari')}
                 className="w-full h-40 object-cover rounded-xl border border-gray-100" />
             ))}
           </div>

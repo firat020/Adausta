@@ -6,7 +6,8 @@ import {
   CreditCard, PackageCheck, Wallet, Power, PowerOff
 } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const menuItems = [
   { to: '/admin/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 
-const API = 'http://localhost:5000'
+import API from '../config.js'
+// API
 
 export default function CokYakinda() {
   const canvasRef = useRef(null)

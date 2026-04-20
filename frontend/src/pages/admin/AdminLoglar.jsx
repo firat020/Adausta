@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { RefreshCw, ShieldAlert } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const islemStyle = (islem) => {
   if (islem.includes('SİL') || islem.includes('REDDET')) return 'text-red-600 bg-red-50 border-red-200'

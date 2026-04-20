@@ -1,3 +1,4 @@
+import API from '../config.js'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import * as Icons from 'lucide-react'
@@ -199,7 +200,7 @@ export default function KategoriKart({ kategori }) {
               : kategori.ad
 
   const tikla = () => {
-    axios.post('http://localhost:5000/api/analitik/kategori-goruntule', { kategori_id: kategori.id }, { withCredentials: false }).catch(() => {})
+    axios.post(`${API}/api/analitik/kategori-goruntule`, { kategori_id: kategori.id }, { withCredentials: false }).catch(() => {})
     navigate(`/ustalar?kategori_id=${kategori.id}&kategori_ad=${encodeURIComponent(kategori.ad)}`)
   }
 

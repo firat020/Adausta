@@ -10,7 +10,8 @@ import {
   ToggleLeft, ToggleRight, AlertCircle
 } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 const ARALIK_SECENEKLER = [
   { deger: '7',  etiket: 'Son 7 Gün' },
