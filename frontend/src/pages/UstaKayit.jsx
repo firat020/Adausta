@@ -131,7 +131,7 @@ export default function UstaKayit() {
       return
     }
     setSifreHata('')
-    setAdim(4)
+    setAdim(2)
   }
 
   const odemeGonder = async (e) => {
@@ -188,9 +188,9 @@ export default function UstaKayit() {
 
   // ─── Adım göstergesi ─────────────────────────────────────────────────────────
   const ADIMLAR = [
-    { no: 1, ad: t('kayit.planAdim') },
+    { no: 1, ad: t('kayit.bilgilerAdim') },
     { no: 2, ad: t('kayit.dogrulamaAdim') },
-    { no: 3, ad: t('kayit.bilgilerAdim') },
+    { no: 3, ad: t('kayit.planAdim') },
     { no: 4, ad: t('kayit.odemeAdim') },
   ]
 
@@ -214,8 +214,8 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 1: Plan Seçimi ──────────────────────────────────────────────────────
-  if (adim === 1) return (
+  // ─── Adım 3: Plan Seçimi ──────────────────────────────────────────────────────
+  if (adim === 3) return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.baslik')}</h1>
@@ -269,10 +269,19 @@ export default function UstaKayit() {
       <div className="flex items-center justify-center gap-2 mb-6 text-xs text-gray-400">
         <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
       </div>
-      <button onClick={() => setAdim(2)}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
-        {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
-      </button>
+      <div className="flex items-center justify-center gap-2 mb-3 text-xs text-gray-400">
+        <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
+      </div>
+      <div className="flex gap-3">
+        <button onClick={() => setAdim(2)}
+          className="flex-1 border border-blue-200 text-blue-600 font-semibold py-4 rounded-xl hover:bg-blue-50 transition-colors text-sm">
+          {t('kayit.geriBtn')}
+        </button>
+        <button onClick={() => setAdim(4)}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
+          {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
+        </button>
+      </div>
     </div>
   )
 
@@ -286,18 +295,6 @@ export default function UstaKayit() {
       <AdimGostergesi />
 
       <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-6">
-        {/* Plan özeti */}
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 mb-6 text-sm">
-          <div className="flex items-center gap-2">
-            <Zap size={13} className="text-blue-600" />
-            <span className="font-semibold text-blue-800">{seciliPlan?.ad}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
-            <button onClick={() => setAdim(1)} className="text-xs text-blue-500 hover:underline">{t('kayit.degistir')}</button>
-          </div>
-        </div>
-
         <div className="mb-4">
           <label className={labelCls}>+90</label>
           <div className="flex gap-2">
@@ -375,8 +372,8 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 3: Bilgi Formu ──────────────────────────────────────────────────────
-  if (adim === 3) return (
+  // ─── Adım 1: Bilgi Formu ──────────────────────────────────────────────────────
+  if (adim === 1) return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.profilBilgileri')}</h1>
@@ -384,17 +381,11 @@ export default function UstaKayit() {
       </div>
       <AdimGostergesi />
 
-      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 mb-6 text-sm">
-        <div className="flex items-center gap-3">
-          <Zap size={14} className="text-blue-600" />
-          <span className="font-semibold text-blue-800">{seciliPlan?.ad}</span>
-          <span className="text-blue-400">·</span>
-          <span className="text-blue-700 font-medium flex items-center gap-1">
-            <Phone size={12} /> {telefonGirdi}
-            <CheckCircle size={13} className="text-emerald-500 ml-1" />
-          </span>
-        </div>
-        <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
+      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 mb-6 text-sm">
+        <Phone size={13} className="text-emerald-600" />
+        <span className="text-emerald-700 font-medium">{telefonGirdi}</span>
+        <CheckCircle size={13} className="text-emerald-500" />
+        <span className="text-emerald-600 text-xs">Telefon doğrulandı</span>
       </div>
 
       <form onSubmit={formGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
@@ -558,14 +549,10 @@ export default function UstaKayit() {
           <p className="text-xs text-gray-400 mt-2">Bu şifre ile usta panelinize giriş yapacaksınız.</p>
         </div>
 
-        <div className="p-6 flex gap-3">
-          <button type="button" onClick={() => setAdim(2)}
-            className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-            {t('kayit.geriBtn')}
-          </button>
+        <div className="p-6">
           <button type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
-            {t('kayit.odemeGec')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
+            {t('kayit.dogrulamaAdim')} →
           </button>
         </div>
       </form>
