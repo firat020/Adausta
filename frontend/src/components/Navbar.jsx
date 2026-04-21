@@ -33,9 +33,9 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="Ada Usta" className="h-10 w-10 object-contain" />
-            <span className="font-extrabold text-[#0052CC] text-xl tracking-tight">Ada Usta</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/ada-usta-logo.png" alt="Ada Usta" className="h-9 w-9 sm:h-10 sm:w-10 object-contain" />
+            <span className="font-extrabold text-[#0052CC] text-xl tracking-tight hidden sm:inline">Ada Usta</span>
           </Link>
 
           {/* Desktop Links */}

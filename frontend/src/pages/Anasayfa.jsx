@@ -107,7 +107,7 @@ export default function Anasayfa() {
       {/* ══════════════════════════════════════════
           HERO — Gerçek arka plan fotoğrafı
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden min-h-[480px] flex items-center">
+      <section className="relative min-h-[480px] flex items-center">
         {/* Arka plan fotoğrafı */}
         <div
           className="absolute inset-0 bg-cover bg-center"

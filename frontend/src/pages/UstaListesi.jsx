@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal, X, ExternalLink } from 'lucide-react'
+import { Search, SlidersHorizontal, X, ExternalLink, MapPin, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { ustaListele, kategorileriGetir, sehirleriGetir, reklamlariGetir, reklamTikla } from '../api'
 import UstaKart from '../components/UstaKart'
@@ -59,12 +59,38 @@ export default function UstaListesi() {
     arama: searchParams.get('arama') || '',
   })
   const [reklamlar, setReklamlar] = useState({ sol: [], sag: [] })
+  const [konum, setKonum] = useState(null) // { lat, lng }
+  const [konumYukleniyor, setKonumYukleniyor] = useState(false)
+  const konumAlindi = useRef(false)
 
   const kategoriAd = decodeURIComponent(searchParams.get('kategori_ad') || '')
 
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
+
+    // Konum al (sadece bir kez) — önce GPS (HTTPS), olmazsa IP geo
+    if (!konumAlindi.current) {
+      konumAlindi.current = true
+      setKonumYukleniyor(true)
+
+      const ipGeo = () =>
+        fetch('https://ipwho.is/')
+          .then(r => r.json())
+          .then(d => { if (d.success && d.latitude) setKonum({ lat: d.latitude, lng: d.longitude }) })
+          .catch(() => {})
+          .finally(() => setKonumYukleniyor(false))
+
+      if (window.location.protocol === 'https:' && 'geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          pos => { setKonum({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setKonumYukleniyor(false) },
+          ipGeo,
+          { timeout: 6000, maximumAge: 60000 }
+        )
+      } else {
+        ipGeo()
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -81,11 +107,12 @@ export default function UstaListesi() {
     if (filtreler.kategori_id) params.kategori_id = filtreler.kategori_id
     if (filtreler.sehir_id) params.sehir_id = filtreler.sehir_id
     if (filtreler.arama) params.arama = filtreler.arama
+    if (konum) { params.lat = konum.lat; params.lng = konum.lng }
     ustaListele(params)
       .then(r => { setUstalar(r.data.ustalar || []); setToplam(r.data.toplam || 0) })
       .catch(() => {})
       .finally(() => setYukleniyor(false))
-  }, [filtreler])
+  }, [filtreler, konum])
 
   const temizle = () => setFiltreler({ kategori_id: '', sehir_id: '', arama: '' })
   const aktifFiltre = filtreler.kategori_id || filtreler.sehir_id || filtreler.arama
@@ -119,8 +146,18 @@ export default function UstaListesi() {
           <h1 className="text-2xl font-bold text-gray-900">
             {kategoriAd || t('ustaListesi.baslik')}
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <p className="text-gray-500 text-sm mt-0.5 flex items-center gap-2">
             {yukleniyor ? t('common.yukleniyor') : `${toplam} ${t('ustaListesi.ustaFound')}`}
+            {konumYukleniyor && (
+              <span className="inline-flex items-center gap-1 text-xs text-blue-500">
+                <Loader2 size={11} className="animate-spin" /> Konum alınıyor...
+              </span>
+            )}
+            {!konumYukleniyor && konum && (
+              <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                <MapPin size={11} /> Yakınlığa göre sıralı
+              </span>
+            )}
           </p>
         </div>
         <button onClick={() => setFiltrePaneli(!filtrePaneli)}
