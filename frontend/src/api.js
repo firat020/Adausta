@@ -52,6 +52,21 @@ export const musteriPanelTalepIptal = (id) => api.put(`/musteri/taleplerim/${id}
 export const musteriPanelProfil = () => api.get('/musteri/profil');
 export const musteriPanelProfilGuncelle = (data) => api.put('/musteri/profil', data);
 
+// ── Şirketler ────────────────────────────────────────────
+export const sirketListele = (params) => api.get('/sirketler/', { params });
+export const sirketDetay = (id) => api.get(`/sirketler/${id}`);
+export const sirketKayit = (data) => api.post('/sirketler/kayit', data);
+export const sirketIsTalebiGonder = (id, data) => api.post(`/sirketler/${id}/is-talebi`, data);
+
+// ── Şirket Paneli ─────────────────────────────────────────
+export const sirketPanelDashboard = () => api.get('/sirket/panel');
+export const sirketPanelProfil = () => api.get('/sirket/profil');
+export const sirketPanelProfilGuncelle = (data) => api.put('/sirket/profil', data);
+export const sirketPanelLogoYukle = (formData) =>
+  api.post('/sirket/profil/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const sirketPanelIsTalepleri = (params) => api.get('/sirket/is-talepleri', { params });
+export const sirketPanelTalepGuncelle = (id, data) => api.put(`/sirket/is-talepleri/${id}`, data);
+
 // ── Admin Reklamlar ──────────────────────────────────────
 export const adminReklamListele = () => api.get('/reklamlar/admin');
 export const adminReklamEkle = (data) => api.post('/reklamlar/admin', data);

@@ -10,6 +10,9 @@ import Kategoriler from './pages/Kategoriler'
 import UstaListesi from './pages/UstaListesi'
 import UstaDetay from './pages/UstaDetay'
 import UstaKayit from './pages/UstaKayit'
+import SirketKayit from './pages/SirketKayit'
+import SirketListesi from './pages/SirketListesi'
+import SirketDetay from './pages/SirketDetay'
 import EnYakin from './pages/EnYakin'
 import MusteriGiris from './pages/MusteriGiris'
 import GizlilikPolitikasi from './pages/yasal/GizlilikPolitikasi'
@@ -39,6 +42,12 @@ import UstaPanelMusteriler from './pages/usta-panel/UstaPanelMusteriler'
 import UstaPanelIstatistik from './pages/usta-panel/UstaPanelIstatistik'
 import UstaPanelYorumlar from './pages/usta-panel/UstaPanelYorumlar'
 import UstaPanelProfil from './pages/usta-panel/UstaPanelProfil'
+// Şirket Paneli
+import SirketGiris from './pages/sirket-panel/SirketGiris'
+import SirketPanelLayout from './pages/sirket-panel/SirketPanelLayout'
+import SirketPanelDashboard from './pages/sirket-panel/SirketPanelDashboard'
+import SirketPanelTalepler from './pages/sirket-panel/SirketPanelTalepler'
+import SirketPanelProfil from './pages/sirket-panel/SirketPanelProfil'
 // Müşteri Paneli
 import MusteriPanelLayout from './pages/musteri-panel/MusteriPanelLayout'
 import MusteriPanelDashboard from './pages/musteri-panel/MusteriPanelDashboard'
@@ -56,6 +65,9 @@ function PublicSite() {
           <Route path="/ustalar" element={<UstaListesi />} />
           <Route path="/usta/:id" element={<UstaDetay />} />
           <Route path="/usta-kayit" element={<UstaKayit />} />
+          <Route path="/sirket-kayit" element={<SirketKayit />} />
+          <Route path="/sirketler" element={<SirketListesi />} />
+          <Route path="/sirket/:id" element={<SirketDetay />} />
           <Route path="/en-yakin" element={<EnYakin />} />
           <Route path="/giris" element={<MusteriGiris />} />
           <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
@@ -110,6 +122,14 @@ export default function App() {
         <Route path="panel/istatistik" element={<UstaPanelIstatistik />} />
         <Route path="panel/yorumlar" element={<UstaPanelYorumlar />} />
         <Route path="panel/profil" element={<UstaPanelProfil />} />
+      </Route>
+
+      {/* Şirket Paneli */}
+      <Route path="/sirket/giris" element={<SirketGiris />} />
+      <Route path="/sirket" element={<SirketPanelLayout />}>
+        <Route path="panel" element={<SirketPanelDashboard />} />
+        <Route path="panel/talepler" element={<SirketPanelTalepler />} />
+        <Route path="panel/profil" element={<SirketPanelProfil />} />
       </Route>
 
       {/* Müşteri Paneli */}

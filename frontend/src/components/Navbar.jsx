@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard } from 'lucide-react'
+import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard, Building2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import AdaUstaLogo from './AdaUstaLogo'
 import DilSecici from './DilSecici'
@@ -53,6 +53,11 @@ export default function Navbar() {
               <MapPin size={14} />
               {t('nav.enYakin')}
             </Link>
+            <Link to="/sirketler"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${aktif('/sirketler') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              <Building2 size={14} />
+              Şirketler
+            </Link>
           </div>
 
           {/* CTA + Dil */}
@@ -72,6 +77,28 @@ export default function Navbar() {
                     <Link to="/usta/panel" onClick={() => setProfilAcik(false)}
                       className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                       <Wrench size={14} /> Panelim
+                    </Link>
+                    <button onClick={handleCikis}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                      <LogOut size={14} /> Çıkış Yap
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : kullanici && kullanici.rol === 'sirket' ? (
+              // Şirket giriş yapmış
+              <div className="relative">
+                <button onClick={() => setProfilAcik(!profilAcik)}
+                  className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-indigo-700 transition-colors">
+                  <Building2 size={14} />
+                  <span className="max-w-[120px] truncate">Şirket Paneli</span>
+                  <ChevronDown size={14} />
+                </button>
+                {profilAcik && (
+                  <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 w-48 z-50">
+                    <Link to="/sirket/panel" onClick={() => setProfilAcik(false)}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                      <Building2 size={14} /> Panelim
                     </Link>
                     <button onClick={handleCikis}
                       className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
@@ -139,10 +166,23 @@ export default function Navbar() {
           <div className="md:hidden py-3 border-t border-gray-100 flex flex-col gap-1">
             <Link to="/kategoriler" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.hizmetler')}</Link>
             <Link to="/ustalar" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.ustalar')}</Link>
+            <Link to="/sirketler" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <Building2 size={14} /> Şirketler
+            </Link>
             <Link to="/en-yakin" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <MapPin size={14} /> {t('nav.enYakin')}
             </Link>
-            {kullanici?.rol === 'usta' ? (
+            {kullanici?.rol === 'sirket' ? (
+              <>
+                <Link to="/sirket/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+                  <Building2 size={14} /> Şirket Paneli
+                </Link>
+                <button onClick={() => { handleCikis(); setMenuAcik(false) }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
+                  <LogOut size={14} /> Çıkış Yap
+                </button>
+              </>
+            ) : kullanici?.rol === 'usta' ? (
               <>
                 <Link to="/usta/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
                   <Wrench size={14} /> Usta Paneli
@@ -164,6 +204,9 @@ export default function Navbar() {
                   <Wrench size={14} /> Usta Girişi
                 </Link>
                 <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center">{t('nav.ustaKayit')}</Link>
+                <Link to="/sirket-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-indigo-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center flex items-center gap-2 justify-center">
+                  <Building2 size={14} /> Şirket Kaydı
+                </Link>
               </>
             )}
           </div>

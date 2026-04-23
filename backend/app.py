@@ -35,6 +35,8 @@ from routes.usta_panel import usta_panel_bp
 from routes.reklamlar import reklamlar_bp
 from routes.musteri_panel import musteri_panel_bp
 from routes.ayarlar import ayarlar_bp
+from routes.sirketler import sirketler_bp
+from routes.sirket_panel import sirket_panel_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
@@ -45,6 +47,8 @@ app.register_blueprint(usta_panel_bp, url_prefix='/api/usta')
 app.register_blueprint(reklamlar_bp, url_prefix='/api/reklamlar')
 app.register_blueprint(musteri_panel_bp, url_prefix='/api/musteri')
 app.register_blueprint(ayarlar_bp, url_prefix='/api/ayarlar')
+app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
+app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 
 @app.route('/uploads/<path:dosya>')
 def uploads(dosya):

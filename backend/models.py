@@ -45,6 +45,9 @@ class Kullanici(db.Model):
         if self.rol == 'usta':
             usta = Usta.query.filter_by(kullanici_id=self.id).first()
             d['usta_id'] = usta.id if usta else None
+        if self.rol == 'sirket':
+            sirket = Sirket.query.filter_by(kullanici_id=self.id).first()
+            d['sirket_id'] = sirket.id if sirket else None
         return d
 
 
@@ -387,6 +390,99 @@ class Odeme(db.Model):
             'durum': self.durum,
             'aciklama': self.aciklama,
             'tarih': fmt(self.tarih),
+        }
+
+
+class Sirket(db.Model):
+    __tablename__ = 'sirketler'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    sirket_adi = db.Column(db.String(200), nullable=False)
+    vergi_no = db.Column(db.String(50), default='')
+    yetkili_ad = db.Column(db.String(100), nullable=False)
+    telefon = db.Column(db.String(30), nullable=False)
+    whatsapp = db.Column(db.String(30), default='')
+    email = db.Column(db.String(150), default='')
+    sehir_id = db.Column(db.Integer, db.ForeignKey('sehirler.id'), nullable=True)
+    ilce_id = db.Column(db.Integer, db.ForeignKey('ilceler.id'), nullable=True)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id'), nullable=False)
+    adres = db.Column(db.Text, default='')
+    aciklama = db.Column(db.Text, default='')
+    website = db.Column(db.String(256), default='')
+    logo = db.Column(db.String(256), default='')
+    onaylanmis = db.Column(db.Boolean, default=True)
+    aktif = db.Column(db.Boolean, default=True)
+    plan = db.Column(db.String(20), default='ucretsiz')
+    plan_bitis = db.Column(db.DateTime, nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    is_talepleri = db.relationship('SirketIsTalebi', backref='sirket', lazy=True, cascade='all, delete-orphan')
+    sehir = db.relationship('Sehir', foreign_keys=[sehir_id])
+    ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
+    kategori = db.relationship('Kategori', foreign_keys=[kategori_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tip': 'sirket',
+            'sirket_adi': self.sirket_adi,
+            'vergi_no': self.vergi_no,
+            'yetkili_ad': self.yetkili_ad,
+            'telefon': self.telefon,
+            'whatsapp': self.whatsapp,
+            'email': self.email,
+            'sehir': self.sehir.ad if self.sehir else '',
+            'ilce': self.ilce.ad if self.ilce else '',
+            'sehir_id': self.sehir_id,
+            'ilce_id': self.ilce_id,
+            'kategori': self.kategori.ad if self.kategori else '',
+            'kategori_id': self.kategori_id,
+            'kategori_ikon': self.kategori.ikon if self.kategori else '🏢',
+            'adres': self.adres,
+            'aciklama': self.aciklama,
+            'website': self.website,
+            'logo': self.logo,
+            'logo_url': f'/uploads/{self.logo}' if self.logo else None,
+            'onaylanmis': self.onaylanmis,
+            'aktif': self.aktif,
+            'plan': self.plan,
+            'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
+            'talep_sayisi': len(self.is_talepleri),
+            'olusturma': self.olusturma.isoformat(),
+        }
+
+
+class SirketIsTalebi(db.Model):
+    __tablename__ = 'sirket_is_talepleri'
+    id = db.Column(db.Integer, primary_key=True)
+    sirket_id = db.Column(db.Integer, db.ForeignKey('sirketler.id', ondelete='CASCADE'), nullable=False)
+    musteri_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    musteri_ad = db.Column(db.String(100), nullable=False)
+    musteri_telefon = db.Column(db.String(30), nullable=False)
+    musteri_adres = db.Column(db.Text, default='')
+    baslik = db.Column(db.String(200), nullable=False)
+    aciklama = db.Column(db.Text, default='')
+    tercih_tarih = db.Column(db.String(100), default='')
+    durum = db.Column(db.String(30), default='bekliyor')
+    sirket_notu = db.Column(db.Text, default='')
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    musteri = db.relationship('Kullanici', foreign_keys=[musteri_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'sirket_id': self.sirket_id,
+            'musteri_id': self.musteri_id,
+            'musteri_ad': self.musteri_ad,
+            'musteri_telefon': self.musteri_telefon,
+            'musteri_adres': self.musteri_adres,
+            'baslik': self.baslik,
+            'aciklama': self.aciklama,
+            'tercih_tarih': self.tercih_tarih,
+            'durum': self.durum,
+            'sirket_notu': self.sirket_notu,
+            'olusturma': fmt(self.olusturma),
+            'guncelleme': fmt(self.guncelleme),
         }
 
 
