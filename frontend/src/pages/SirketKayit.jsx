@@ -1,15 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   CheckCircle, Building2, Phone, MapPin, Briefcase, FileText,
-  CreditCard, Shield, Star, Check, RefreshCw, MessageSquare, Eye, EyeOff, Lock, Globe
+  CreditCard, Shield, Star, Check, Eye, EyeOff, Lock, Globe,
+  UploadCloud, Image as ImageIcon, X
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { kategorileriGetir, sehirleriGetir, sirketKayit } from '../api'
-
-function smsKoduGonder(telefon) {
-  console.log(`SMS kodu gönderildi: ${telefon} → 1234`)
-  return Promise.resolve('1234')
-}
 
 const PLANLAR = [
   {
@@ -17,8 +13,8 @@ const PLANLAR = [
     ad: 'Aylık Plan',
     fiyat: '19.99',
     birim: '/ ay',
-    aciklama: 'Şirketiniz için esnek aylık üyelik',
-    ozellikler: ['Şirket profil sayfası', 'Müşteri talepleri', 'Kategori listesi', 'E-posta desteği'],
+    aciklama: 'Esnek aylık üyelik, istediğin zaman iptal et',
+    ozellikler: ['Şirket profil sayfası', 'Müşteri talepleri al', 'Kategori listesi', 'E-posta desteği'],
     rozet: null,
   },
   {
@@ -26,14 +22,14 @@ const PLANLAR = [
     ad: 'Yıllık Plan',
     fiyat: '159.99',
     birim: '/ yıl',
-    aylikEsit: 'Aylık sadece $13.33',
+    ayBirim: '12.30',
     aciklama: 'En çok tercih edilen — %33 tasarruf',
-    ozellikler: ['Şirket profil sayfası', 'Müşteri talepleri', 'Öne çıkan listeleme', '7/24 öncelikli destek'],
+    ozellikler: ['Şirket profil sayfası', 'Müşteri talepleri al', 'Öne çıkan listeleme', '7/24 öncelikli destek'],
     rozet: 'En Popüler',
   },
 ]
 
-const inputCls = "w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
+const inputCls = "w-full border border-indigo-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent bg-white"
 const labelCls = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"
 
 export default function SirketKayit() {
@@ -41,15 +37,6 @@ export default function SirketKayit() {
 
   const [adim, setAdim] = useState(1)
   const [secilenPlan, setSecilenPlan] = useState('yillik')
-
-  const [telefonGirdi, setTelefonGirdi] = useState('')
-  const [smsDurum, setSmsDurum] = useState('idle')
-  const [smsKod, setSmsKod] = useState('')
-  const [gercekKod, setGercekKod] = useState('')
-  const [kodHata, setKodHata] = useState('')
-  const [geriSayim, setGeriSayim] = useState(0)
-  const timerRef = useRef(null)
-  const girdiRef = useRef([])
 
   const [kategoriler, setKategoriler] = useState([])
   const [sehirler, setSehirler] = useState([])
@@ -60,13 +47,19 @@ export default function SirketKayit() {
 
   const [form, setForm] = useState({
     sirket_adi: '', vergi_no: '', yetkili_ad: '',
-    email: '', whatsapp: '',
+    telefon: '', email: '', whatsapp: '',
     sehir_id: '', ilce_id: '',
     kategori_id: '', adres: '', aciklama: '', website: '',
     sifre: '', sifre_tekrar: '',
   })
   const [sifreGoster, setSifreGoster] = useState(false)
   const [sifreHata, setSifreHata] = useState('')
+
+  const [logoFile, setLogoFile] = useState(null)
+  const [logoOnizleme, setLogoOnizleme] = useState(null)
+
+  const [fotoFiles, setFotoFiles] = useState([])
+  const [fotoOnizlemeler, setFotoOnizlemeler] = useState([])
 
   const [odeme, setOdeme] = useState({ kart_ad: '', kart_no: '', son_tarih: '', cvv: '' })
 
@@ -75,47 +68,29 @@ export default function SirketKayit() {
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
   }, [])
 
-  useEffect(() => {
-    if (geriSayim > 0) {
-      timerRef.current = setTimeout(() => setGeriSayim(g => g - 1), 1000)
-    }
-    return () => clearTimeout(timerRef.current)
-  }, [geriSayim])
-
   const sehirDegisti = (sehir_id) => {
     setForm(f => ({ ...f, sehir_id, ilce_id: '' }))
     const s = sehirler.find(s => s.id === parseInt(sehir_id))
     setIlceler(s?.ilceler || [])
   }
 
-  const smsiGonder = async () => {
-    if (!telefonGirdi.trim()) return
-    setKodHata('')
-    setSmsDurum('gonderildi')
-    setGeriSayim(60)
-    setSmsKod('')
-    const kod = await smsKoduGonder(telefonGirdi)
-    setGercekKod(kod)
+  const logoSec = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoOnizleme(URL.createObjectURL(file))
   }
 
-  const koduDogrula = () => {
-    if (smsKod === gercekKod) {
-      setSmsDurum('dogrulandi')
-      setKodHata('')
-      setTimeout(() => setAdim(3), 600)
-    } else {
-      setKodHata('Kod hatalı, tekrar deneyin')
-    }
+  const fotolarSec = (e) => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+    setFotoFiles(prev => [...prev, ...files])
+    setFotoOnizlemeler(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
   }
 
-  const handleKodInput = (val, idx) => {
-    const temiz = val.replace(/\D/g, '').slice(-1)
-    const arr = (smsKod + '    ').split('').slice(0, 4)
-    arr[idx] = temiz
-    const yeni = arr.join('').replace(/ /g, '')
-    setSmsKod(yeni)
-    if (temiz && idx < 3) girdiRef.current[idx + 1]?.focus()
-    if (!temiz && idx > 0) girdiRef.current[idx - 1]?.focus()
+  const fotoKaldir = (idx) => {
+    setFotoFiles(prev => prev.filter((_, i) => i !== idx))
+    setFotoOnizlemeler(prev => prev.filter((_, i) => i !== idx))
   }
 
   const formGonder = (e) => {
@@ -133,10 +108,10 @@ export default function SirketKayit() {
     try {
       await sirketKayit({
         ...form,
-        telefon: telefonGirdi,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
         kategori_id: parseInt(form.kategori_id),
+        plan: secilenPlan,
       })
       setBasarili(true)
       setTimeout(() => navigate('/sirket/panel'), 2500)
@@ -151,17 +126,32 @@ export default function SirketKayit() {
     val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
 
   const sonTarihFormat = (val) => {
-    const t = val.replace(/\D/g, '').slice(0, 4)
-    return t.length >= 3 ? t.slice(0, 2) + '/' + t.slice(2) : t
+    const d = val.replace(/\D/g, '').slice(0, 4)
+    return d.length >= 3 ? d.slice(0, 2) + '/' + d.slice(2) : d
   }
 
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
 
+  if (basarili) return (
+    <div className="max-w-lg mx-auto px-4 py-20 text-center">
+      <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+        <CheckCircle size={36} className="text-indigo-600" />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Şirket Kaydınız Tamamlandı!</h2>
+      <p className="text-gray-500 leading-relaxed mb-6">
+        Şirket profiliniz oluşturuldu. Şirket panelinize yönlendiriliyorsunuz...
+      </p>
+      <button onClick={() => navigate('/sirket/panel')}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">
+        Panele Git
+      </button>
+    </div>
+  )
+
   const ADIMLAR = [
     { no: 1, ad: 'Şirket Bilgileri' },
-    { no: 2, ad: 'Doğrulama' },
-    { no: 3, ad: 'Plan' },
-    { no: 4, ad: 'Ödeme' },
+    { no: 2, ad: 'Plan' },
+    { no: 3, ad: 'Ödeme' },
   ]
 
   const AdimGostergesi = () => (
@@ -184,31 +174,15 @@ export default function SirketKayit() {
     </div>
   )
 
-  if (basarili) return (
-    <div className="max-w-lg mx-auto px-4 py-20 text-center">
-      <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-        <CheckCircle size={36} className="text-indigo-600" />
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Şirket Kaydınız Tamamlandı!</h2>
-      <p className="text-gray-500 leading-relaxed mb-6">
-        Şirket profiliniz oluşturuldu. Şirket panelinize yönlendiriliyorsunuz...
-      </p>
-      <button onClick={() => navigate('/sirket/panel')}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">
-        Panele Git
-      </button>
-    </div>
-  )
-
-  // ─── Adım 3: Plan ────────────────────────────────────────────────────────────
-  if (adim === 3) return (
+  // ─── Adım 2: Plan ────────────────────────────────────────────────────────────
+  if (adim === 2) return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">Plan Seçin</h1>
         <p className="text-gray-500 text-sm mt-2">Şirketinize en uygun planı seçin</p>
       </div>
       <AdimGostergesi />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
         {PLANLAR.map(plan => (
           <div key={plan.id}
             onClick={() => setSecilenPlan(plan.id)}
@@ -222,12 +196,12 @@ export default function SirketKayit() {
                 <Star size={10} className="fill-white" /> {plan.rozet}
               </div>
             )}
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
               <div>
                 <h3 className="font-bold text-gray-900">{plan.ad}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{plan.aciklama}</p>
               </div>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-2 ${
                 secilenPlan === plan.id ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'
               }`}>
                 {secilenPlan === plan.id && <Check size={11} className="text-white" />}
@@ -236,8 +210,8 @@ export default function SirketKayit() {
             <div className="mb-4">
               <span className="text-3xl font-extrabold text-gray-900">${plan.fiyat}</span>
               <span className="text-sm text-gray-500 ml-1">{plan.birim}</span>
-              {plan.aylikEsit && (
-                <div className="text-xs text-indigo-600 font-semibold mt-0.5">{plan.aylikEsit}</div>
+              {plan.ayBirim && (
+                <div className="text-xs text-indigo-600 font-semibold mt-0.5">Aylık ${plan.ayBirim}</div>
               )}
             </div>
             <ul className="space-y-2">
@@ -250,87 +224,17 @@ export default function SirketKayit() {
           </div>
         ))}
       </div>
+      <div className="flex items-center justify-center gap-2 mb-5 text-xs text-gray-400">
+        <Shield size={13} /><span>256-bit SSL şifreli güvenli ödeme</span>
+      </div>
       <div className="flex gap-3">
-        <button onClick={() => setAdim(2)}
+        <button onClick={() => setAdim(1)}
           className="flex-1 border border-indigo-200 text-indigo-600 font-semibold py-4 rounded-xl hover:bg-indigo-50 transition-colors text-sm">
-          Geri
+          ← Geri
         </button>
-        <button onClick={() => setAdim(4)}
+        <button onClick={() => setAdim(3)}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
           Devam Et — ${seciliPlan?.fiyat} {seciliPlan?.birim}
-        </button>
-      </div>
-    </div>
-  )
-
-  // ─── Adım 2: Telefon Doğrulama ────────────────────────────────────────────────
-  if (adim === 2) return (
-    <div className="max-w-md mx-auto px-4 py-10">
-      <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Telefon Doğrulama</h1>
-        <p className="text-gray-500 text-sm mt-1">Yetkili telefon numaranızı doğrulayın</p>
-      </div>
-      <AdimGostergesi />
-      <div className="bg-white border border-indigo-100 shadow-sm rounded-2xl p-6">
-        <div className="mb-4">
-          <label className={labelCls}>Telefon Numarası</label>
-          <div className="flex gap-2">
-            <input type="tel" value={telefonGirdi}
-              onChange={e => setTelefonGirdi(e.target.value)}
-              placeholder="+90 548 000 00 00"
-              disabled={smsDurum === 'dogrulandi'}
-              className={`${inputCls} flex-1`} />
-            <button onClick={smsiGonder}
-              disabled={!telefonGirdi.trim() || geriSayim > 0 || smsDurum === 'dogrulandi'}
-              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
-              {smsDurum === 'idle' ? (
-                <><MessageSquare size={14} /> Kod Gönder</>
-              ) : geriSayim > 0 ? (
-                <><RefreshCw size={13} className="animate-spin" /> {geriSayim}s</>
-              ) : (
-                <><RefreshCw size={13} /> Tekrar</>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {smsDurum !== 'idle' && (
-          <div className="mb-4">
-            <label className={labelCls}>SMS Kodu</label>
-            <div className="flex gap-3 justify-center my-4">
-              {[0, 1, 2, 3].map(i => (
-                <input key={i}
-                  ref={el => girdiRef.current[i] = el}
-                  type="text" inputMode="numeric" maxLength={1}
-                  value={smsKod[i] || ''}
-                  onChange={e => handleKodInput(e.target.value, i)}
-                  onKeyDown={e => {
-                    if (e.key === 'Backspace' && !smsKod[i] && i > 0)
-                      girdiRef.current[i - 1]?.focus()
-                  }}
-                  className={`w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 outline-none transition-all ${
-                    smsDurum === 'dogrulandi'
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                      : 'border-indigo-300 focus:border-indigo-600 bg-white'
-                  }`} />
-              ))}
-            </div>
-            {kodHata && <p className="text-red-500 text-xs text-center mb-3">{kodHata}</p>}
-            {smsDurum === 'dogrulandi' ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold text-sm">
-                <CheckCircle size={16} /> Telefon doğrulandı
-              </div>
-            ) : (
-              <button onClick={koduDogrula} disabled={smsKod.length < 4}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 text-white font-bold py-3 rounded-xl transition-colors text-sm">
-                Doğrula
-              </button>
-            )}
-          </div>
-        )}
-        <button type="button" onClick={() => setAdim(1)}
-          className="w-full mt-3 text-indigo-500 hover:underline text-sm text-center">
-          ← Geri Dön
         </button>
       </div>
     </div>
@@ -372,6 +276,36 @@ export default function SirketKayit() {
                 onChange={e => setForm(f => ({ ...f, yetkili_ad: e.target.value }))}
                 className={inputCls} placeholder="Ad Soyad" />
             </div>
+
+            {/* Logo Upload */}
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Şirket Logosu</label>
+              <div className="flex items-center gap-4">
+                {logoOnizleme ? (
+                  <div className="relative">
+                    <img src={logoOnizleme} alt="Logo önizleme"
+                      className="w-20 h-20 object-contain border border-indigo-200 rounded-xl bg-white p-2" />
+                    <button type="button"
+                      onClick={() => { setLogoFile(null); setLogoOnizleme(null) }}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 border-2 border-dashed border-indigo-200 rounded-xl flex items-center justify-center bg-indigo-50">
+                    <ImageIcon size={22} className="text-indigo-300" />
+                  </div>
+                )}
+                <div>
+                  <label className="cursor-pointer inline-flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-600 text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+                    <UploadCloud size={14} />
+                    {logoOnizleme ? 'Logoyu Değiştir' : 'Logo Yükle'}
+                    <input type="file" accept="image/*" className="hidden" onChange={logoSec} />
+                  </label>
+                  <p className="text-xs text-gray-400 mt-1.5">PNG, JPG veya SVG — maks. 2MB</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -382,6 +316,12 @@ export default function SirketKayit() {
             <h3 className="font-semibold text-gray-900 text-sm">İletişim</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Telefon *</label>
+              <input type="tel" required value={form.telefon}
+                onChange={e => setForm(f => ({ ...f, telefon: e.target.value }))}
+                className={inputCls} placeholder="+90 548 000 00 00" />
+            </div>
             <div>
               <label className={labelCls}>WhatsApp</label>
               <input type="tel" value={form.whatsapp}
@@ -394,7 +334,7 @@ export default function SirketKayit() {
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className={inputCls} placeholder="info@sirketiniz.com" />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className={labelCls}>Website</label>
               <div className="relative">
                 <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -467,6 +407,38 @@ export default function SirketKayit() {
             placeholder="Şirketiniz, sunduğunuz hizmetler ve uzmanlık alanlarınız hakkında kısa bir açıklama yazın..." />
         </div>
 
+        {/* Hizmet Fotoğrafları */}
+        <div className="p-6 border-b border-indigo-50">
+          <div className="flex items-center gap-2 mb-5">
+            <ImageIcon size={16} className="text-indigo-600" />
+            <h3 className="font-semibold text-gray-900 text-sm">Hizmet Fotoğrafları</h3>
+          </div>
+          <label className="cursor-pointer flex items-center justify-center gap-3 border-2 border-dashed border-indigo-200 rounded-xl p-5 hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <UploadCloud size={20} className="text-indigo-400" />
+            <div className="text-center">
+              <p className="text-sm font-semibold text-indigo-600">Fotoğraf Ekle</p>
+              <p className="text-xs text-gray-400 mt-0.5">Birden fazla fotoğraf seçebilirsiniz</p>
+            </div>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={fotolarSec} />
+          </label>
+          {fotoOnizlemeler.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+              {fotoOnizlemeler.map((src, i) => (
+                <div key={i} className="relative group">
+                  <img src={src} alt={`Fotoğraf ${i + 1}`}
+                    className="w-full aspect-square object-cover rounded-xl border border-indigo-100" />
+                  <button type="button"
+                    onClick={() => fotoKaldir(i)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-2">{fotoOnizlemeler.length} fotoğraf seçildi</p>
+        </div>
+
         {/* Şifre */}
         <div className="p-6 border-b border-indigo-50">
           <div className="flex items-center gap-2 mb-5">
@@ -494,24 +466,26 @@ export default function SirketKayit() {
             </div>
           </div>
           {sifreHata && (
-            <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
-              <span>⚠</span> {sifreHata}
-            </p>
+            <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><span>⚠</span> {sifreHata}</p>
           )}
           <p className="text-xs text-gray-400 mt-2">Bu şifre ile şirket panelinize giriş yapacaksınız.</p>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 flex gap-3">
+          <button type="button" onClick={() => navigate('/usta-kayit')}
+            className="flex-1 border border-indigo-200 text-indigo-600 font-semibold py-3.5 rounded-xl hover:bg-indigo-50 transition-colors text-sm">
+            ← Geri
+          </button>
           <button type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
-            Telefon Doğrulamaya Geç →
+            className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
+            Plan Seçimine Geç →
           </button>
         </div>
       </form>
     </div>
   )
 
-  // ─── Adım 4: Ödeme ────────────────────────────────────────────────────────────
+  // ─── Adım 3: Ödeme ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
@@ -563,9 +537,9 @@ export default function SirketKayit() {
               </div>
             )}
             <div className="flex gap-3">
-              <button type="button" onClick={() => setAdim(3)}
+              <button type="button" onClick={() => setAdim(2)}
                 className="flex-1 border border-indigo-200 text-indigo-600 font-semibold py-3.5 rounded-xl hover:bg-indigo-50 transition-colors text-sm">
-                Geri
+                ← Geri
               </button>
               <button type="submit" disabled={yukleniyor}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
@@ -578,6 +552,7 @@ export default function SirketKayit() {
           </div>
         </form>
 
+        {/* Sipariş Özeti */}
         <div className="md:col-span-2">
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
             <h4 className="font-bold text-gray-900 text-sm mb-4">Sipariş Özeti</h4>
@@ -586,12 +561,22 @@ export default function SirketKayit() {
                 <span className="text-gray-600">{seciliPlan?.ad}</span>
                 <span className="font-semibold text-gray-900">${seciliPlan?.fiyat}</span>
               </div>
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Doğrulanan telefon</span>
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <CheckCircle size={11} /> {telefonGirdi}
-                </span>
-              </div>
+              {logoOnizleme && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <ImageIcon size={11} /><span>Logo yüklendi</span>
+                </div>
+              )}
+              {fotoFiles.length > 0 && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <ImageIcon size={11} /><span>{fotoFiles.length} hizmet fotoğrafı</span>
+                </div>
+              )}
+              {form.telefon && (
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Telefon</span>
+                  <span className="text-gray-700">{form.telefon}</span>
+                </div>
+              )}
             </div>
             <div className="border-t border-indigo-200 pt-3 flex justify-between font-bold text-gray-900">
               <span>Toplam</span>
