@@ -1,17 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
-  CreditCard, Shield, Star, Zap, Check, RefreshCw, MessageSquare, Eye, EyeOff, Lock
+  CreditCard, Shield, Star, Zap, Check, Eye, EyeOff, Lock
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { kategorileriGetir, sehirleriGetir, ustaKayit } from '../api'
-
-// ─── DEMO: Sahte SMS kodu ─────────────────────────────────────────────────────
-function smsKoduGonder(telefon) {
-  console.log(`SMS kodu gönderildi: ${telefon} → 1234`)
-  return Promise.resolve('1234')
-}
 
 export default function UstaKayit() {
   const { t } = useTranslation()
@@ -42,15 +36,6 @@ export default function UstaKayit() {
   const [adim, setAdim] = useState(1)
   const [secilenPlan, setSecilenPlan] = useState('yillik')
 
-  const [telefonGirdi, setTelefonGirdi] = useState('')
-  const [smsDurum, setSmsDurum] = useState('idle')
-  const [smsKod, setSmsKod] = useState('')
-  const [gercekKod, setGercekKod] = useState('')
-  const [kodHata, setKodHata] = useState('')
-  const [geriSayim, setGeriSayim] = useState(0)
-  const timerRef = useRef(null)
-  const girdiRef = useRef([])
-
   const [kategoriler, setKategoriler] = useState([])
   const [sehirler, setSehirler] = useState([])
   const [ilceler, setIlceler] = useState([])
@@ -76,48 +61,10 @@ export default function UstaKayit() {
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
   }, [])
 
-  useEffect(() => {
-    if (geriSayim > 0) {
-      timerRef.current = setTimeout(() => setGeriSayim(g => g - 1), 1000)
-    }
-    return () => clearTimeout(timerRef.current)
-  }, [geriSayim])
-
   const sehirDegisti = (sehir_id) => {
     setForm(f => ({ ...f, sehir_id, ilce_id: '' }))
     const s = sehirler.find(s => s.id === parseInt(sehir_id))
     setIlceler(s?.ilceler || [])
-  }
-
-  const smsiGonder = async () => {
-    if (!telefonGirdi.trim()) return
-    setKodHata('')
-    setSmsDurum('gonderildi')
-    setGeriSayim(60)
-    setSmsKod('')
-    const kod = await smsKoduGonder(telefonGirdi)
-    setGercekKod(kod)
-  }
-
-  const koduDogrula = () => {
-    if (smsKod === gercekKod) {
-      setSmsDurum('dogrulandi')
-      setKodHata('')
-      setForm(f => ({ ...f, telefon: telefonGirdi }))
-      setTimeout(() => setAdim(3), 600)
-    } else {
-      setKodHata(t('errors.kodHatali'))
-    }
-  }
-
-  const handleKodInput = (val, idx) => {
-    const temiz = val.replace(/\D/g, '').slice(-1)
-    const arr = (smsKod + '    ').split('').slice(0, 4)
-    arr[idx] = temiz
-    const yeni = arr.join('').replace(/ /g, '')
-    setSmsKod(yeni)
-    if (temiz && idx < 3) girdiRef.current[idx + 1]?.focus()
-    if (!temiz && idx > 0) girdiRef.current[idx - 1]?.focus()
   }
 
   const formGonder = (e) => {
@@ -131,7 +78,7 @@ export default function UstaKayit() {
       return
     }
     setSifreHata('')
-    setAdim(2)
+    setAdim(3)
   }
 
   const odemeGonder = async (e) => {
@@ -141,7 +88,7 @@ export default function UstaKayit() {
     try {
       await ustaKayit({
         ...form,
-        telefon: telefonGirdi,
+        telefon: form.telefon,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
         kategori_id: parseInt(form.kategori_id),
@@ -188,10 +135,9 @@ export default function UstaKayit() {
 
   // ─── Adım göstergesi ─────────────────────────────────────────────────────────
   const ADIMLAR = [
-    { no: 1, ad: t('kayit.bilgilerAdim') },
-    { no: 2, ad: t('kayit.dogrulamaAdim') },
-    { no: 3, ad: t('kayit.planAdim') },
-    { no: 4, ad: t('kayit.odemeAdim') },
+    { no: 1, ad: t('kayit.planAdim') },
+    { no: 2, ad: t('kayit.bilgilerAdim') },
+    { no: 3, ad: t('kayit.odemeAdim') },
   ]
 
   const AdimGostergesi = () => (
@@ -214,8 +160,8 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 3: Plan Seçimi ──────────────────────────────────────────────────────
-  if (adim === 3) return (
+  // ─── Adım 1: Plan Seçimi ──────────────────────────────────────────────────────
+  if (adim === 1) return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.baslik')}</h1>
@@ -273,11 +219,11 @@ export default function UstaKayit() {
         <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
       </div>
       <div className="flex gap-3">
-        <button onClick={() => setAdim(2)}
+        <button onClick={() => navigate('/')}
           className="flex-1 border border-blue-200 text-blue-600 font-semibold py-4 rounded-xl hover:bg-blue-50 transition-colors text-sm">
           {t('kayit.geriBtn')}
         </button>
-        <button onClick={() => setAdim(4)}
+        <button onClick={() => setAdim(2)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
           {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
         </button>
@@ -285,108 +231,14 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 2: Telefon Doğrulama ────────────────────────────────────────────────
+  // ─── Adım 2: Bilgi Formu ──────────────────────────────────────────────────────
   if (adim === 2) return (
-    <div className="max-w-md mx-auto px-4 py-10">
-      <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">{t('kayit.telefonDogrulama')}</h1>
-        <p className="text-gray-500 text-sm mt-1">{t('kayit.telefonAlt')}</p>
-      </div>
-      <AdimGostergesi />
-
-      <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-6">
-        <div className="mb-4">
-          <label className={labelCls}>+90</label>
-          <div className="flex gap-2">
-            <input
-              type="tel"
-              value={telefonGirdi}
-              onChange={e => setTelefonGirdi(e.target.value)}
-              placeholder="+90 548 000 00 00"
-              disabled={smsDurum === 'dogrulandi'}
-              className={`${inputCls} flex-1`}
-            />
-            <button
-              onClick={smsiGonder}
-              disabled={!telefonGirdi.trim() || geriSayim > 0 || smsDurum === 'dogrulandi'}
-              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
-              {smsDurum === 'idle' ? (
-                <><MessageSquare size={14} /> {t('kayit.kodGonder')}</>
-              ) : geriSayim > 0 ? (
-                <><RefreshCw size={13} className="animate-spin" /> {geriSayim}s</>
-              ) : (
-                <><RefreshCw size={13} /> {t('kayit.tekrar')}</>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {smsDurum !== 'idle' && (
-          <div className="mb-4">
-            <label className={labelCls}>{t('kayit.smsKodu')}</label>
-            <div className="flex gap-3 justify-center my-4">
-              {[0, 1, 2, 3].map(i => (
-                <input
-                  key={i}
-                  ref={el => girdiRef.current[i] = el}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={smsKod[i] || ''}
-                  onChange={e => handleKodInput(e.target.value, i)}
-                  onKeyDown={e => {
-                    if (e.key === 'Backspace' && !smsKod[i] && i > 0)
-                      girdiRef.current[i - 1]?.focus()
-                  }}
-                  className={`w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 outline-none transition-all ${
-                    smsDurum === 'dogrulandi'
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                      : 'border-blue-300 focus:border-blue-600 bg-white'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {kodHata && <p className="text-red-500 text-xs text-center mb-3">{kodHata}</p>}
-
-            {smsDurum === 'dogrulandi' ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold text-sm">
-                <CheckCircle size={16} /> {t('kayit.telefonDogrulandi')}
-              </div>
-            ) : (
-              <button
-                onClick={koduDogrula}
-                disabled={smsKod.length < 4}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-bold py-3 rounded-xl transition-colors text-sm">
-                {t('kayit.dogrula')}
-              </button>
-            )}
-          </div>
-        )}
-
-        <button type="button" onClick={() => setAdim(1)}
-          className="w-full mt-3 text-blue-500 hover:underline text-sm text-center">
-          {t('kayit.geriDon')}
-        </button>
-      </div>
-    </div>
-  )
-
-  // ─── Adım 1: Bilgi Formu ──────────────────────────────────────────────────────
-  if (adim === 1) return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.profilBilgileri')}</h1>
         <p className="text-gray-500 text-sm mt-1">{t('kayit.profilAlt')}</p>
       </div>
       <AdimGostergesi />
-
-      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 mb-6 text-sm">
-        <Phone size={13} className="text-emerald-600" />
-        <span className="text-emerald-700 font-medium">{telefonGirdi}</span>
-        <CheckCircle size={13} className="text-emerald-500" />
-        <span className="text-emerald-600 text-xs">Telefon doğrulandı</span>
-      </div>
 
       <form onSubmit={formGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
 
@@ -421,8 +273,9 @@ export default function UstaKayit() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>{t('footer.iletisim')}</label>
-              <input type="tel" value={telefonGirdi} readOnly
-                className={`${inputCls} bg-emerald-50 border-emerald-300 text-emerald-700 cursor-not-allowed`} />
+              <input type="tel" required value={form.telefon}
+                onChange={e => setForm(f => ({ ...f, telefon: e.target.value }))}
+                className={inputCls} placeholder="+90 548 000 0000" />
             </div>
             <div>
               <label className={labelCls}>WhatsApp</label>
@@ -559,7 +412,7 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 4: Ödeme ────────────────────────────────────────────────────────────
+  // ─── Adım 3: Ödeme ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
@@ -611,7 +464,7 @@ export default function UstaKayit() {
               </div>
             )}
             <div className="flex gap-3">
-              <button type="button" onClick={() => setAdim(3)}
+              <button type="button" onClick={() => setAdim(2)}
                 className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
                 {t('kayit.geriBtn')}
               </button>
@@ -641,12 +494,12 @@ export default function UstaKayit() {
                   <span>-$39.89</span>
                 </div>
               )}
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>{t('kayit.dogrulanmisTelefon')}</span>
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <CheckCircle size={11} /> {telefonGirdi}
-                </span>
-              </div>
+              {form.telefon && (
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>{t('kayit.dogrulanmisTelefon')}</span>
+                  <span className="text-gray-700">{form.telefon}</span>
+                </div>
+              )}
             </div>
             <div className="border-t border-blue-200 pt-3 flex justify-between font-bold text-gray-900">
               <span>{t('kayit.toplam')}</span>
