@@ -34,7 +34,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src="/ada-usta-logo.webp" alt="Ada Usta" className="h-9 w-auto sm:h-11 object-contain" />
+            <img src="/ada-usta-logo.webp" alt="Ada Usta" className="h-11 w-auto sm:h-14 object-contain" style={{imageRendering:'crisp-edges'}} />
           </Link>
 
           {/* Desktop Links */}
