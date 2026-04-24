@@ -1,122 +1,217 @@
 import 'package:flutter/material.dart';
-import '../models/usta.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../config/app_theme.dart';
 import '../config/api_config.dart';
+import '../models/usta.dart';
 
 class UstaKart extends StatelessWidget {
   final Usta usta;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool showMesafe;
 
-  const UstaKart({super.key, required this.usta, required this.onTap});
+  const UstaKart({
+    super.key,
+    required this.usta,
+    this.onTap,
+    this.showMesafe = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final foto = usta.fotograflar.isNotEmpty ? usta.fotograflar.first : null;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: AppColors.primary.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              _avatar(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+        child: Column(
+          children: [
+            // Üst kısım — fotoğraf + gradient overlay
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Stack(
+                children: [
+                  // Fotoğraf veya gradient bg
+                  SizedBox(
+                    height: 110,
+                    width: double.infinity,
+                    child: foto != null
+                        ? CachedNetworkImage(
+                            imageUrl: '${ApiConfig.uploads}/$foto',
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => _defaultBg(),
+                          )
+                        : _defaultBg(),
+                  ),
+                  // Gradient karartma
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.55),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Kategori rozeti (sol üst)
+                  Positioned(
+                    top: 10,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        usta.kategoriAd,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Puan rozeti (sağ üst)
+                  Positioned(
+                    top: 10,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.45),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, size: 13, color: AppColors.accent),
+                          const SizedBox(width: 3),
+                          Text(
+                            usta.puan != null
+                                ? usta.puan!.toStringAsFixed(1)
+                                : 'Yeni',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // İsim (sol alt)
+                  Positioned(
+                    bottom: 10,
+                    left: 12,
+                    right: 12,
+                    child: Text(
                       usta.tamAd,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                         fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      usta.kategoriAd,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                    ),
-                    if (usta.sehir != null) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on, size: 12, color: Colors.grey[500]),
-                          Text(
-                            '${usta.sehir}${usta.ilce != null ? ", ${usta.ilce}" : ""}',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (usta.puan != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 14),
-                          Text(
-                            ' ${usta.puan!.toStringAsFixed(1)}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            ' (${usta.yorumSayisi} yorum)',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
-          ),
+            ),
+
+            // Alt kısım — bilgiler
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 11, 14, 13),
+              child: Row(
+                children: [
+                  // Konum
+                  const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primaryMid),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Text(
+                      usta.konumText,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (showMesafe && usta.mesafe != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.near_me_rounded, size: 12, color: AppColors.accent),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${usta.mesafe!.toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    // Yorum sayısı
+                    const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: AppColors.textSecondary),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${usta.yorumSayisi} yorum',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.textSecondary),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _avatar() {
-    if (usta.fotograflar.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          '${ApiConfig.uploads}/${usta.fotograflar.first}',
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _defaultAvatar(),
-        ),
-      );
-    }
-    return _defaultAvatar();
-  }
-
-  Widget _defaultAvatar() {
+  Widget _defaultBg() {
     return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1e3a5f),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: const BoxDecoration(gradient: AppColors.heroGradient),
       child: Center(
         child: Text(
           usta.ad.isNotEmpty ? usta.ad[0].toUpperCase() : '?',
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            color: Colors.white38,
+            fontSize: 56,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),

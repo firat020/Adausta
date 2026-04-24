@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -52,9 +52,15 @@ export default function Anasayfa() {
   const [sehirler, setSehirler]       = useState([])
   const [enIyiUstalar, setEnIyiUstalar] = useState([])
   const [arama, setArama]             = useState('')
-  const [secilenSehir, setSecilenSehir] = useState('')
+  const [secilenSehirId, setSecilenSehirId] = useState('')
+  const [oneriAcik, setOneriAcik]     = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(true)
+  const aramaRef = useRef(null)
   const navigate = useNavigate()
+
+  const oneriListesi = arama.trim().length > 0
+    ? kategoriler.filter(k => k.ad.toLowerCase().includes(arama.toLowerCase())).slice(0, 8)
+    : []
 
   useEffect(() => {
     Promise.all([
@@ -71,9 +77,19 @@ export default function Anasayfa() {
 
   const aramayaGit = (e) => {
     e.preventDefault()
+    setOneriAcik(false)
     const params = new URLSearchParams()
     if (arama.trim()) params.set('arama', arama)
-    if (secilenSehir) params.set('sehir', secilenSehir)
+    if (secilenSehirId) params.set('sehir_id', secilenSehirId)
+    navigate(`/ustalar?${params.toString()}`)
+  }
+
+  const oneriSec = (kategori) => {
+    setOneriAcik(false)
+    const params = new URLSearchParams()
+    params.set('kategori_id', kategori.id)
+    params.set('kategori_ad', kategori.ad)
+    if (secilenSehirId) params.set('sehir_id', secilenSehirId)
     navigate(`/ustalar?${params.toString()}`)
   }
 
@@ -91,7 +107,7 @@ export default function Anasayfa() {
       {/* ══════════════════════════════════════════
           HERO — Gerçek arka plan fotoğrafı
       ══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden min-h-[480px] flex items-center">
+      <section className="relative min-h-[480px] flex items-center">
         {/* Arka plan fotoğrafı */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -133,25 +149,46 @@ export default function Anasayfa() {
 
           {/* Arama kutusu */}
           <form onSubmit={aramayaGit} className="flex flex-col sm:flex-row gap-2 shadow-2xl">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <div className="relative flex-1" ref={aramaRef}>
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
               <input
                 type="text"
                 value={arama}
-                onChange={e => setArama(e.target.value)}
+                onChange={e => { setArama(e.target.value); setOneriAcik(true) }}
+                onFocus={() => setOneriAcik(true)}
+                onBlur={() => setTimeout(() => setOneriAcik(false), 150)}
                 placeholder={t('hero.aramaPlaceholder')}
                 className="w-full pl-11 pr-4 py-4 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-yellow-400"
               />
+              {/* Autocomplete dropdown */}
+              {oneriAcik && oneriListesi.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                  {oneriListesi.map(k => (
+                    <button
+                      key={k.id}
+                      type="button"
+                      onMouseDown={() => oneriSec(k)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      <Search size={13} className="text-gray-400 flex-shrink-0" />
+                      <span>{k.ad}</span>
+                      {k.usta_sayisi > 0 && (
+                        <span className="ml-auto text-xs text-gray-400">{k.usta_sayisi} usta</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="relative sm:w-44">
               <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={secilenSehir}
-                onChange={e => setSecilenSehir(e.target.value)}
+                value={secilenSehirId}
+                onChange={e => setSecilenSehirId(e.target.value)}
                 className="w-full pl-9 pr-4 py-4 rounded-xl bg-white text-gray-600 text-sm outline-none focus:ring-2 focus:ring-yellow-400 appearance-none"
               >
                 <option value="">{t('hero.sehirSec')}</option>
-                {sehirler.map(s => <option key={s.id} value={s.ad}>{s.ad}</option>)}
+                {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
               </select>
             </div>
             <button type="submit"
@@ -171,7 +208,7 @@ export default function Anasayfa() {
               { key: 'temizlik',    arama: 'Temizlik' },
             ].map(tag => (
               <button key={tag.key}
-                onClick={() => navigate(`/ustalar?arama=${tag.arama}`)}
+                onClick={() => navigate(`/ustalar?arama=${tag.arama}${secilenSehirId ? `&sehir_id=${secilenSehirId}` : ''}`)}
                 className="text-xs text-white bg-white/10 hover:bg-white/20 border border-white/25 px-3 py-1 rounded-full transition-colors">
                 {t(`heroTaglar.${tag.key}`)}
               </button>

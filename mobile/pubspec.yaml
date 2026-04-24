@@ -1,7 +1,7 @@
 name: adausta
 description: "KKTC Usta Bulma Platformu"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.2+3
 
 environment:
   sdk: ^3.6.2
@@ -17,11 +17,23 @@ dependencies:
   image_picker: ^1.1.2
   shared_preferences: ^2.3.3
   url_launcher: ^6.3.1
+  shimmer: ^3.0.0
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/ada-usta-logo.png"
+  adaptive_icon_background: "#1e3a5f"
+  adaptive_icon_foreground: "assets/images/ada-usta-logo.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true

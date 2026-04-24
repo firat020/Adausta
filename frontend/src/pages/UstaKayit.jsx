@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
-  CreditCard, Shield, Star, Zap, Check, RefreshCw, MessageSquare
+  CreditCard, Shield, Star, Zap, Check, RefreshCw, MessageSquare, Eye, EyeOff, Lock
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { kategorileriGetir, sehirleriGetir, ustaKayit } from '../api'
 
 // ─── DEMO: Sahte SMS kodu ─────────────────────────────────────────────────────
@@ -14,6 +15,7 @@ function smsKoduGonder(telefon) {
 
 export default function UstaKayit() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const PLANLAR = [
     {
@@ -60,7 +62,10 @@ export default function UstaKayit() {
     ad: '', soyad: '', telefon: '', whatsapp: '',
     email: '', sehir_id: '', ilce_id: '',
     kategori_id: '', aciklama: '', deneyim_yil: '',
+    sifre: '', sifre_tekrar: '',
   })
+  const [sifreGoster, setSifreGoster] = useState(false)
+  const [sifreHata, setSifreHata] = useState('')
 
   const [odeme, setOdeme] = useState({
     kart_ad: '', kart_no: '', son_tarih: '', cvv: '',
@@ -115,7 +120,19 @@ export default function UstaKayit() {
     if (!temiz && idx > 0) girdiRef.current[idx - 1]?.focus()
   }
 
-  const formGonder = (e) => { e.preventDefault(); setAdim(4) }
+  const formGonder = (e) => {
+    e.preventDefault()
+    if (form.sifre.length < 6) {
+      setSifreHata('Şifre en az 6 karakter olmalıdır')
+      return
+    }
+    if (form.sifre !== form.sifre_tekrar) {
+      setSifreHata('Şifreler eşleşmiyor')
+      return
+    }
+    setSifreHata('')
+    setAdim(2)
+  }
 
   const odemeGonder = async (e) => {
     e.preventDefault()
@@ -124,12 +141,14 @@ export default function UstaKayit() {
     try {
       await ustaKayit({
         ...form,
+        telefon: telefonGirdi,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
         kategori_id: parseInt(form.kategori_id),
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
       })
       setBasarili(true)
+      setTimeout(() => navigate('/usta/panel'), 2500)
     } catch (err) {
       setHata(err.response?.data?.hata || t('errors.birHataOlustu'))
     } finally {
@@ -150,14 +169,17 @@ export default function UstaKayit() {
   // ─── Başarılı ────────────────────────────────────────────────────────────────
   if (basarili) return (
     <div className="max-w-lg mx-auto px-4 py-20 text-center">
-      <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
         <CheckCircle size={36} className="text-blue-600" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('kayit.basarili')}</h2>
-      <p className="text-gray-500 leading-relaxed mb-4">{t('kayit.basariliAlt')}</p>
-      <div className="bg-blue-50 border border-blue-100 rounded-xl px-6 py-4 text-sm text-blue-700">
-        +90 533 426 58 90
-      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Kaydınız Tamamlandı!</h2>
+      <p className="text-gray-500 leading-relaxed mb-6">
+        Profiliniz oluşturuldu ve kategorinize eklendi. Usta panelinize yönlendiriliyorsunuz...
+      </p>
+      <button onClick={() => navigate('/usta/panel')}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">
+        Panele Git
+      </button>
     </div>
   )
 
@@ -166,9 +188,9 @@ export default function UstaKayit() {
 
   // ─── Adım göstergesi ─────────────────────────────────────────────────────────
   const ADIMLAR = [
-    { no: 1, ad: t('kayit.planAdim') },
+    { no: 1, ad: t('kayit.bilgilerAdim') },
     { no: 2, ad: t('kayit.dogrulamaAdim') },
-    { no: 3, ad: t('kayit.bilgilerAdim') },
+    { no: 3, ad: t('kayit.planAdim') },
     { no: 4, ad: t('kayit.odemeAdim') },
   ]
 
@@ -192,8 +214,8 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 1: Plan Seçimi ──────────────────────────────────────────────────────
-  if (adim === 1) return (
+  // ─── Adım 3: Plan Seçimi ──────────────────────────────────────────────────────
+  if (adim === 3) return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.baslik')}</h1>
@@ -247,10 +269,19 @@ export default function UstaKayit() {
       <div className="flex items-center justify-center gap-2 mb-6 text-xs text-gray-400">
         <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
       </div>
-      <button onClick={() => setAdim(2)}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
-        {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
-      </button>
+      <div className="flex items-center justify-center gap-2 mb-3 text-xs text-gray-400">
+        <Shield size={13} /><span>{t('kayit.sslBadge')}</span>
+      </div>
+      <div className="flex gap-3">
+        <button onClick={() => setAdim(2)}
+          className="flex-1 border border-blue-200 text-blue-600 font-semibold py-4 rounded-xl hover:bg-blue-50 transition-colors text-sm">
+          {t('kayit.geriBtn')}
+        </button>
+        <button onClick={() => setAdim(4)}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
+          {t('kayit.devam')}{seciliPlan?.fiyat} {seciliPlan?.id === 'aylik' ? t('kayit.planAylikBirim') : t('kayit.planYillikBirim')}
+        </button>
+      </div>
     </div>
   )
 
@@ -264,18 +295,6 @@ export default function UstaKayit() {
       <AdimGostergesi />
 
       <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-6">
-        {/* Plan özeti */}
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 mb-6 text-sm">
-          <div className="flex items-center gap-2">
-            <Zap size={13} className="text-blue-600" />
-            <span className="font-semibold text-blue-800">{seciliPlan?.ad}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
-            <button onClick={() => setAdim(1)} className="text-xs text-blue-500 hover:underline">{t('kayit.degistir')}</button>
-          </div>
-        </div>
-
         <div className="mb-4">
           <label className={labelCls}>+90</label>
           <div className="flex gap-2">
@@ -353,8 +372,8 @@ export default function UstaKayit() {
     </div>
   )
 
-  // ─── Adım 3: Bilgi Formu ──────────────────────────────────────────────────────
-  if (adim === 3) return (
+  // ─── Adım 1: Bilgi Formu ──────────────────────────────────────────────────────
+  if (adim === 1) return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{t('kayit.profilBilgileri')}</h1>
@@ -362,17 +381,11 @@ export default function UstaKayit() {
       </div>
       <AdimGostergesi />
 
-      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 mb-6 text-sm">
-        <div className="flex items-center gap-3">
-          <Zap size={14} className="text-blue-600" />
-          <span className="font-semibold text-blue-800">{seciliPlan?.ad}</span>
-          <span className="text-blue-400">·</span>
-          <span className="text-blue-700 font-medium flex items-center gap-1">
-            <Phone size={12} /> {telefonGirdi}
-            <CheckCircle size={13} className="text-emerald-500 ml-1" />
-          </span>
-        </div>
-        <span className="font-bold text-blue-700">${seciliPlan?.fiyat}</span>
+      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 mb-6 text-sm">
+        <Phone size={13} className="text-emerald-600" />
+        <span className="text-emerald-700 font-medium">{telefonGirdi}</span>
+        <CheckCircle size={13} className="text-emerald-500" />
+        <span className="text-emerald-600 text-xs">Telefon doğrulandı</span>
       </div>
 
       <form onSubmit={formGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
@@ -492,14 +505,54 @@ export default function UstaKayit() {
             placeholder={t('kayit.hakkindaPlaceholder')} />
         </div>
 
-        <div className="p-6 flex gap-3">
-          <button type="button" onClick={() => setAdim(2)}
-            className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-            {t('kayit.geriBtn')}
-          </button>
+        {/* Şifre */}
+        <div className="p-6 border-b border-blue-50">
+          <div className="flex items-center gap-2 mb-5">
+            <Lock size={16} className="text-blue-600" />
+            <h3 className="font-semibold text-gray-900 text-sm">Giriş Şifresi</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Şifre *</label>
+              <div className="relative">
+                <input
+                  type={sifreGoster ? 'text' : 'password'}
+                  required
+                  value={form.sifre}
+                  onChange={e => setForm(f => ({ ...f, sifre: e.target.value }))}
+                  className={inputCls}
+                  placeholder="En az 6 karakter"
+                />
+                <button type="button" onClick={() => setSifreGoster(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {sifreGoster ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Şifre Tekrar *</label>
+              <input
+                type={sifreGoster ? 'text' : 'password'}
+                required
+                value={form.sifre_tekrar}
+                onChange={e => setForm(f => ({ ...f, sifre_tekrar: e.target.value }))}
+                className={inputCls}
+                placeholder="Şifrenizi tekrar girin"
+              />
+            </div>
+          </div>
+          {sifreHata && (
+            <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+              <span>⚠</span> {sifreHata}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mt-2">Bu şifre ile usta panelinize giriş yapacaksınız.</p>
+        </div>
+
+        <div className="p-6">
           <button type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
-            {t('kayit.odemeGec')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm">
+            {t('kayit.dogrulamaAdim')} →
           </button>
         </div>
       </form>

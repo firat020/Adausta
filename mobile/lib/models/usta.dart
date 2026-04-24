@@ -8,10 +8,12 @@ class Usta {
   final String? sehir;
   final String? ilce;
   final String kategoriAd;
+  final int? kategoriId;
   final double? puan;
   final int yorumSayisi;
   final bool aktif;
   final List<String> fotograflar;
+  double? mesafe;
 
   Usta({
     required this.id,
@@ -23,13 +25,21 @@ class Usta {
     this.sehir,
     this.ilce,
     required this.kategoriAd,
+    this.kategoriId,
     this.puan,
     this.yorumSayisi = 0,
     this.aktif = true,
     this.fotograflar = const [],
+    this.mesafe,
   });
 
   String get tamAd => '$ad $soyad';
+
+  String get konumText {
+    if (ilce != null && sehir != null) return '$ilce, $sehir';
+    if (sehir != null) return sehir!;
+    return 'KKTC';
+  }
 
   factory Usta.fromJson(Map<String, dynamic> json) {
     return Usta(
@@ -42,12 +52,14 @@ class Usta {
       sehir: json['sehir'],
       ilce: json['ilce'],
       kategoriAd: json['kategori_ad'] ?? json['kategori'] ?? '',
+      kategoriId: json['kategori_id'],
       puan: json['puan'] != null ? (json['puan'] as num).toDouble() : null,
       yorumSayisi: json['yorum_sayisi'] ?? 0,
       aktif: json['aktif'] ?? true,
       fotograflar: json['fotograflar'] != null
           ? List<String>.from(json['fotograflar'])
           : [],
+      mesafe: json['mesafe'] != null ? (json['mesafe'] as num).toDouble() : null,
     );
   }
 }

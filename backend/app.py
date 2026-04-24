@@ -18,6 +18,10 @@ CORS(app, supports_credentials=True, origins=[
     'http://localhost:5175',
     'http://localhost:5176',
     'http://localhost:3000',
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://192.168.88.253:5000',
+    'http://192.168.88.253:8080',
 ])
 
 db.init_app(app)
@@ -26,11 +30,25 @@ from routes.auth import auth_bp
 from routes.ustalar import ustalar_bp
 from routes.kategoriler import kategoriler_bp
 from routes.admin import admin_bp
+from routes.analitik import analitik_bp
+from routes.usta_panel import usta_panel_bp
+from routes.reklamlar import reklamlar_bp
+from routes.musteri_panel import musteri_panel_bp
+from routes.ayarlar import ayarlar_bp
+from routes.sirketler import sirketler_bp
+from routes.sirket_panel import sirket_panel_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
 app.register_blueprint(kategoriler_bp, url_prefix='/api/kategoriler')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(analitik_bp, url_prefix='/api/analitik')
+app.register_blueprint(usta_panel_bp, url_prefix='/api/usta')
+app.register_blueprint(reklamlar_bp, url_prefix='/api/reklamlar')
+app.register_blueprint(musteri_panel_bp, url_prefix='/api/musteri')
+app.register_blueprint(ayarlar_bp, url_prefix='/api/ayarlar')
+app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
+app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 
 @app.route('/uploads/<path:dosya>')
 def uploads(dosya):
@@ -43,4 +61,4 @@ def saglik():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

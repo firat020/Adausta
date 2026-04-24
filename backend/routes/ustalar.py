@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir
 from werkzeug.utils import secure_filename
 import os, uuid
 
@@ -13,14 +13,21 @@ def izin_verilen(dosya_adi):
 @ustalar_bp.route('/', methods=['GET'])
 def listele():
     kategori_id = request.args.get('kategori_id', type=int)
-    sehir_id = request.args.get('sehir_id', type=int)
-    ilce_id = request.args.get('ilce_id', type=int)
-    arama = request.args.get('arama', '')
-    lat = request.args.get('lat', type=float)
-    lng = request.args.get('lng', type=float)
-    yakin = request.args.get('yakin', type=int, default=0)  # km
+    sehir_id    = request.args.get('sehir_id', type=int)
+    sehir_ad    = request.args.get('sehir', '')
+    ilce_id     = request.args.get('ilce_id', type=int)
+    arama       = request.args.get('arama', '')
+    lat  = request.args.get('lat', type=float)
+    lng  = request.args.get('lng', type=float)
+    yakin = request.args.get('yakin', type=int, default=0)
     sayfa = request.args.get('sayfa', 1, type=int)
     limit = request.args.get('limit', 20, type=int)
+
+    # Şehir adından ID bul (hero search'ten gelen sehir= parametresi için)
+    if sehir_ad and not sehir_id:
+        s = Sehir.query.filter(Sehir.ad.ilike(f'{sehir_ad}%')).first()
+        if s:
+            sehir_id = s.id
 
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
 
@@ -31,7 +38,11 @@ def listele():
     if ilce_id:
         q = q.filter_by(ilce_id=ilce_id)
     if arama:
-        q = q.filter(Usta.ad.ilike(f'%{arama}%') | Usta.aciklama.ilike(f'%{arama}%'))
+        q = q.join(Kategori, Usta.kategori_id == Kategori.id, isouter=True).filter(
+            Usta.ad.ilike(f'%{arama}%') |
+            Usta.aciklama.ilike(f'%{arama}%') |
+            Kategori.ad.ilike(f'%{arama}%')
+        )
 
     ustalar = q.all()
 
@@ -65,17 +76,28 @@ def detay(id):
 @ustalar_bp.route('/kayit', methods=['POST'])
 def kayit():
     data = request.get_json()
-    zorunlu = ['ad', 'telefon', 'kategori_id', 'sehir_id']
+    zorunlu = ['ad', 'telefon', 'kategori_id', 'sehir_id', 'email', 'sifre']
     for alan in zorunlu:
         if not data.get(alan):
             return jsonify({'hata': f'{alan} zorunludur'}), 400
 
+    # Email zaten var mı kontrol et
+    if Kullanici.query.filter_by(email=data['email']).first():
+        return jsonify({'hata': 'Bu email adresi zaten kayıtlı'}), 400
+
+    # Kullanıcı hesabı oluştur
+    k = Kullanici(email=data['email'], rol='usta')
+    k.sifre_set(data['sifre'])
+    db.session.add(k)
+    db.session.flush()  # k.id'yi al
+
     u = Usta(
+        kullanici_id=k.id,
         ad=data['ad'],
         soyad=data.get('soyad', ''),
         telefon=data['telefon'],
-        whatsapp=data.get('whatsapp', ''),
-        email=data.get('email', ''),
+        whatsapp=data.get('whatsapp', data['telefon']),
+        email=data['email'],
         sehir_id=data['sehir_id'],
         ilce_id=data.get('ilce_id'),
         kategori_id=data['kategori_id'],
@@ -83,11 +105,17 @@ def kayit():
         deneyim_yil=data.get('deneyim_yil', 0),
         lat=data.get('lat'),
         lng=data.get('lng'),
-        onaylanmis=False
+        onaylanmis=True,
+        aktif=True
     )
     db.session.add(u)
     db.session.commit()
-    return jsonify({'mesaj': 'Kayıt alındı, onay bekliyor', 'id': u.id}), 201
+
+    # Otomatik giriş yap
+    session['kullanici_id'] = k.id
+    session['rol'] = 'usta'
+
+    return jsonify({'mesaj': 'Kayıt başarılı', 'id': u.id, 'kullanici': k.to_dict()}), 201
 
 @ustalar_bp.route('/<int:id>/fotograf', methods=['POST'])
 def fotograf_yukle(id):
@@ -125,6 +153,31 @@ def yorum_ekle(id):
     db.session.add(y)
     db.session.commit()
     return jsonify({'mesaj': 'Yorumunuz alındı, onay bekliyor'}), 201
+
+@ustalar_bp.route('/<int:id>/is-talebi', methods=['POST'])
+def is_talebi_gonder(id):
+    """Müşteri bir ustaya iş/arıza talebi gönderir."""
+    usta = Usta.query.get_or_404(id)
+    data = request.get_json()
+    if not data.get('musteri_ad') or not data.get('musteri_telefon') or not data.get('baslik'):
+        return jsonify({'hata': 'Ad, telefon ve başlık zorunludur'}), 400
+
+    talep = IsTalebi(
+        usta_id=usta.id,
+        musteri_id=session.get('kullanici_id'),
+        musteri_ad=data['musteri_ad'],
+        musteri_telefon=data['musteri_telefon'],
+        musteri_adres=data.get('musteri_adres', ''),
+        baslik=data['baslik'],
+        aciklama=data.get('aciklama', ''),
+        tercih_tarih=data.get('tercih_tarih', ''),
+        durum='bekliyor',
+    )
+    db.session.add(talep)
+    db.session.commit()
+    return jsonify({'mesaj': 'Talebiniz iletildi! Usta en kısa sürede sizinle iletişime geçecek.',
+                    'talep_id': talep.id}), 201
+
 
 @ustalar_bp.route('/en-yakin', methods=['GET'])
 def en_yakin():

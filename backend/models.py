@@ -5,6 +5,12 @@ import math
 
 db = SQLAlchemy()
 
+# ──────────────────────────────────────────────────────────
+# Yardımcı: tarih formatla
+# ──────────────────────────────────────────────────────────
+def fmt(dt):
+    return dt.strftime('%d.%m.%Y %H:%M') if dt else None
+
 class Kullanici(db.Model):
     __tablename__ = 'kullanicilar'
     id = db.Column(db.Integer, primary_key=True)
@@ -15,6 +21,11 @@ class Kullanici(db.Model):
     aktif = db.Column(db.Boolean, default=True)
     giris_deneme = db.Column(db.Integer, default=0)
     kilitli_kadar = db.Column(db.DateTime, nullable=True)
+    # Müşteri profil alanları (rol=musteri için)
+    ad = db.Column(db.String(100), default='')
+    soyad = db.Column(db.String(100), default='')
+    telefon = db.Column(db.String(30), default='')
+    adres = db.Column(db.Text, default='')
 
     def sifre_set(self, sifre):
         self.sifre_hash = generate_password_hash(sifre)
@@ -28,7 +39,16 @@ class Kullanici(db.Model):
         return False
 
     def to_dict(self):
-        return {'id': self.id, 'email': self.email, 'rol': self.rol}
+        d = {'id': self.id, 'email': self.email, 'rol': self.rol,
+             'ad': self.ad, 'soyad': self.soyad, 'telefon': self.telefon,
+             'adres': self.adres, 'olusturma': fmt(self.olusturma)}
+        if self.rol == 'usta':
+            usta = Usta.query.filter_by(kullanici_id=self.id).first()
+            d['usta_id'] = usta.id if usta else None
+        if self.rol == 'sirket':
+            sirket = Sirket.query.filter_by(kullanici_id=self.id).first()
+            d['sirket_id'] = sirket.id if sirket else None
+        return d
 
 
 class AdminLog(db.Model):
@@ -119,9 +139,13 @@ class Usta(db.Model):
     lng = db.Column(db.Float, nullable=True)
     onaylanmis = db.Column(db.Boolean, default=False)
     aktif = db.Column(db.Boolean, default=True)
+    musaitlik = db.Column(db.Boolean, default=True)   # Müsait mi?
+    plan = db.Column(db.String(20), default='ucretsiz')  # ucretsiz / aylik / yillik
+    plan_bitis = db.Column(db.DateTime, nullable=True)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     fotograflar = db.relationship('Fotograf', backref='usta', lazy=True, cascade='all, delete-orphan')
     yorumlar = db.relationship('Yorum', backref='usta', lazy=True, cascade='all, delete-orphan')
+    is_talepleri = db.relationship('IsTalebi', backref='usta', lazy=True, cascade='all, delete-orphan')
     sehir = db.relationship('Sehir', foreign_keys=[sehir_id])
     ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
 
@@ -167,6 +191,9 @@ class Usta(db.Model):
             'mesafe': mesafe,
             'onaylanmis': self.onaylanmis,
             'aktif': self.aktif,
+            'musaitlik': self.musaitlik,
+            'plan': self.plan,
+            'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
             'olusturma': self.olusturma.isoformat()
         }
 
@@ -199,4 +226,312 @@ class Yorum(db.Model):
             'puan': self.puan,
             'yorum': self.yorum,
             'tarih': self.tarih.strftime('%d.%m.%Y')
+        }
+
+
+class Abone(db.Model):
+    __tablename__ = 'aboneler'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    ad = db.Column(db.String(100), default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    aktif = db.Column(db.Boolean, default=True)
+    kaynak = db.Column(db.String(50), default='footer')  # footer / popup / mobil
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'ad': self.ad,
+            'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
+            'aktif': self.aktif,
+            'kaynak': self.kaynak,
+        }
+
+
+class IletisimLog(db.Model):
+    """Kullanıcıların ustalarla iletişime geçme olaylarını kaydeder."""
+    __tablename__ = 'iletisim_log'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    tur = db.Column(db.String(20), nullable=False)  # ara / whatsapp / goruntule / teklif
+    ip = db.Column(db.String(60), default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    kategori_id = db.Column(db.Integer, nullable=True)
+    sehir = db.Column(db.String(100), default='')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'tur': self.tur,
+            'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
+            'sehir': self.sehir,
+        }
+
+
+class KategoriGoruntuleme(db.Model):
+    """Kategori sayfası ziyaretlerini kaydeder."""
+    __tablename__ = 'kategori_goruntuleme'
+    id = db.Column(db.Integer, primary_key=True)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id', ondelete='CASCADE'), nullable=False)
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    ip = db.Column(db.String(60), default='')
+
+
+class IsTalebi(db.Model):
+    """Müşterinin ustaya gönderdiği iş/arıza talebi."""
+    __tablename__ = 'is_talepleri'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    musteri_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    # Müşteri bilgileri (misafir kullanıcı için de çalışsın)
+    musteri_ad = db.Column(db.String(100), nullable=False)
+    musteri_telefon = db.Column(db.String(30), nullable=False)
+    musteri_adres = db.Column(db.Text, default='')
+    # Talep detayları
+    baslik = db.Column(db.String(200), nullable=False)
+    aciklama = db.Column(db.Text, default='')
+    tercih_tarih = db.Column(db.String(100), default='')  # Müşterinin tercih ettiği tarih
+    durum = db.Column(db.String(30), default='bekliyor')  # bekliyor / kabul / red / tamamlandi
+    usta_notu = db.Column(db.Text, default='')  # Ustanın notu
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    musteri = db.relationship('Kullanici', foreign_keys=[musteri_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'musteri_id': self.musteri_id,
+            'musteri_ad': self.musteri_ad,
+            'musteri_telefon': self.musteri_telefon,
+            'musteri_adres': self.musteri_adres,
+            'baslik': self.baslik,
+            'aciklama': self.aciklama,
+            'tercih_tarih': self.tercih_tarih,
+            'durum': self.durum,
+            'usta_notu': self.usta_notu,
+            'olusturma': fmt(self.olusturma),
+            'guncelleme': fmt(self.guncelleme),
+        }
+
+
+class Plan(db.Model):
+    __tablename__ = 'planlar'
+    id = db.Column(db.Integer, primary_key=True)
+    ad = db.Column(db.String(50), nullable=False)
+    fiyat = db.Column(db.Float, default=0.0)
+    sure_tip = db.Column(db.String(20), default='aylik')  # aylik / yillik
+    ilan_siniri = db.Column(db.Integer, default=1)
+    one_cikma = db.Column(db.Boolean, default=False)
+    aktif = db.Column(db.Boolean, default=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    abonelikler = db.relationship('Abonelik', backref='plan', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'ad': self.ad, 'fiyat': self.fiyat,
+            'sure_tip': self.sure_tip, 'ilan_siniri': self.ilan_siniri,
+            'one_cikma': self.one_cikma, 'aktif': self.aktif,
+            'abone_sayisi': len([a for a in self.abonelikler if a.durum == 'aktif']),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class Abonelik(db.Model):
+    __tablename__ = 'abonelikler'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('planlar.id'), nullable=False)
+    baslangic = db.Column(db.DateTime, default=datetime.utcnow)
+    bitis = db.Column(db.DateTime, nullable=True)
+    durum = db.Column(db.String(20), default='aktif')  # aktif / askida / iptal
+    yenileme_tarihi = db.Column(db.DateTime, nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+    odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'plan_id': self.plan_id,
+            'plan_ad': self.plan.ad if self.plan else '',
+            'plan_fiyat': self.plan.fiyat if self.plan else 0,
+            'baslangic': fmt(self.baslangic),
+            'bitis': fmt(self.bitis),
+            'durum': self.durum,
+            'yenileme_tarihi': fmt(self.yenileme_tarihi),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class Odeme(db.Model):
+    __tablename__ = 'odemeler'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    abonelik_id = db.Column(db.Integer, db.ForeignKey('abonelikler.id'), nullable=True)
+    tutar = db.Column(db.Float, nullable=False)
+    durum = db.Column(db.String(20), default='bekliyor')  # basarili / basarisiz / bekliyor
+    aciklama = db.Column(db.Text, default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'abonelik_id': self.abonelik_id,
+            'tutar': self.tutar,
+            'durum': self.durum,
+            'aciklama': self.aciklama,
+            'tarih': fmt(self.tarih),
+        }
+
+
+class Sirket(db.Model):
+    __tablename__ = 'sirketler'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    sirket_adi = db.Column(db.String(200), nullable=False)
+    vergi_no = db.Column(db.String(50), default='')
+    yetkili_ad = db.Column(db.String(100), nullable=False)
+    telefon = db.Column(db.String(30), nullable=False)
+    whatsapp = db.Column(db.String(30), default='')
+    email = db.Column(db.String(150), default='')
+    sehir_id = db.Column(db.Integer, db.ForeignKey('sehirler.id'), nullable=True)
+    ilce_id = db.Column(db.Integer, db.ForeignKey('ilceler.id'), nullable=True)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id'), nullable=False)
+    adres = db.Column(db.Text, default='')
+    aciklama = db.Column(db.Text, default='')
+    website = db.Column(db.String(256), default='')
+    logo = db.Column(db.String(256), default='')
+    onaylanmis = db.Column(db.Boolean, default=True)
+    aktif = db.Column(db.Boolean, default=True)
+    plan = db.Column(db.String(20), default='ucretsiz')
+    plan_bitis = db.Column(db.DateTime, nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    is_talepleri = db.relationship('SirketIsTalebi', backref='sirket', lazy=True, cascade='all, delete-orphan')
+    sehir = db.relationship('Sehir', foreign_keys=[sehir_id])
+    ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
+    kategori = db.relationship('Kategori', foreign_keys=[kategori_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tip': 'sirket',
+            'sirket_adi': self.sirket_adi,
+            'vergi_no': self.vergi_no,
+            'yetkili_ad': self.yetkili_ad,
+            'telefon': self.telefon,
+            'whatsapp': self.whatsapp,
+            'email': self.email,
+            'sehir': self.sehir.ad if self.sehir else '',
+            'ilce': self.ilce.ad if self.ilce else '',
+            'sehir_id': self.sehir_id,
+            'ilce_id': self.ilce_id,
+            'kategori': self.kategori.ad if self.kategori else '',
+            'kategori_id': self.kategori_id,
+            'kategori_ikon': self.kategori.ikon if self.kategori else '🏢',
+            'adres': self.adres,
+            'aciklama': self.aciklama,
+            'website': self.website,
+            'logo': self.logo,
+            'logo_url': f'/uploads/{self.logo}' if self.logo else None,
+            'onaylanmis': self.onaylanmis,
+            'aktif': self.aktif,
+            'plan': self.plan,
+            'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
+            'talep_sayisi': len(self.is_talepleri),
+            'olusturma': self.olusturma.isoformat(),
+        }
+
+
+class SirketIsTalebi(db.Model):
+    __tablename__ = 'sirket_is_talepleri'
+    id = db.Column(db.Integer, primary_key=True)
+    sirket_id = db.Column(db.Integer, db.ForeignKey('sirketler.id', ondelete='CASCADE'), nullable=False)
+    musteri_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    musteri_ad = db.Column(db.String(100), nullable=False)
+    musteri_telefon = db.Column(db.String(30), nullable=False)
+    musteri_adres = db.Column(db.Text, default='')
+    baslik = db.Column(db.String(200), nullable=False)
+    aciklama = db.Column(db.Text, default='')
+    tercih_tarih = db.Column(db.String(100), default='')
+    durum = db.Column(db.String(30), default='bekliyor')
+    sirket_notu = db.Column(db.Text, default='')
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    musteri = db.relationship('Kullanici', foreign_keys=[musteri_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'sirket_id': self.sirket_id,
+            'musteri_id': self.musteri_id,
+            'musteri_ad': self.musteri_ad,
+            'musteri_telefon': self.musteri_telefon,
+            'musteri_adres': self.musteri_adres,
+            'baslik': self.baslik,
+            'aciklama': self.aciklama,
+            'tercih_tarih': self.tercih_tarih,
+            'durum': self.durum,
+            'sirket_notu': self.sirket_notu,
+            'olusturma': fmt(self.olusturma),
+            'guncelleme': fmt(self.guncelleme),
+        }
+
+
+class Reklam(db.Model):
+    """Kategori sayfalarında gösterilen reklamlar."""
+    __tablename__ = 'reklamlar'
+    id = db.Column(db.Integer, primary_key=True)
+    baslik = db.Column(db.String(200), nullable=False)
+    aciklama = db.Column(db.Text, default='')
+    resim_url = db.Column(db.String(500), default='')
+    link_url = db.Column(db.String(500), default='')
+    firma_adi = db.Column(db.String(150), default='')
+    # Hangi kategoride gösterilsin (None = tüm kategorilerde)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id'), nullable=True)
+    konum = db.Column(db.String(20), default='sol')  # sol / sag / ust
+    aktif = db.Column(db.Boolean, default=True)
+    baslangic = db.Column(db.DateTime, nullable=True)
+    bitis = db.Column(db.DateTime, nullable=True)
+    tiklanma = db.Column(db.Integer, default=0)
+    goruntuleme = db.Column(db.Integer, default=0)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    kategori = db.relationship('Kategori', foreign_keys=[kategori_id])
+
+    def aktif_mi(self):
+        now = datetime.utcnow()
+        if not self.aktif:
+            return False
+        if self.baslangic and now < self.baslangic:
+            return False
+        if self.bitis and now > self.bitis:
+            return False
+        return True
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'baslik': self.baslik,
+            'aciklama': self.aciklama,
+            'resim_url': self.resim_url,
+            'link_url': self.link_url,
+            'firma_adi': self.firma_adi,
+            'kategori_id': self.kategori_id,
+            'kategori_ad': self.kategori.ad if self.kategori else 'Tümü',
+            'konum': self.konum,
+            'aktif': self.aktif,
+            'baslangic': fmt(self.baslangic),
+            'bitis': fmt(self.bitis),
+            'tiklanma': self.tiklanma,
+            'goruntuleme': self.goruntuleme,
+            'olusturma': fmt(self.olusturma),
         }

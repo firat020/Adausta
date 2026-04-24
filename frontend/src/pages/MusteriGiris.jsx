@@ -11,7 +11,7 @@ export default function MusteriGiris() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || '/'
+  const from = location.state?.from || '/musteri/panel'
   const googleBtnRef = useRef(null)
 
   const [tab, setTab] = useState('giris')

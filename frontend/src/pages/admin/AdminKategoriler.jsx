@@ -6,7 +6,8 @@ import {
   Truck, Tv, Leaf, Car, Briefcase, Layers
 } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+import API from '../../config.js'
+// API
 
 // Grup adına göre ikon
 const GRUP_IKON = {

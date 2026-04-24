@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'config/app_theme.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const AdaustaApp());
@@ -13,14 +14,8 @@ class AdaustaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Adausta',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1e3a5f),
-          primary: const Color(0xFF1e3a5f),
-        ),
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
+      theme: AppTheme.theme,
+      home: const SplashScreen(),
     );
   }
 }
