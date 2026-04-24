@@ -145,7 +145,7 @@ export default function Navbar() {
                 </Link>
                 <Link to="/usta-kayit"
                   className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                  {t('nav.ustaKayit')}
+                  Kayıt Ol
                 </Link>
               </>
             )}
@@ -202,7 +202,7 @@ export default function Navbar() {
                 <Link to="/usta/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
                   <Wrench size={14} /> Usta Girişi
                 </Link>
-                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center">{t('nav.ustaKayit')}</Link>
+                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center">Kayıt Ol</Link>
                 <Link to="/sirket-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-indigo-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center flex items-center gap-2 justify-center">
                   <Building2 size={14} /> Şirket Kaydı
                 </Link>
