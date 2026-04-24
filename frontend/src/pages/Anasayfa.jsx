@@ -31,9 +31,9 @@ const YORUMLAR = [
 const AVATAR_RENK = ['bg-blue-600', 'bg-sky-500', 'bg-cyan-600', 'bg-indigo-600', 'bg-blue-800']
 
 const OZELLIKLER_IKONLAR = [
-  <ShieldCheck size={20} className="text-blue-400" />,
-  <Zap size={20} className="text-yellow-400" />,
-  <CheckCircle2 size={20} className="text-green-400" />,
+  <ShieldCheck size={14} className="text-blue-400" />,
+  <Zap size={14} className="text-yellow-400" />,
+  <CheckCircle2 size={14} className="text-green-400" />,
 ]
 const OZELLIKLER_KEYS = ['guvenilir', 'hizli', 'ucretsiz']
 
@@ -96,7 +96,7 @@ export default function Anasayfa() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/hero-bg.png')"
+            backgroundImage: "url('/hero-bg.webp')"
           }}
         />
         {/* Koyu overlay */}
@@ -183,15 +183,15 @@ export default function Anasayfa() {
       {/* ══════════════════════════════════════════
           ÖZELLİKLER ŞERİDİ
       ══════════════════════════════════════════ */}
-      <section className="bg-blue-900 py-5 px-4">
+      <section className="bg-blue-900 py-2 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-10">
             {OZELLIKLER_KEYS.map((key, i) => (
-              <div key={key} className="flex items-center gap-3">
+              <div key={key} className="flex items-center gap-1.5">
                 {OZELLIKLER_IKONLAR[i]}
                 <div>
-                  <p className="text-white font-bold text-sm">{t(`ozellikler.${key}`)}</p>
-                  <p className="text-blue-300 text-xs">{t(`ozellikler.${key}Alt`)}</p>
+                  <p className="text-white font-bold text-xs">{t(`ozellikler.${key}`)}</p>
+                  <p className="text-blue-300 text-[10px]">{t(`ozellikler.${key}Alt`)}</p>
                 </div>
               </div>
             ))}
