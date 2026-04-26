@@ -3,6 +3,7 @@ import { MapPin, Navigation, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { enYakinUstalar, kategorileriGetir } from '../api'
 import UstaKart from '../components/UstaKart'
+import SEO from '../components/SEO'
 
 export default function EnYakin() {
   const { t } = useTranslation()
@@ -60,6 +61,12 @@ export default function EnYakin() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
+      <SEO
+        baslik="En Yakın Usta — Konumuma Yakın KKTC Ustası Bul"
+        aciklama="Konumunuza en yakın onaylı ustayı bulun. KKTC'de Lefkoşa, Girne, Gazimağusa ve tüm şehirlerde yakınınızdaki elektrikçi, tesisatçı, boyacı ve daha fazlası."
+        anahtar="yakınımdaki usta, KKTC yakın usta, en yakın elektrikçi KKTC, Kuzey Kıbrıs yakın usta bul"
+        url="/en-yakin"
+      />
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-1">{t('nav.enYakin')}</h1>
         <p className="text-gray-500">{t('enYakin.alt')}</p>

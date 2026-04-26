@@ -210,7 +210,7 @@ export default function KategoriKart({ kategori }) {
       className="bg-white rounded-xl overflow-hidden cursor-pointer border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col"
     >
       {/* Fotoğraf */}
-      <div className="relative overflow-hidden" style={{ height: 200 }}>
+      <div className="relative overflow-hidden h-36 sm:h-48">
         <img
           src={gorsel}
           alt={kategori.ad}

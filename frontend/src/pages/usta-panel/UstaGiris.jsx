@@ -60,8 +60,8 @@ export default function UstaGiris() {
 
         {/* Logo büyük — kutusuz */}
         <div className="flex flex-col items-center gap-4 pt-4">
-          <img src="/ada-usta-logo.png" alt="Ada Usta Logo"
-            className="w-32 h-32 rounded-3xl object-cover shadow-2xl ring-4 ring-white/10" />
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta Logo"
+            className="w-32 h-32 object-contain drop-shadow-2xl" />
           <div className="text-center">
             <p className="text-white font-black text-3xl tracking-tight">Ada Usta</p>
             <p className="text-blue-300 text-sm font-medium mt-1 tracking-wide">Usta Paneline Hoş Geldiniz</p>
@@ -119,7 +119,7 @@ export default function UstaGiris() {
 
         {/* Mobil logo */}
         <div className="lg:hidden flex items-center gap-3 mb-10">
-          <img src="/ada-usta-logo.png" alt="Ada Usta" className="w-11 h-11 rounded-xl object-cover" />
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-10 w-auto object-contain" />
           <div>
             <p className="font-extrabold text-white text-lg">Ada Usta</p>
             <p className="text-blue-400 text-xs font-semibold tracking-wide uppercase">Usta Paneli</p>

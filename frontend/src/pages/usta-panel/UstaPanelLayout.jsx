@@ -73,8 +73,7 @@ export default function UstaPanelLayout() {
         {/* Logo */}
         <div className="border-b border-gray-200 px-5 py-4">
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="Ada Usta" className="h-10 w-10 object-contain" />
-            <span className="font-bold text-gray-900 text-sm">Ada Usta</span>
+            <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-9 w-auto object-contain" loading="lazy" />
           </div>
           {kullanici && (
             <div className="mt-4 p-3 bg-blue-50 rounded-xl">

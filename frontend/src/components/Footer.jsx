@@ -31,16 +31,12 @@ export default function Footer() {
   return (
     <footer className="bg-blue-950 text-blue-200">
       <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 mb-10">
 
           {/* Brand */}
-          <div className="md:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
-              <img src="/ada-usta-logo.png" alt="Ada Usta" className="w-10 h-10 rounded-xl object-cover" />
-              <div>
-                <div className="text-white font-bold text-lg leading-none">Ada Usta</div>
-                <div className="text-blue-400 text-[10px] font-semibold tracking-widest uppercase">{t('common.logoTagline')}</div>
-              </div>
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex justify-center items-center mb-4">
+              <img src="/footer-logo.webp" alt="Ada Usta" className="h-28 sm:h-36 md:h-44 w-auto object-contain" loading="lazy" />
             </div>
             <p className="text-sm leading-relaxed text-blue-300 mb-5">
               {t('footer.aciklama')}
@@ -93,7 +89,7 @@ export default function Footer() {
           </div>
 
           {/* İletişim + Yasal */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className="text-white font-semibold text-sm mb-4">{t('footer.iletisim')}</h4>
             <ul className="space-y-3 text-sm mb-5">
               <li>

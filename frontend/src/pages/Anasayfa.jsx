@@ -101,13 +101,13 @@ export default function Anasayfa() {
     <div className="bg-white">
       <SEO
         url="/"
-        anahtar="KKTC usta bul, Kuzey Kıbrıs usta, KKTC elektrikçi, Kuzey Kıbrıs tesisatçı, KKTC boyacı, Kuzey Kıbrıs klima servisi, KKTC nakliyat, Kuzey Kıbrıs temizlik, Lefkoşa usta, Girne usta, Gazimağusa usta, KKTC tadilat"
+        anahtar="KKTC usta bul, Kuzey Kıbrıs usta, KKTC elektrikçi, Kuzey Kıbrıs tesisatçı, KKTC boyacı, Kuzey Kıbrıs klima servisi, KKTC nakliyat, Kuzey Kıbrıs temizlik, Lefkoşa usta, Girne usta, Gazimağusa usta, KKTC tadilat, Kıbrıs tesisat, KKTC su tesisatı, sıhhi tesisat KKTC, Girne tesisat, Lefkoşa tesisat, Kıbrıs şofben servisi, KKTC şofben tamir, Kıbrıs kombi servisi, su deposu temizleme KKTC, tıkanıklık açma Kıbrıs, hidrofor servisi KKTC, Kıbrıs su arıza servisi"
       />
 
       {/* ══════════════════════════════════════════
           HERO — Gerçek arka plan fotoğrafı
       ══════════════════════════════════════════ */}
-      <section className="relative min-h-[480px] flex items-center">
+      <section className="relative min-h-[420px] sm:min-h-[480px] flex items-center">
         {/* Arka plan fotoğrafı */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -117,7 +117,7 @@ export default function Anasayfa() {
         />
         {/* Koyu overlay */}
 
-        <div className="relative w-full max-w-3xl mx-auto text-center px-4 py-16 md:py-20">
+        <div className="relative w-full max-w-3xl mx-auto text-center px-4 py-10 sm:py-16 md:py-20">
           {/* Üst rozet */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/20">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -143,7 +143,7 @@ export default function Anasayfa() {
               <Plus size={11} /> {t('heroChipler.artiBes')}
             </span>
           </div>
-          <p className="text-white/80 text-xs mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
+          <p className="text-white/80 text-xs sm:text-sm mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
             {t('hero.aciklama')}
           </p>
 
@@ -162,7 +162,7 @@ export default function Anasayfa() {
               />
               {/* Autocomplete dropdown */}
               {oneriAcik && oneriListesi.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden max-h-64 overflow-y-auto">
                   {oneriListesi.map(k => (
                     <button
                       key={k.id}

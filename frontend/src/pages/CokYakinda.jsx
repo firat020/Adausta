@@ -240,7 +240,7 @@ export default function CokYakinda() {
 
       <div className="cy-page">
         <div className="cy-logo">
-          <img src="/favicon.svg" alt="Ada Usta" />
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" style={{ width: 'auto', height: 80, objectFit: 'contain' }} loading="lazy" />
         </div>
 
         <div className="cy-tag">

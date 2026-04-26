@@ -5,6 +5,7 @@ import {
   MessageCircle, Send, CheckCircle, ExternalLink
 } from 'lucide-react'
 import { sirketDetay, sirketIsTalebiGonder } from '../api'
+import SEO from '../components/SEO'
 
 export default function SirketDetay() {
   const { id } = useParams()
@@ -64,6 +65,11 @@ export default function SirketDetay() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <SEO
+        baslik={sirket ? `${sirket.sirket_adi} — KKTC Kurumsal Hizmet` : 'Şirket Detayı — Ada Usta KKTC'}
+        aciklama={sirket ? `${sirket.sirket_adi} — Kuzey Kıbrıs'ta ${sirket.kategori || 'profesyonel'} hizmeti. KKTC'de güvenilir kurumsal firma.` : 'KKTC kurumsal hizmet şirketi'}
+        url={`/sirketler/${id}`}
+      />
       {/* Geri */}
       <Link to="/sirketler" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 mb-6 transition-colors">
         <ChevronLeft size={16} /> Şirketlere Dön
@@ -177,7 +183,7 @@ export default function SirketDetay() {
 
         {/* Sağ: Talep formu */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-hidden sticky top-6">
+          <div className="bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-hidden lg:sticky top-6">
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-5 text-white">
               <h3 className="font-bold text-lg mb-1">Teklif İste</h3>
               <p className="text-indigo-200 text-xs">Şirkete ücretsiz talep gönderin</p>

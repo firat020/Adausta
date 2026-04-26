@@ -6,6 +6,7 @@ import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, 
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder } from '../api'
+import SEO from '../components/SEO'
 
 export default function UstaDetay() {
   const { id } = useParams()
@@ -98,6 +99,12 @@ export default function UstaDetay() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <SEO
+        baslik={`${usta.ad_soyad} — ${usta.kategori} Ustası KKTC`}
+        aciklama={`${usta.ad_soyad}, Kuzey Kıbrıs'ta ${usta.kategori} ustası. ${usta.sehir ? `${usta.sehir}'da` : 'KKTC\'de'} hizmet vermektedir. Puan: ${usta.ortalama_puan || 5}/5.`}
+        anahtar={`${usta.kategori} KKTC, ${usta.kategori} ustası, ${usta.sehir || 'Kuzey Kıbrıs'} ${usta.kategori}`}
+        url={`/usta/${id}`}
+      />
       <button onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors">
         <ArrowLeft size={16} /> {t('ustaDetay.geri')}
@@ -288,7 +295,7 @@ export default function UstaDetay() {
                 </div>
               ) : (
                 <form onSubmit={teklifGonder} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 mb-1 block">Adınız Soyadınız *</label>
                       <div className="relative">

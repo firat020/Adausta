@@ -9,6 +9,20 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const path = window.location.pathname
+      if (path.startsWith('/usta/panel'))    window.location.href = '/usta/giris'
+      else if (path.startsWith('/sirket/panel')) window.location.href = '/sirket/giris'
+      else if (path.startsWith('/admin'))    window.location.href = '/admin/login'
+      else if (path.startsWith('/musteri/panel')) window.location.href = '/giris'
+    }
+    return Promise.reject(error)
+  }
+);
+
 // Kategoriler & şehirler
 export const kategorileriGetir = () => api.get('/kategoriler/');
 export const sehirleriGetir = () => api.get('/kategoriler/sehirler');

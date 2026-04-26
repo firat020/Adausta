@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Building2, MapPin, Phone, Globe, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
 import { sirketListele, kategorileriGetir, sehirleriGetir } from '../api'
+import SEO from '../components/SEO'
 
 export default function SirketListesi() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -44,6 +45,12 @@ export default function SirketListesi() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <SEO
+        baslik="KKTC Kurumsal Şirketler — Kuzey Kıbrıs Hizmet Firmaları"
+        aciklama="Kuzey Kıbrıs'ta hizmet veren onaylı kurumsal şirketleri keşfedin. KKTC'de elektrik, tesisat, temizlik, tadilat ve daha fazla alanda güvenilir firmalar."
+        anahtar="KKTC kurumsal şirket, Kuzey Kıbrıs hizmet firması, KKTC firma listesi, Lefkoşa şirket"
+        url="/sirketler"
+      />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Kurumsal Şirketler</h1>

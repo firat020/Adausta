@@ -1,118 +1,358 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Ana Sayfa -->
+  <!-- ══ ANA SAYFALAR ══════════════════════════════════════════════════════ -->
   <url>
     <loc>https://adausta.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
-
-  <!-- Ustalar -->
   <url>
     <loc>https://adausta.com/ustalar</loc>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
-
-  <!-- Kategoriler -->
   <url>
     <loc>https://adausta.com/kategoriler</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
-
-  <!-- En Yakın Usta -->
   <url>
     <loc>https://adausta.com/en-yakin</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
-
-  <!-- Usta Kayıt -->
+  <url>
+    <loc>https://adausta.com/sirketler</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
   <url>
     <loc>https://adausta.com/usta-kayit</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/sirket-kayit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Şehir bazlı usta sayfaları -->
+  <!-- ══ ŞEHİR SAYFALARI ══════════════════════════════════════════════════ -->
   <url>
     <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?sehir=Girne</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?sehir=Gazima%C4%9Fusa</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?sehir=G%C3%BCzelyurt</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?sehir=%C4%B0skele</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
 
-  <!-- Kategori bazlı arama sayfaları (en çok aranan) -->
+  <!-- ══ HİZMET KATEGORİLERİ ═══════════════════════════════════════════════ -->
   <url>
     <loc>https://adausta.com/ustalar?arama=Elektrik%C3%A7i</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Su+Tesisat%C4%B1</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Boya+Badana</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Klima+Servisi</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Evden+Eve+Nakliyat</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Ev+Temizli%C4%9Fi</loc>
     <changefreq>daily</changefreq>
-    <priority>0.85</priority>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Anahtar+Teslim+Tadilat</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Bah%C3%A7e+Bak%C4%B1m%C4%B1</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=G%C3%BCvenlik+Kamera</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
   </url>
   <url>
     <loc>https://adausta.com/ustalar?arama=Kombi+Servisi</loc>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Mobilya+Montaj</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Bah%C3%A7e+Bak%C4%B1m%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Boyac%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Tesisatc%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Kaynakc%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.82</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Demirci</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.82</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=B%C3%B6cek+%C4%B0la%C3%A7lama</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.82</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Beyaz+E%C5%9Fya+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.82</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+
+  <!-- ══ ŞEHİR + HİZMET KOMBİNASYONLARI (en güçlü SEO) ═══════════════════ -->
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Elektrik%C3%A7i</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.92</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Elektrik%C3%A7i</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Gazima%C4%9Fusa&amp;arama=Elektrik%C3%A7i</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Su+Tesisat%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Su+Tesisat%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Boya+Badana</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Boya+Badana</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.87</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Klima+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Klima+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.87</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Evden+Eve+Nakliyat</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.87</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Gazima%C4%9Fusa&amp;arama=Su+Tesisat%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.86</priority>
+    <lastmod>2026-04-25</lastmod>
+  </url>
+
+  <!-- ══ TESİSAT ALT HİZMETLERİ (kibristesisat.com rakip kelimeler) ══════════ -->
+  <url>
+    <loc>https://adausta.com/ustalar?arama=%C5%9Eofben+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=T%C4%B1kan%C4%B1kl%C4%B1k+A%C3%A7ma</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Su+Deposu+Temizleme</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Hidrofor+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=%C5%9Eofben+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.92</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=%C5%9Eofben+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.92</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Su+Tesisat%C4%B1</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.92</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=T%C4%B1kan%C4%B1kl%C4%B1k+A%C3%A7ma</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=T%C4%B1kan%C4%B1kl%C4%B1k+A%C3%A7ma</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Gazima%C4%9Fusa&amp;arama=%C5%9Eofben+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.88</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Girne&amp;arama=Kombi+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?sehir=Lefko%C5%9Fa&amp;arama=Kombi+Servisi</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-04-26</lastmod>
+  </url>
+
+  <!-- ══ YASAL SAYFALAR ══════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://adausta.com/gizlilik</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/kullanim-sartlari</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/cerez-politikasi</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/iade-politikasi</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/mesafeli-satis</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
   </url>
 
 </urlset>

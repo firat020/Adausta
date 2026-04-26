@@ -20,6 +20,13 @@ export default function Navbar() {
     benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
   }, [location.pathname])
 
+  useEffect(() => {
+    if (!profilAcik) return
+    const kapat = () => setProfilAcik(false)
+    document.addEventListener('click', kapat)
+    return () => document.removeEventListener('click', kapat)
+  }, [profilAcik])
+
   const handleCikis = async () => {
     await cikis()
     setKullanici(null)
@@ -34,7 +41,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src="/ada-usta-logo.webp" alt="Ada Usta" className="h-11 w-auto sm:h-14 object-contain" style={{imageRendering:'crisp-edges'}} />
+            <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-11 w-auto sm:h-14 object-contain" style={{imageRendering:'crisp-edges'}} />
           </Link>
 
           {/* Desktop Links */}

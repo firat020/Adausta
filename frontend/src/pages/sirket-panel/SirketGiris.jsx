@@ -56,8 +56,8 @@ export default function SirketGiris() {
       {/* Sol panel */}
       <div className="hidden lg:flex lg:w-[52%] flex-col justify-between px-12 py-10 relative z-10">
         <div className="flex flex-col items-center gap-4 pt-4">
-          <img src="/ada-usta-logo.png" alt="Ada Usta Logo"
-            className="w-32 h-32 rounded-3xl object-cover shadow-2xl ring-4 ring-white/10" />
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta Logo"
+            className="w-32 h-32 object-contain drop-shadow-2xl" />
           <div className="text-center">
             <p className="text-white font-black text-3xl tracking-tight">Ada Usta</p>
             <p className="text-indigo-300 text-sm font-medium mt-1 tracking-wide">Şirket Paneline Hoş Geldiniz</p>
@@ -103,7 +103,7 @@ export default function SirketGiris() {
       {/* Sağ panel - form */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative z-10">
         <div className="lg:hidden flex items-center gap-3 mb-10">
-          <img src="/ada-usta-logo.png" alt="Ada Usta" className="w-11 h-11 rounded-xl object-cover" />
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-10 w-auto object-contain" />
           <div>
             <p className="font-extrabold text-white text-lg">Ada Usta</p>
             <p className="text-indigo-400 text-xs font-semibold tracking-wide uppercase">Şirket Paneli</p>

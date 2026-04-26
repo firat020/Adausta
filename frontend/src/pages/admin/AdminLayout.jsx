@@ -84,8 +84,7 @@ export default function AdminLayout() {
       `}>
         {/* Logo */}
         <div className="border-b-2 border-[#1a2744] flex items-center px-4 py-4">
-          <img src="/favicon.svg" alt="Ada Usta" className="h-9 w-9 object-contain" />
-          <span className="ml-2 text-white font-bold text-sm tracking-wide">Ada Usta</span>
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-9 w-auto object-contain" loading="lazy" />
         </div>
 
         {/* Navigasyon */}

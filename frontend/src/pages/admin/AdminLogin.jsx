@@ -432,7 +432,7 @@ export default function AdminLogin() {
         {/* SOL PANEL */}
         <div className="au-left">
           <div className="au-logo-area">
-            <img src="/favicon.svg" alt="Ada Usta" />
+            <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" style={{ width: 'auto', height: 64, objectFit: 'contain' }} />
           </div>
 
           <div className="au-tag">
@@ -465,7 +465,7 @@ export default function AdminLogin() {
           <div className="au-card">
             {/* Mobilde logo */}
             <div className="au-mobile-logo" style={{ justifyContent: 'center', marginBottom: 28 }}>
-              <img src="/favicon.svg" alt="Ada Usta" style={{ width: 72, height: 72, objectFit: 'contain' }} />
+              <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" style={{ width: 'auto', height: 56, objectFit: 'contain' }} />
             </div>
 
             <div className="au-eyebrow">Hoş Geldiniz</div>
