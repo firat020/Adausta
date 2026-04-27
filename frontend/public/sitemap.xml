@@ -444,4 +444,64 @@
     <priority>0.75</priority>
   </url>
 
+  <!-- ══ TEMİZ URL HİZMET SAYFALARI (silo mimarisi) ══════════════════════════ -->
+  <!-- Elektrik & Güvenlik -->
+  <url><loc>https://adausta.com/hizmet/elektrikci</loc><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://adausta.com/hizmet/elektrikci/lefkosa</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://adausta.com/hizmet/elektrikci/girne</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://adausta.com/hizmet/elektrikci/gazimagusa</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://adausta.com/hizmet/elektrikci/guzelyurt</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/elektrikci/iskele</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/guvenlik-kamera</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/alarm-sistemi</loc><changefreq>weekly</changefreq><priority>0.82</priority></url>
+  <url><loc>https://adausta.com/hizmet/solar-panel</loc><changefreq>weekly</changefreq><priority>0.82</priority></url>
+  <!-- Su & Isıtma Tesisatı -->
+  <url><loc>https://adausta.com/hizmet/su-tesisati</loc><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-tesisati/lefkosa</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-tesisati/girne</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-tesisati/gazimagusa</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-tesisati/guzelyurt</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-tesisati/iskele</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/kombi-servisi</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/kombi-servisi/lefkosa</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/kombi-servisi/girne</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/sofben-termosifon</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/sofben-termosifon/lefkosa</loc><changefreq>daily</changefreq><priority>0.87</priority></url>
+  <url><loc>https://adausta.com/hizmet/sofben-termosifon/girne</loc><changefreq>daily</changefreq><priority>0.87</priority></url>
+  <url><loc>https://adausta.com/hizmet/gider-acma</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-kacagi-tespiti</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/su-kacagi-tespiti/lefkosa</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <!-- Klima -->
+  <url><loc>https://adausta.com/hizmet/klima-servisi</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://adausta.com/hizmet/klima-servisi/lefkosa</loc><changefreq>daily</changefreq><priority>0.91</priority></url>
+  <url><loc>https://adausta.com/hizmet/klima-servisi/girne</loc><changefreq>daily</changefreq><priority>0.91</priority></url>
+  <url><loc>https://adausta.com/hizmet/klima-servisi/gazimagusa</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/klima-servisi/guzelyurt</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/klima-servisi/iskele</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <!-- Yapı & Tadilat -->
+  <url><loc>https://adausta.com/hizmet/boya-badana</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://adausta.com/hizmet/boya-badana/lefkosa</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/boya-badana/girne</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/anahtar-teslim-tadilat</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/anahtar-teslim-tadilat/lefkosa</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/fayans-seramik</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/parke-doseme</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/alcipan-asma-tavan</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://adausta.com/hizmet/cati-tamiri-yapimi</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <!-- Temizlik -->
+  <url><loc>https://adausta.com/hizmet/ev-temizligi</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/ev-temizligi/lefkosa</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/ev-temizligi/girne</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/bocek-ilaclama</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <!-- Nakliyat -->
+  <url><loc>https://adausta.com/hizmet/evden-eve-nakliyat</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://adausta.com/hizmet/evden-eve-nakliyat/lefkosa</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://adausta.com/hizmet/evden-eve-nakliyat/girne</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <!-- Diğer öncelikli kategoriler -->
+  <url><loc>https://adausta.com/hizmet/mobilya-montaj</loc><changefreq>weekly</changefreq><priority>0.83</priority></url>
+  <url><loc>https://adausta.com/hizmet/bahce-bakimi</loc><changefreq>weekly</changefreq><priority>0.83</priority></url>
+  <url><loc>https://adausta.com/hizmet/beyaz-esya-servisi</loc><changefreq>weekly</changefreq><priority>0.83</priority></url>
+  <url><loc>https://adausta.com/hizmet/cilingir</loc><changefreq>weekly</changefreq><priority>0.83</priority></url>
+  <url><loc>https://adausta.com/hizmet/oto-tamiri</loc><changefreq>weekly</changefreq><priority>0.82</priority></url>
+
 </urlset>

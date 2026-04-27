@@ -14,7 +14,7 @@ export default function SEO({
 }) {
   const tamBaslik = baslik
     ? `${baslik} | Ada Usta KKTC`
-    : "Ada Usta | Kıbrıs'ta Usta Bul — Su Tesisatı, Elektrikçi, Klima ve 80+ Hizmet KKTC"
+    : "Ada Usta | Kıbrıs Tesisat, Boya, Elektrik ve Tadilat Hizmetleri — KKTC Usta Platformu"
 
   const tamAciklama = aciklama ||
     "Kıbrıs'ta elektrikçi, su tesisatı, boyacı, klima servisi, nakliyat ve 80+ hizmet için güvenilir usta bul. KKTC genelinde 7/24 onaylı usta platformu."

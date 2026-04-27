@@ -18,6 +18,7 @@ import EnYakin from './pages/EnYakin'
 import MusteriGiris from './pages/MusteriGiris'
 import Blog from './pages/Blog'
 import BlogDetay from './pages/BlogDetay'
+import HizmetSayfasi from './pages/HizmetSayfasi'
 import GizlilikPolitikasi from './pages/yasal/GizlilikPolitikasi'
 import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
@@ -75,6 +76,8 @@ function PublicSite() {
           <Route path="/giris" element={<MusteriGiris />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogDetay />} />
+          <Route path="/hizmet/:slug" element={<HizmetSayfasi />} />
+          <Route path="/hizmet/:slug/:sehirSlug" element={<HizmetSayfasi />} />
           <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
           <Route path="/kullanim-sartlari" element={<KullanimSartlari />} />
           <Route path="/iade-politikasi" element={<IadePolitikasi />} />
