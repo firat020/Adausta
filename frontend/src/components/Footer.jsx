@@ -104,6 +104,10 @@ export default function Footer() {
               </li>
             </ul>
 
+            <Link to="/blog" className="inline-block text-blue-300 hover:text-white text-sm mb-5 transition-colors font-medium">
+              📖 Rehber Yazılar →
+            </Link>
+
             <h4 className="text-white font-semibold text-sm mb-3">{t('footer.yasal')}</h4>
             <div className="space-y-2 text-sm">
               <Link to="/gizlilik" className="block hover:text-white transition-colors">{t('footer.gizlilik')}</Link>

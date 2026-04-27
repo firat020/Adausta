@@ -101,7 +101,7 @@ export default function Anasayfa() {
     <div className="bg-white">
       <SEO
         url="/"
-        anahtar="KKTC usta bul, Kuzey Kıbrıs usta, KKTC elektrikçi, Kuzey Kıbrıs tesisatçı, KKTC boyacı, Kuzey Kıbrıs klima servisi, KKTC nakliyat, Kuzey Kıbrıs temizlik, Lefkoşa usta, Girne usta, Gazimağusa usta, KKTC tadilat, Kıbrıs tesisat, KKTC su tesisatı, sıhhi tesisat KKTC, Girne tesisat, Lefkoşa tesisat, Kıbrıs şofben servisi, KKTC şofben tamir, Kıbrıs kombi servisi, su deposu temizleme KKTC, tıkanıklık açma Kıbrıs, hidrofor servisi KKTC, Kıbrıs su arıza servisi"
+        anahtar="Kıbrıs usta bul, KKTC usta, Kuzey Kıbrıs usta, Kıbrıs su tesisatı, KKTC elektrikçi, Kıbrıs klima servisi, Kuzey Kıbrıs boyacı, KKTC nakliyat, Kıbrıs su kaçağı tespiti, sıhhi tesisat KKTC, Girne tesisat, Lefkoşa tesisat, Kıbrıs şofben servisi, tıkanıklık açma KKTC, Lefkoşa usta, Girne usta, Gazimağusa usta, Güzelyurt usta, KKTC tadilat, 7/24 usta Kıbrıs"
       />
 
       {/* ══════════════════════════════════════════

@@ -16,6 +16,8 @@ import SirketListesi from './pages/SirketListesi'
 import SirketDetay from './pages/SirketDetay'
 import EnYakin from './pages/EnYakin'
 import MusteriGiris from './pages/MusteriGiris'
+import Blog from './pages/Blog'
+import BlogDetay from './pages/BlogDetay'
 import GizlilikPolitikasi from './pages/yasal/GizlilikPolitikasi'
 import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
@@ -71,6 +73,8 @@ function PublicSite() {
           <Route path="/sirket/:id" element={<SirketDetay />} />
           <Route path="/en-yakin" element={<EnYakin />} />
           <Route path="/giris" element={<MusteriGiris />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogDetay />} />
           <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
           <Route path="/kullanim-sartlari" element={<KullanimSartlari />} />
           <Route path="/iade-politikasi" element={<IadePolitikasi />} />

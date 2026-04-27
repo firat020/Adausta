@@ -354,5 +354,94 @@
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Mobilya+Montaj</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=B%C3%B6cek+%C4%B0la%C3%A7lama</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Şehir + Kategori kombinasyonları -->
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Su+Tesisat%C4%B1&amp;sehir=Lefko%C5%9Fa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Elektrik%C3%A7i&amp;sehir=Lefko%C5%9Fa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Klima+Servisi&amp;sehir=Lefko%C5%9Fa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Su+Tesisat%C4%B1&amp;sehir=Girne</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Elektrik%C3%A7i&amp;sehir=Girne</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Su+Tesisat%C4%B1&amp;sehir=Gazima%C4%9Fusa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Boya+Badana&amp;sehir=Lefko%C5%9Fa</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/ustalar?arama=Evden+Eve+Nakliyat&amp;sehir=Girne</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog sayfaları -->
+  <url>
+    <loc>https://adausta.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/kibris-su-kacagi-tespiti</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/kktc-elektrikci-bulma-rehberi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/lefkosa-klima-servisi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/kibris-boya-badana-fiyatlari</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/kktc-ev-temizligi-hizmetleri</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://adausta.com/blog/girne-nakliyat-rehberi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
 
 </urlset>
