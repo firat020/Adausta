@@ -97,6 +97,11 @@ def robots():
     return Response(content, mimetype='text/plain')
 
 
+@app.route('/google6ecd33fc3d70a635.html')
+def google_dogrulama():
+    return Response('google-site-verification: google6ecd33fc3d70a635.html', mimetype='text/html')
+
+
 @app.route('/api/saglik')
 def saglik():
     return {'durum': 'OK', 'platform': 'AdaUsta KKTC'}
