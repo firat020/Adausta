@@ -1,5 +1,6 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { initGA, trackPage } from './analytics'
 import ScrollToTop from './components/ScrollToTop'
 import axios from 'axios'
 import API from './config.js'
@@ -93,6 +94,10 @@ function PublicSite() {
 export default function App() {
   const [bakimModu, setBakimModu] = useState(false)
   const [kontrol, setKontrol] = useState(true)
+  const location = useLocation()
+
+  useEffect(() => { initGA() }, [])
+  useEffect(() => { trackPage(location.pathname) }, [location])
 
   useEffect(() => {
     axios.get(`${API}/api/ayarlar/bakim`)

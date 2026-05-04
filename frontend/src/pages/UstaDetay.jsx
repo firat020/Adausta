@@ -97,6 +97,29 @@ export default function UstaDetay() {
     <div className="text-center py-24 text-gray-400">{t('ustaDetay.ustaBulunamadi')}</div>
   )
 
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: usta.ad_soyad,
+    description: usta.aciklama || `${usta.kategori} ustası — KKTC`,
+    telephone: usta.telefon,
+    knowsAbout: usta.kategori,
+    areaServed: usta.sehir || 'Kuzey Kıbrıs',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: usta.sehir || 'Kuzey Kıbrıs',
+      addressRegion: usta.ilce || '',
+      addressCountry: 'CY',
+    },
+    ...(usta.yorum_sayisi > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: String(usta.puan || usta.ortalama_puan || 5),
+        reviewCount: String(usta.yorum_sayisi),
+      },
+    }),
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <SEO
@@ -104,6 +127,7 @@ export default function UstaDetay() {
         aciklama={`${usta.ad_soyad}, Kuzey Kıbrıs'ta ${usta.kategori} ustası. ${usta.sehir ? `${usta.sehir}'da` : 'KKTC\'de'} hizmet vermektedir. Puan: ${usta.ortalama_puan || 5}/5.`}
         anahtar={`${usta.kategori} KKTC, ${usta.kategori} ustası, ${usta.sehir || 'Kuzey Kıbrıs'} ${usta.kategori}`}
         url={`/usta/${id}`}
+        schema={schema}
       />
       <button onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors">
@@ -191,8 +215,10 @@ export default function UstaDetay() {
             {t('ustaDetay.isFotograflari')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {usta.fotograflar.map(f => (
-              <img key={f.id} src={`${API}${f.url}`} alt={t('ustaDetay.isFotograflari')}
+            {usta.fotograflar.map((f, idx) => (
+              <img key={f.id} src={`${API}${f.url}`}
+                alt={`Adausta - ${usta.sehir || 'KKTC'} ${usta.kategori} ${usta.ad_soyad}`}
+                loading={idx === 0 ? 'eager' : 'lazy'}
                 className="w-full h-40 object-cover rounded-xl border border-gray-100" />
             ))}
           </div>

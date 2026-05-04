@@ -1,0 +1,37 @@
+# Build çıktıları
+frontend/dist/
+frontend/node_modules/
+
+# Python cache
+backend/__pycache__/
+backend/**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Veritabanı
+backend/instance/adausta.db
+backend/adausta.db
+
+# Ortam dosyaları
+.env
+.env.*
+backend/.env
+
+# Log dosyaları
+*.log
+backend/logs/
+
+# Upload edilen görseller (büyük binary)
+backend/uploads/
+backend/static/uploads/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

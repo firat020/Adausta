@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, Response
 from flask_cors import CORS
 from models import db
 import os
@@ -50,9 +50,52 @@ app.register_blueprint(ayarlar_bp, url_prefix='/api/ayarlar')
 app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
 app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 
+@app.after_request
+def guvenlik_basliklari(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(self), microphone=()'
+    return response
+
+
 @app.route('/uploads/<path:dosya>')
 def uploads(dosya):
     return send_from_directory(app.config['UPLOAD_FOLDER'], dosya)
+
+@app.route('/sitemap.xml')
+def sitemap():
+    from models import Usta
+    base = 'https://adausta.com'
+    urls = []
+
+    static_pages = [
+        ('/', '1.0', 'daily'),
+        ('/ustalar', '0.9', 'daily'),
+        ('/kategoriler', '0.8', 'weekly'),
+        ('/sirketler', '0.8', 'weekly'),
+        ('/en-yakin', '0.7', 'weekly'),
+        ('/blog', '0.7', 'weekly'),
+        ('/usta-kayit', '0.6', 'monthly'),
+        ('/sirket-kayit', '0.6', 'monthly'),
+    ]
+    for path, pri, freq in static_pages:
+        urls.append(f'<url><loc>{base}{path}</loc><changefreq>{freq}</changefreq><priority>{pri}</priority></url>')
+
+    ustalar = Usta.query.filter_by(onaylanmis=True, aktif=True).all()
+    for u in ustalar:
+        urls.append(f'<url><loc>{base}/usta/{u.id}</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>')
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(urls) + '</urlset>'
+    return Response(xml, mimetype='application/xml')
+
+
+@app.route('/robots.txt')
+def robots():
+    content = "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api\nSitemap: https://adausta.com/sitemap.xml\n"
+    return Response(content, mimetype='text/plain')
+
 
 @app.route('/api/saglik')
 def saglik():
