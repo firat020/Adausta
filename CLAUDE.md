@@ -32,16 +32,20 @@ C:\Adausta\
 # 1. Build
 cd frontend && npm run build
 
-# 2. Push
+# 2. Push (src dosyaları — dist gitignore'da)
 git add -A && git commit -m "..." && git push origin master
 
-# 3. Sunucuya deploy (sadece frontend)
-'/c/Program Files/PuTTY/plink.exe' -ssh root@31.210.53.135 -pw 'iU7FTMHC' \
-  "cd /var/www/adausta && git fetch origin && git checkout origin/master -- frontend/ && systemctl restart adausta && echo TAMAM"
+# 3. dist/ SCP ile upload (KRİTİK — git checkout dist'i kopyalamaz!)
+'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/assets/index-XXXX.js"  "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
+'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/assets/index-XXXX.css" "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
+'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/index.html"            "root@31.210.53.135:/var/www/adausta/frontend/dist/"
+
+# 4. Nginx reload
+'/c/Program Files/PuTTY/plink.exe' -ssh root@31.210.53.135 -pw 'iU7FTMHC' "nginx -s reload && echo TAMAM"
 ```
 
 > **NOT:** Sunucuda backend dosyaları (app.py, models.py, routes/) uncommitted değişiklikler içeriyor.
-> `git pull` YAPMA — sadece `git checkout origin/master -- frontend/` kullan.
+> `git pull` YAPMA. `dist/` gitignore'da — her deploy'da SCP ile upload zorunlu.
 
 ## Geliştirme (Local)
 - Frontend: `cd frontend && npm run dev` → localhost:5175

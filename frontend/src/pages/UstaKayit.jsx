@@ -33,6 +33,59 @@ const PLANLAR = [
 const inputCls = "w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
 const labelCls = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"
 
+function KategoriSecici({ kategoriler, value, onChange }) {
+  const [arama, setArama] = useState('')
+  const [acik, setAcik] = useState(false)
+  const secili = kategoriler.find(k => String(k.id) === String(value))
+  const filtreli = kategoriler.filter(k =>
+    k.ad.toLowerCase().includes(arama.toLowerCase())
+  )
+  return (
+    <div className="relative">
+      <div
+        onClick={() => setAcik(a => !a)}
+        className={`${inputCls} cursor-pointer flex items-center justify-between`}
+        style={{ userSelect: 'none' }}
+      >
+        <span className={secili ? 'text-gray-900' : 'text-gray-400'}>
+          {secili ? secili.ad : 'Kategori seçin'}
+        </span>
+        <span className="text-gray-400 text-xs">{acik ? '▲' : '▼'}</span>
+      </div>
+      {acik && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-blue-200 rounded-lg shadow-lg overflow-hidden">
+          <input
+            autoFocus
+            type="text"
+            value={arama}
+            onChange={e => setArama(e.target.value)}
+            placeholder="Kategori ara..."
+            className="w-full px-3 py-2 text-sm border-b border-gray-100 outline-none focus:bg-blue-50"
+          />
+          <div className="max-h-48 overflow-y-auto">
+            {filtreli.length === 0 && (
+              <p className="text-xs text-gray-400 px-3 py-2">Sonuç bulunamadı</p>
+            )}
+            {filtreli.map(k => (
+              <div
+                key={k.id}
+                onClick={() => { onChange(String(k.id)); setAcik(false); setArama('') }}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors
+                  ${String(k.id) === String(value) ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-800'}`}
+              >
+                {k.ad}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {acik && (
+        <div className="fixed inset-0 z-40" onClick={() => { setAcik(false); setArama('') }} />
+      )}
+    </div>
+  )
+}
+
 function HavaleKopyala({ metin }) {
   const [kopyalandi, setKopyalandi] = useState(false)
   return (
@@ -345,12 +398,14 @@ export default function UstaKayit() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className={labelCls}>Kategori *</label>
-              <select required value={form.kategori_id}
-                onChange={e => setForm(f => ({ ...f, kategori_id: e.target.value }))}
-                className={inputCls}>
-                <option value="">Kategori seçin</option>
-                {kategoriler.map(k => <option key={k.id} value={k.id}>{k.ad}</option>)}
-              </select>
+              <KategoriSecici
+                kategoriler={kategoriler}
+                value={form.kategori_id}
+                onChange={v => setForm(f => ({ ...f, kategori_id: v }))}
+              />
+              {!form.kategori_id && (
+                <input type="text" required className="sr-only" tabIndex={-1} readOnly value="" aria-hidden />
+              )}
             </div>
             <div>
               <label className={labelCls}>Deneyim (Yıl)</label>
