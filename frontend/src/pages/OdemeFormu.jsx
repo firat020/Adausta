@@ -71,41 +71,41 @@ function HavaleFormu({ ustaId }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Ad Soyad / Şirket Adı</label>
+        <label className="block text-sm font-bold text-gray-800 mb-1.5">Ad Soyad / Şirket Adı</label>
         <input
           type="text" required
           value={form.ad} onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
           placeholder="Havaleyi yapan ad veya şirket"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border-2 border-gray-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">E-posta</label>
+        <label className="block text-sm font-bold text-gray-800 mb-1.5">E-posta</label>
         <input
           type="email" required
           value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
           placeholder="ornek@mail.com"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border-2 border-gray-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Havale Tutarı (₺)</label>
+        <label className="block text-sm font-bold text-gray-800 mb-1.5">Havale Tutarı (₺)</label>
         <input
           type="number" min="1" step="0.01" required
           value={form.tutar} onChange={e => setForm(f => ({ ...f, tutar: e.target.value }))}
           placeholder="0.00"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border-2 border-gray-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">
+        <label className="block text-sm font-bold text-gray-800 mb-1.5">
           Dekont / İşlem Referans No <span className="text-gray-400 font-normal">(opsiyonel)</span>
         </label>
         <input
           type="text"
           value={form.referans} onChange={e => setForm(f => ({ ...f, referans: e.target.value }))}
           placeholder="Banka dekont numarası"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border-2 border-gray-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 

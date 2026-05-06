@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Building2, Save, Upload } from 'lucide-react'
 import { sirketPanelProfil, sirketPanelProfilGuncelle, sirketPanelLogoYukle, kategorileriGetir, sehirleriGetir } from '../../api'
 
-const inputCls = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent bg-white"
-const labelCls = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"
+const inputCls = "w-full border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+const labelCls = "text-sm font-bold text-gray-800 mb-1.5 block"
 
 export default function SirketPanelProfil() {
   const [sirket, setSirket] = useState(null)

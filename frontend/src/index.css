@@ -23,9 +23,33 @@ body {
     @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all duration-200 text-sm;
   }
   .input {
-    @apply w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all;
+    @apply w-full border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white;
   }
   .card {
     @apply bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow duration-200;
   }
+}
+
+/* ── Global form kuralları ─────────────────────────────────── */
+/* Input / select / textarea — belirgin kenarlık */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not(.sr-only),
+select,
+textarea {
+  border: 2px solid #94a3b8;  /* slate-400 */
+  border-radius: 8px;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not(.sr-only):focus,
+select:focus,
+textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+/* Tüm form label'ları — bold + koyu */
+form label,
+.form-label {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.8125rem;
 }

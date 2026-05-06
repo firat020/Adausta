@@ -146,60 +146,60 @@ export default function UstaPanelProfil() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Ad *</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Ad *</label>
             <div className="relative">
               <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={form.ad} onChange={e => setForm(p => ({ ...p, ad: e.target.value }))}
                 required placeholder="Adınız"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Soyad</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Soyad</label>
             <input value={form.soyad} onChange={e => setForm(p => ({ ...p, soyad: e.target.value }))}
               placeholder="Soyadınız"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full px-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Telefon *</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Telefon *</label>
             <div className="relative">
               <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={form.telefon} onChange={e => setForm(p => ({ ...p, telefon: e.target.value }))}
                 required placeholder="+90 548 000 0000"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">WhatsApp</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">WhatsApp</label>
             <div className="relative">
               <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={form.whatsapp} onChange={e => setForm(p => ({ ...p, whatsapp: e.target.value }))}
                 placeholder="+90 548 000 0000"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">E-posta</label>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 block">E-posta</label>
           <div className="relative">
             <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               type="email" placeholder="email@example.com"
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Şehir</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Şehir</label>
             <div className="relative">
               <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <select value={form.sehir_id} onChange={e => setForm(p => ({ ...p, sehir_id: e.target.value }))}
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">Seçin</option>
                 {sehirler.map(s => (
                   <option key={s.id} value={s.id}>{s.ad}</option>
@@ -208,22 +208,22 @@ export default function UstaPanelProfil() {
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Deneyim (Yıl)</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Deneyim (Yıl)</label>
             <div className="relative">
               <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={form.deneyim_yil} onChange={e => setForm(p => ({ ...p, deneyim_yil: Number(e.target.value) }))}
                 type="number" min={0} max={50}
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">Hakkında / Açıklama</label>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 block">Hakkında / Açıklama</label>
           <textarea value={form.aciklama} onChange={e => setForm(p => ({ ...p, aciklama: e.target.value }))}
             placeholder="Kendinizi ve sunduğunuz hizmetleri kısaca tanıtın..."
             rows={4}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            className="w-full px-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
         </div>
 
         <button type="submit" disabled={kayıtYukleniyor}
