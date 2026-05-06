@@ -172,6 +172,10 @@ export default function UstaKayit() {
         })
         setHavaleGonderildi(true)
       }
+      // Google Ads dönüşüm — Kaydolma işlemi
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'conversion', { send_to: 'AW-18139050345/3g4tCJaFu6gcEOnir8ID' })
+      }
       setBasarili(true)
       setTimeout(() => navigate('/usta/panel'), 3000)
     } catch (err) {
