@@ -124,11 +124,19 @@ export default function UstaKayit() {
   const [odemeYontemi, setOdemeYontemi] = useState('havale')
   const [havale, setHavale] = useState({ ad: '', email: '', referans: '' })
   const [havaleGonderildi, setHavaleGonderildi] = useState(false)
+  const [kur, setKur] = useState(null) // USD→TRY
 
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
+    fetch('/api/odeme/kur').then(r => r.json()).then(d => setKur(d.USD_TRY)).catch(() => {})
   }, [])
+
+  const tlGoster = (usd) => {
+    if (!kur) return ''
+    const tl = (parseFloat(usd) * kur).toLocaleString('tr-TR', { maximumFractionDigits: 0 })
+    return `≈ ₺${tl}`
+  }
 
   const sehirDegisti = (sehir_id) => {
     setForm(f => ({ ...f, sehir_id, ilce_id: '' }))
@@ -517,16 +525,19 @@ export default function UstaKayit() {
               <span className="text-3xl font-extrabold text-gray-900">${plan.fiyat}</span>
               <span className="text-sm text-gray-500 ml-1">{plan.birim}</span>
             </div>
+            {kur && (
+              <p className="text-sm font-semibold text-orange-600 mb-1">{tlGoster(plan.fiyat)}</p>
+            )}
 
             {plan.id === 'yillik' && (
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="text-xs text-blue-600 font-semibold">Aylık ${plan.ayBirim}</span>
-                <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Gift size={9} /> 1 ay bedava
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="text-xs text-blue-600 font-semibold">Aylık ${plan.ayBirim} {kur ? `(${tlGoster(plan.ayBirim)})` : ''}</span>
+                <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  1 ay bedava
                 </span>
               </div>
             )}
-            {plan.id === 'aylik' && <div className="mb-4" />}
+            {plan.id === 'aylik' && <div className="mb-3" />}
 
             <ul className="space-y-2">
               {plan.ozellikler.map((o, i) => (
@@ -549,7 +560,7 @@ export default function UstaKayit() {
         </button>
         <button onClick={() => setAdim(4)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
-          Devam Et — ${seciliPlan?.fiyat} {seciliPlan?.birim}
+          Devam Et — ${seciliPlan?.fiyat} {seciliPlan?.birim} {kur ? tlGoster(seciliPlan?.fiyat) : ''}
         </button>
       </div>
     </div>
@@ -668,42 +679,79 @@ export default function UstaKayit() {
 
         {/* Sipariş Özeti */}
         <div className="md:col-span-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-            <h4 className="font-bold text-gray-900 text-sm mb-4">Sipariş Özeti</h4>
-            <div className="space-y-2 mb-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">{seciliPlan?.ad}</span>
-                <span className="font-semibold text-gray-900">${seciliPlan?.fiyat}</span>
+          <div className="bg-white border-2 border-blue-200 rounded-2xl overflow-hidden shadow-sm">
+            {/* Başlık */}
+            <div className="bg-blue-600 px-5 py-3">
+              <p className="text-white font-bold text-sm">Sipariş Özeti</p>
+            </div>
+
+            {/* Plan detayı */}
+            <div className="px-5 pt-4 pb-3 space-y-2.5 text-sm border-b border-gray-100">
+              <div className="flex justify-between items-start">
+                <span className="text-gray-700 font-semibold">{seciliPlan?.ad}</span>
+                <div className="text-right">
+                  <span className="font-bold text-gray-900">${seciliPlan?.fiyat}</span>
+                  {kur && <p className="text-orange-600 text-xs font-semibold">{tlGoster(seciliPlan?.fiyat)}</p>}
+                </div>
               </div>
               {seciliPlan?.id === 'yillik' && (
                 <>
-                  <div className="flex items-center gap-1 text-xs text-orange-600">
-                    <Gift size={11} /><span>13 ay kapsar — 1 ay bedava</span>
+                  <div className="text-xs text-orange-600 font-medium">
+                    13 ay kapsar — 1 ay bedava
                   </div>
-                  <div className="flex justify-between text-emerald-600 text-xs">
+                  <div className="flex justify-between text-emerald-600 text-xs font-semibold">
                     <span>Tasarruf</span>
-                    <span>-${seciliPlan.tasarruf}</span>
+                    <span>-${seciliPlan.tasarruf} {kur ? `(${tlGoster(seciliPlan.tasarruf)})` : ''}</span>
                   </div>
                 </>
               )}
               {form.telefon && (
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Telefon</span>
-                  <span className="text-gray-700">{form.telefon}</span>
+                  <span className="font-medium text-gray-700">{form.telefon}</span>
                 </div>
               )}
             </div>
-            <div className="border-t border-blue-200 pt-3 flex justify-between font-bold text-gray-900">
-              <span>Toplam</span>
-              <span>${seciliPlan?.fiyat}</span>
+
+            {/* Toplam */}
+            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900 text-sm">Toplam</span>
+                <div className="text-right">
+                  <span className="font-extrabold text-blue-700 text-lg">${seciliPlan?.fiyat}</span>
+                  {kur && (
+                    <p className="text-orange-600 text-sm font-bold">
+                      {tlGoster(seciliPlan?.fiyat)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {kur && (
+                <p className="text-xs text-gray-400 mt-1 text-right">
+                  1 USD = ₺{kur?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} (günlük kur)
+                </p>
+              )}
             </div>
-            <ul className="mt-5 space-y-1.5">
-              {seciliPlan?.ozellikler.map((o, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                  <Check size={12} className="text-blue-500 mt-0.5 flex-shrink-0" />{o}
-                </li>
-              ))}
-            </ul>
+
+            {/* Özellikler */}
+            <div className="px-5 py-4">
+              <p className="text-xs font-bold text-gray-500 mb-2">PLAN KAPSAMI</p>
+              <ul className="space-y-2">
+                {seciliPlan?.ozellikler.map((o, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-gray-700">
+                    <span className="w-4 h-4 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
+                    {o}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* SSL güvence */}
+            <div className="px-5 pb-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700 font-semibold text-center">
+                256-bit SSL ile güvenli ödeme
+              </div>
+            </div>
           </div>
         </div>
       </div>

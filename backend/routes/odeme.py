@@ -1,9 +1,25 @@
 import os
 import hashlib
 import uuid
-from datetime import datetime
+import requests as _requests
+from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, redirect, session
 from models import db, Odeme, Usta, Abonelik, Plan
+
+_kur_cache = {'rate': None, 'zaman': None}
+
+def _usd_try_kur():
+    global _kur_cache
+    now = datetime.utcnow()
+    if _kur_cache['rate'] and _kur_cache['zaman'] and (now - _kur_cache['zaman']) < timedelta(hours=1):
+        return _kur_cache['rate']
+    try:
+        r = _requests.get('https://open.er-api.com/v6/latest/USD', timeout=5)
+        rate = r.json()['rates']['TRY']
+        _kur_cache = {'rate': round(rate, 2), 'zaman': now}
+        return _kur_cache['rate']
+    except Exception:
+        return _kur_cache['rate'] or 38.0
 
 odeme_bp = Blueprint('odeme', __name__)
 
@@ -225,6 +241,15 @@ def havale_bildir():
     db.session.commit()
 
     return jsonify({'mesaj': 'Bildirim alındı', 'siparis_no': order_id}), 201
+
+
+# ---------------------------------------------------------------------------
+# GET /api/odeme/kur  — USD→TRY anlık kur (1 saatlik cache)
+# ---------------------------------------------------------------------------
+@odeme_bp.route('/kur', methods=['GET'])
+def doviz_kur():
+    rate = _usd_try_kur()
+    return jsonify({'USD_TRY': rate, 'guncelleme': datetime.utcnow().strftime('%H:%M UTC')})
 
 
 # ---------------------------------------------------------------------------
