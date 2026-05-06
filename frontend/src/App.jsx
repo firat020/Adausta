@@ -7,6 +7,7 @@ import API from './config.js'
 import CokYakinda from './pages/CokYakinda'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import WhatsappButon from './components/WhatsappButon'
 import Anasayfa from './pages/Anasayfa'
 import Kategoriler from './pages/Kategoriler'
 import UstaListesi from './pages/UstaListesi'
@@ -67,6 +68,7 @@ function PublicSite() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50" style={{width:'100%', textAlign:'left'}}>
       <Navbar />
+      <WhatsappButon />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Anasayfa />} />
