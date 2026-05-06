@@ -25,6 +25,10 @@ import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
 import MesafeliSatis from './pages/yasal/MesafeliSatis'
 import CerezPolitikasi from './pages/yasal/CerezPolitikasi'
+import Hakkimizda from './pages/Hakkimizda'
+import Iletisim from './pages/Iletisim'
+import OdemeFormu from './pages/OdemeFormu'
+import OdemeSonuc from './pages/OdemeSonuc'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -84,6 +88,10 @@ function PublicSite() {
           <Route path="/iade-politikasi" element={<IadePolitikasi />} />
           <Route path="/mesafeli-satis" element={<MesafeliSatis />} />
           <Route path="/cerez-politikasi" element={<CerezPolitikasi />} />
+          <Route path="/hakkimizda" element={<Hakkimizda />} />
+          <Route path="/iletisim" element={<Iletisim />} />
+          <Route path="/odeme" element={<OdemeFormu />} />
+          <Route path="/odeme-sonuc" element={<OdemeSonuc />} />
         </Routes>
       </main>
       <Footer />

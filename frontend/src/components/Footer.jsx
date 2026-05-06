@@ -108,6 +108,10 @@ export default function Footer() {
               📖 Rehber Yazılar →
             </Link>
 
+            <div className="space-y-2 text-sm mb-4">
+              <Link to="/hakkimizda" className="block hover:text-white transition-colors">Hakkımızda</Link>
+              <Link to="/iletisim" className="block hover:text-white transition-colors">İletişim</Link>
+            </div>
             <h4 className="text-white font-semibold text-sm mb-3">{t('footer.yasal')}</h4>
             <div className="space-y-2 text-sm">
               <Link to="/gizlilik" className="block hover:text-white transition-colors">{t('footer.gizlilik')}</Link>

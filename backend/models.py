@@ -375,6 +375,10 @@ class Odeme(db.Model):
     usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
     abonelik_id = db.Column(db.Integer, db.ForeignKey('abonelikler.id'), nullable=True)
     tutar = db.Column(db.Float, nullable=False)
+    para_birimi = db.Column(db.String(10), default='TRY')
+    siparis_no = db.Column(db.String(100), unique=True, nullable=True)
+    islem_id = db.Column(db.String(200), nullable=True)
+    kart_son4 = db.Column(db.String(4), nullable=True)
     durum = db.Column(db.String(20), default='bekliyor')  # basarili / basarisiz / bekliyor
     aciklama = db.Column(db.Text, default='')
     tarih = db.Column(db.DateTime, default=datetime.utcnow)
@@ -387,6 +391,9 @@ class Odeme(db.Model):
             'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
             'abonelik_id': self.abonelik_id,
             'tutar': self.tutar,
+            'para_birimi': self.para_birimi,
+            'siparis_no': self.siparis_no,
+            'kart_son4': self.kart_son4,
             'durum': self.durum,
             'aciklama': self.aciklama,
             'tarih': fmt(self.tarih),
