@@ -33,6 +33,19 @@ const PLANLAR = [
 const inputCls = "w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
 const labelCls = "text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block"
 
+function HavaleKopyala({ metin }) {
+  const [kopyalandi, setKopyalandi] = useState(false)
+  return (
+    <button type="button" onClick={() => {
+      navigator.clipboard.writeText(metin)
+      setKopyalandi(true)
+      setTimeout(() => setKopyalandi(false), 2000)
+    }} className="text-xs border px-2 py-0.5 rounded ml-1 border-blue-300 text-blue-600 hover:border-blue-500 flex-shrink-0">
+      {kopyalandi ? 'Kopyalandı' : 'Kopyala'}
+    </button>
+  )
+}
+
 export default function UstaKayit() {
   const navigate = useNavigate()
 
@@ -55,6 +68,9 @@ export default function UstaKayit() {
   const [sifreHata, setSifreHata] = useState('')
 
   const [odeme, setOdeme] = useState({ kart_ad: '', kart_no: '', son_tarih: '', cvv: '' })
+  const [odemeYontemi, setOdemeYontemi] = useState('havale')
+  const [havale, setHavale] = useState({ ad: '', email: '', referans: '' })
+  const [havaleGonderildi, setHavaleGonderildi] = useState(false)
 
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
@@ -80,7 +96,7 @@ export default function UstaKayit() {
     setHata('')
     setYukleniyor(true)
     try {
-      await ustaKayit({
+      const kayitResp = await ustaKayit({
         ...form,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
@@ -88,8 +104,23 @@ export default function UstaKayit() {
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
         plan: secilenPlan,
       })
+      if (odemeYontemi === 'havale') {
+        const ustaId = kayitResp?.data?.usta_id
+        await fetch('/api/odeme/havale', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usta_id: ustaId,
+            ad_soyad: havale.ad || form.ad + ' ' + form.soyad,
+            email: havale.email || form.email,
+            tutar: seciliPlan?.fiyat,
+            referans_no: havale.referans,
+          }),
+        })
+        setHavaleGonderildi(true)
+      }
       setBasarili(true)
-      setTimeout(() => navigate('/usta/panel'), 2500)
+      setTimeout(() => navigate('/usta/panel'), 3000)
     } catch (err) {
       setHata(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin')
     } finally {
@@ -475,62 +506,106 @@ export default function UstaKayit() {
       <AdimGostergesi />
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-        <form onSubmit={odemeGonder} className="md:col-span-3 bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-blue-50">
-            <div className="flex items-center gap-2 mb-5">
-              <CreditCard size={16} className="text-blue-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">Kart Bilgileri</h3>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className={labelCls}>Kart Sahibi</label>
-                <input type="text" required value={odeme.kart_ad}
-                  onChange={e => setOdeme(o => ({ ...o, kart_ad: e.target.value }))}
-                  className={inputCls} placeholder="AD SOYAD" />
-              </div>
-              <div>
-                <label className={labelCls}>Kart Numarası</label>
-                <input type="text" required value={odeme.kart_no}
-                  onChange={e => setOdeme(o => ({ ...o, kart_no: kartNoFormat(e.target.value) }))}
-                  className={inputCls} placeholder="0000 0000 0000 0000" maxLength={19} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Son Tarih</label>
-                  <input type="text" required value={odeme.son_tarih}
-                    onChange={e => setOdeme(o => ({ ...o, son_tarih: sonTarihFormat(e.target.value) }))}
-                    className={inputCls} placeholder="MM/YY" maxLength={5} />
-                </div>
-                <div>
-                  <label className={labelCls}>CVV</label>
-                  <input type="text" required value={odeme.cvv}
-                    onChange={e => setOdeme(o => ({ ...o, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
-                    className={inputCls} placeholder="000" maxLength={3} />
-                </div>
-              </div>
-            </div>
+        <div className="md:col-span-3 space-y-4">
+
+          {/* Sekme seçici */}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setOdemeYontemi('havale')}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors
+                ${odemeYontemi === 'havale' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}>
+              Havale / EFT
+            </button>
+            <button type="button" onClick={() => setOdemeYontemi('kart')}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors relative
+                ${odemeYontemi === 'kart' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}>
+              Kredi Kartı
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Yakında</span>
+            </button>
           </div>
-          <div className="p-6">
-            {hata && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-                {hata}
+
+          {/* Havale paneli */}
+          {odemeYontemi === 'havale' && (
+            <form onSubmit={odemeGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
+              {/* Banka bilgileri */}
+              <div className="bg-gray-900 px-5 py-3">
+                <p className="text-white font-bold text-sm">Garanti BBVA — Havale Bilgileri</p>
               </div>
-            )}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setAdim(3)}
-                className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
-                ← Geri
-              </button>
-              <button type="submit" disabled={yukleniyor}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
-                {yukleniyor ? 'İşleniyor...' : `Öde $${seciliPlan?.fiyat}`}
+              <div className="divide-y divide-gray-50">
+                {[
+                  { etiket: 'Hesap Adı', deger: 'Adissa Enterprises Ltd.' },
+                  { etiket: 'Banka',     deger: 'Garanti BBVA — Girne Şubesi' },
+                  { etiket: 'Şube',      deger: '1288' },
+                  { etiket: 'Hesap No',  deger: '6295117' },
+                ].map(r => (
+                  <div key={r.etiket} className="flex items-center justify-between px-5 py-2.5">
+                    <span className="text-xs text-gray-500 w-24">{r.etiket}</span>
+                    <span className="text-sm font-semibold text-gray-900">{r.deger}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-5 py-2.5 bg-blue-50">
+                  <span className="text-xs text-gray-500 w-24">IBAN</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-blue-700 font-mono">TR05 0006 2001 2880 0006 2951 17</span>
+                    <HavaleKopyala metin="TR05 0006 2001 2880 0006 2951 17" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Uyarı */}
+              <div className="mx-5 mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+                <p className="font-semibold mb-1">Dikkat</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Açıklama kısmına adınızı yazın.</li>
+                  <li>Havale sonrası bildirim gönderin — hesabınız 1–4 saat içinde aktifleştirilir.</li>
+                </ul>
+              </div>
+
+              {/* Bildirim alanları */}
+              <div className="p-5 space-y-3">
+                <p className="text-sm font-semibold text-gray-800">Havale Bilgilerini Girin</p>
+                <div>
+                  <label className={labelCls}>Dekont / Referans No <span className="text-gray-400 normal-case font-normal">(opsiyonel)</span></label>
+                  <input type="text" value={havale.referans}
+                    onChange={e => setHavale(h => ({ ...h, referans: e.target.value }))}
+                    className={inputCls} placeholder="Banka dekont numarası" />
+                </div>
+
+                {hata && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg">{hata}</div>
+                )}
+
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setAdim(3)}
+                    className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm">
+                    ← Geri
+                  </button>
+                  <button type="submit" disabled={yukleniyor}
+                    className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
+                    {yukleniyor ? 'Kaydediliyor...' : 'Kaydı Tamamla — Havale Yapacağım'}
+                  </button>
+                </div>
+                <p className="text-center text-xs text-gray-400">256-bit SSL şifreli güvenli bağlantı</p>
+              </div>
+            </form>
+          )}
+
+          {/* Kredi kartı — Yakında */}
+          {odemeYontemi === 'kart' && (
+            <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-8 text-center">
+              <p className="text-lg font-bold text-gray-900 mb-2">Kredi Kartı ile Ödeme</p>
+              <p className="text-gray-500 text-sm mb-4">Garanti BBVA 3D Secure entegrasyonu hazırlanıyor.</p>
+              <span className="inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold px-4 py-2 rounded-full">
+                Çok Yakında
+              </span>
+              <p className="text-xs text-gray-400 mt-3">Şimdilik Havale / EFT ile ödeme yapabilirsiniz.</p>
+              <button type="button" onClick={() => setOdemeYontemi('havale')}
+                className="mt-2 text-blue-600 text-sm font-semibold hover:underline block mx-auto">
+                Havale ile devam et
               </button>
             </div>
-            <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
-              <Shield size={12} /><span>256-bit SSL şifreli güvenli ödeme</span>
-            </div>
-          </div>
-        </form>
+          )}
+
+        </div>
 
         {/* Sipariş Özeti */}
         <div className="md:col-span-2">
