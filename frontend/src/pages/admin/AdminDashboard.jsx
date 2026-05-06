@@ -45,15 +45,18 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function AdminDashboard() {
   const [veri, setVeri] = useState(null)
   const [mali, setMali] = useState(null)
+  const [kur, setKur] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
 
   useEffect(() => {
     Promise.all([
       axios.get(`${API}/api/admin/istatistik`, { withCredentials: true }),
       axios.get(`${API}/api/admin/mali/ozet`, { withCredentials: true }),
-    ]).then(([r1, r2]) => {
+      axios.get(`${API}/api/odeme/kur`),
+    ]).then(([r1, r2, r3]) => {
       setVeri(r1.data)
       setMali(r2.data)
+      setKur(r3.data.USD_TRY)
       setYukleniyor(false)
     }).catch(() => setYukleniyor(false))
   }, [])
@@ -84,7 +87,7 @@ export default function AdminDashboard() {
 
       {/* Finansal widget'lar */}
       {mali && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-[#0052CC] to-[#003d99] rounded-xl p-5 text-white shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Toplam Ciro</p>
@@ -112,6 +115,22 @@ export default function AdminDashboard() {
             </div>
             <p className="text-3xl font-bold">{mali.bekleyen_tahsilat.toLocaleString('tr-TR')} ₺</p>
             <p className="text-xs opacity-60 mt-1">Geçen ay: {mali.gecen_ay_ciro.toLocaleString('tr-TR')} ₺</p>
+          </div>
+          <div className="bg-gradient-to-br from-violet-600 to-violet-700 rounded-xl p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Kayıt Geliri</p>
+              <div className="p-2 bg-white/10 rounded-lg"><Tag size={16} /></div>
+            </div>
+            <p className="text-2xl font-bold">${mali.usd_toplam?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+            {kur && mali.usd_toplam > 0 && (
+              <p className="text-xs opacity-75 mt-0.5">≈ {(mali.usd_toplam * kur).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺</p>
+            )}
+            <div className="mt-2 pt-2 border-t border-white/20">
+              <p className="text-xs opacity-80">{mali.try_toplam?.toLocaleString('tr-TR')} ₺ <span className="opacity-60">(TL ödemeleri)</span></p>
+              <p className="text-xs opacity-60 mt-0.5">
+                Bu ay: ${mali.usd_bu_ay?.toFixed(2)} / {mali.try_bu_ay?.toLocaleString('tr-TR')} ₺
+              </p>
+            </div>
           </div>
         </div>
       )}

@@ -483,6 +483,20 @@ def mali_ozet():
     aktif_abone = Abonelik.query.filter_by(durum='aktif').count()
     bekleyen_tahsilat = db.session.query(func.sum(Odeme.tutar)).filter_by(durum='bekliyor').scalar() or 0
 
+    # Döviz bazlı gelir
+    usd_toplam = db.session.query(func.sum(Odeme.tutar)).filter(
+        Odeme.durum == 'basarili', Odeme.para_birimi == 'USD'
+    ).scalar() or 0
+    try_toplam = db.session.query(func.sum(Odeme.tutar)).filter(
+        Odeme.durum == 'basarili', Odeme.para_birimi == 'TRY'
+    ).scalar() or 0
+    usd_bu_ay = db.session.query(func.sum(Odeme.tutar)).filter(
+        Odeme.durum == 'basarili', Odeme.para_birimi == 'USD', Odeme.tarih >= bu_ay
+    ).scalar() or 0
+    try_bu_ay = db.session.query(func.sum(Odeme.tutar)).filter(
+        Odeme.durum == 'basarili', Odeme.para_birimi == 'TRY', Odeme.tarih >= bu_ay
+    ).scalar() or 0
+
     # 3 gün içinde yenilenecek abonelikler
     uc_gun_sonra = bugun + timedelta(days=3)
     yaklasan_yenileme = Abonelik.query.filter(
@@ -518,6 +532,10 @@ def mali_ozet():
         'bekleyen_tahsilat': round(bekleyen_tahsilat, 2),
         'yaklasan_yenileme': yaklasan_yenileme,
         'aylik_gelir': aylik_gelir,
+        'usd_toplam': round(usd_toplam, 2),
+        'try_toplam': round(try_toplam, 2),
+        'usd_bu_ay': round(usd_bu_ay, 2),
+        'try_bu_ay': round(try_bu_ay, 2),
     })
 
 
