@@ -196,6 +196,38 @@ def odeme_hata():
 
 
 # ---------------------------------------------------------------------------
+# POST /api/odeme/havale
+# Body: { usta_id, ad_soyad, email, tutar, referans_no }
+# ---------------------------------------------------------------------------
+@odeme_bp.route('/havale', methods=['POST'])
+def havale_bildir():
+    data       = request.get_json()
+    usta_id    = data.get('usta_id')
+    ad_soyad   = data.get('ad_soyad', '').strip()
+    email      = data.get('email', '').strip()
+    tutar      = data.get('tutar')
+    referans   = data.get('referans_no', '').strip()
+
+    if not all([ad_soyad, email, tutar]):
+        return jsonify({'hata': 'Ad soyad, e-posta ve tutar zorunlu'}), 400
+
+    order_id = 'HAV' + uuid.uuid4().hex[:16].upper()
+
+    odeme = Odeme(
+        usta_id=usta_id or 0,
+        tutar=float(tutar),
+        para_birimi='TRY',
+        siparis_no=order_id,
+        durum='bekliyor',
+        aciklama=f'Havale — {ad_soyad} | {email} | Ref: {referans or "belirtilmedi"}',
+    )
+    db.session.add(odeme)
+    db.session.commit()
+
+    return jsonify({'mesaj': 'Bildirim alındı', 'siparis_no': order_id}), 201
+
+
+# ---------------------------------------------------------------------------
 # GET /api/odeme/durum/<siparis_no>
 # ---------------------------------------------------------------------------
 @odeme_bp.route('/durum/<siparis_no>', methods=['GET'])

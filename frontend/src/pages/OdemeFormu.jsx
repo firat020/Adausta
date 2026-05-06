@@ -1,218 +1,247 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import SEO from '../components/SEO'
 import API from '../config.js'
 import axios from 'axios'
-import { Lock, CreditCard, Globe } from 'lucide-react'
 
-const PARA_BIRIMLERI = [
-  { kod: 'TRY', sembol: '₺', ad: 'Türk Lirası' },
-  { kod: 'USD', sembol: '$', ad: 'ABD Doları' },
-  { kod: 'EUR', sembol: '€', ad: 'Euro' },
-]
-
-function kartFormat(val) {
-  return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+const BANKA = {
+  hesapAdi:  'Adissa Enterprises Ltd.',
+  banka:     'Garanti BBVA — Girne Şubesi',
+  sube:      '1288',
+  hesapNo:   '6295117',
+  iban:      'TR05 0006 2001 2880 0006 2951 17',
 }
 
-export default function OdemeFormu() {
-  const [params] = useSearchParams()
-  const ustaId  = params.get('usta_id') || ''
-  const planId  = params.get('plan_id') || ''
-  const tutarP  = params.get('tutar')   || ''
+function KopyalaButon({ metin }) {
+  const [kopyalandi, setKopyalandi] = useState(false)
+  const kopyala = () => {
+    navigator.clipboard.writeText(metin)
+    setKopyalandi(true)
+    setTimeout(() => setKopyalandi(false), 2000)
+  }
+  return (
+    <button
+      onClick={kopyala}
+      className="text-xs border px-2 py-0.5 rounded transition-colors ml-2 flex-shrink-0
+        border-blue-300 text-blue-600 hover:border-blue-500 hover:text-blue-800"
+    >
+      {kopyalandi ? 'Kopyalandı' : 'Kopyala'}
+    </button>
+  )
+}
 
-  const [para, setPara]       = useState('TRY')
-  const [tutar, setTutar]     = useState(tutarP)
-  const [kart, setKart]       = useState({ no: '', ay: '', yil: '', isim: '', cvv: '' })
+function HavaleFormu({ ustaId }) {
+  const [form, setForm]       = useState({ ad: '', email: '', tutar: '', referans: '' })
   const [yukleniyor, setYuk]  = useState(false)
-  const [hata, setHata]       = useState('')
-
-  const secili = PARA_BIRIMLERI.find(p => p.kod === para)
+  const [sonuc, setSonuc]     = useState(null) // null | 'basarili' | 'hata'
+  const [mesaj, setMesaj]     = useState('')
 
   const submit = async (e) => {
     e.preventDefault()
-    setHata('')
     setYuk(true)
+    setSonuc(null)
     try {
-      const { data } = await axios.post(`${API}/api/odeme/baslat`, {
-        usta_id:     ustaId,
-        plan_id:     planId,
-        tutar:       tutar,
-        para_birimi: para,
-        kart_no:     kart.no.replace(/\s/g, ''),
-        kart_ay:     kart.ay,
-        kart_yil:    kart.yil,
-        kart_isim:   kart.isim,
-        cvv:         kart.cvv,
-        email:       params.get('email') || '',
+      const { data } = await axios.post(`${API}/api/odeme/havale`, {
+        usta_id:    ustaId,
+        ad_soyad:   form.ad,
+        email:      form.email,
+        tutar:      form.tutar,
+        referans_no: form.referans,
       })
-      // 3D Secure sayfasına yönlendir
-      const w = window.open('', '_self')
-      w.document.open()
-      w.document.write(data.form_html)
-      w.document.close()
+      setSonuc('basarili')
+      setMesaj(`Bildiriminiz alındı. Sipariş No: ${data.siparis_no}`)
     } catch (err) {
-      setHata(err.response?.data?.hata || 'Bir hata oluştu, lütfen tekrar deneyin.')
+      setSonuc('hata')
+      setMesaj(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin.')
+    } finally {
       setYuk(false)
     }
   }
 
+  if (sonuc === 'basarili') {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+        <p className="font-bold text-green-800 text-base mb-1">Bildirim Alındı</p>
+        <p className="text-green-700 text-sm">{mesaj}</p>
+        <p className="text-gray-500 text-xs mt-3">Havale doğrulandıktan sonra hesabınız aktifleştirilir. İş saatleri içinde 1–4 saat.</p>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Ad Soyad / Şirket Adı</label>
+        <input
+          type="text" required
+          value={form.ad} onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
+          placeholder="Havaleyi yapan ad veya şirket"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">E-posta</label>
+        <input
+          type="email" required
+          value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+          placeholder="ornek@mail.com"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Havale Tutarı (₺)</label>
+        <input
+          type="number" min="1" step="0.01" required
+          value={form.tutar} onChange={e => setForm(f => ({ ...f, tutar: e.target.value }))}
+          placeholder="0.00"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">
+          Dekont / İşlem Referans No <span className="text-gray-400 font-normal">(opsiyonel)</span>
+        </label>
+        <input
+          type="text"
+          value={form.referans} onChange={e => setForm(f => ({ ...f, referans: e.target.value }))}
+          placeholder="Banka dekont numarası"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {sonuc === 'hata' && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{mesaj}</p>
+      )}
+
+      <button
+        type="submit" disabled={yukleniyor}
+        className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+      >
+        {yukleniyor ? 'Gönderiliyor...' : 'Havale Bildirimini Gönder'}
+      </button>
+    </form>
+  )
+}
+
+export default function OdemeFormu() {
+  const [params] = useSearchParams()
+  const ustaId   = params.get('usta_id') || ''
+  const [sekme, setSekme] = useState('havale')
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <SEO baslik="Güvenli Ödeme" url="/odeme" />
+      <SEO baslik="Ödeme" url="/odeme" />
       <div className="w-full max-w-md">
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <Lock size={18} className="text-green-600" />
-          <span className="text-sm font-semibold text-gray-700">256-bit SSL ile Güvenli Ödeme</span>
+        <div className="text-center mb-5">
+          <span className="inline-block bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+            256-bit SSL ile Güvenli Ödeme
+          </span>
+          <h1 className="text-xl font-bold text-gray-900 mt-3">Ödeme Yöntemi</h1>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h1 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <CreditCard size={20} className="text-blue-600" /> Ödeme
-          </h1>
-          <p className="text-xs text-gray-500 mb-6">Kart bilgileriniz sunucularımızda saklanmaz.</p>
+        {/* Sekme */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setSekme('havale')}
+            className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors border
+              ${sekme === 'havale'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}
+          >
+            Havale / EFT
+          </button>
+          <button
+            onClick={() => setSekme('kart')}
+            className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors border relative
+              ${sekme === 'kart'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}
+          >
+            Kredi Kartı
+            <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              Yakında
+            </span>
+          </button>
+        </div>
 
-          <form onSubmit={submit} className="space-y-4">
+        {/* Havale paneli */}
+        {sekme === 'havale' && (
+          <div className="space-y-4">
 
-            {/* Para birimi */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                <Globe size={12} className="inline mr-1" />Para Birimi
-              </label>
-              <div className="flex gap-2">
-                {PARA_BIRIMLERI.map(p => (
-                  <button
-                    key={p.kod}
-                    type="button"
-                    onClick={() => setPara(p.kod)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors
-                      ${para === p.kod
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'
-                      }`}
-                  >
-                    {p.sembol} {p.kod}
-                  </button>
+            {/* Banka bilgileri */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="bg-gray-900 px-5 py-3">
+                <p className="text-white font-bold text-sm">Garanti BBVA — Havale Bilgileri</p>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {[
+                  { etiket: 'Hesap Adı',  deger: BANKA.hesapAdi,  kopyala: true  },
+                  { etiket: 'Banka',      deger: BANKA.banka,     kopyala: false },
+                  { etiket: 'Şube Kodu',  deger: BANKA.sube,      kopyala: false },
+                  { etiket: 'Hesap No',   deger: BANKA.hesapNo,   kopyala: true  },
+                ].map(row => (
+                  <div key={row.etiket} className="flex items-center justify-between px-5 py-3">
+                    <span className="text-xs text-gray-500 font-medium w-28">{row.etiket}</span>
+                    <div className="flex items-center">
+                      <span className="text-sm font-semibold text-gray-900">{row.deger}</span>
+                      {row.kopyala && <KopyalaButon metin={row.deger} />}
+                    </div>
+                  </div>
                 ))}
+                <div className="flex items-center justify-between px-5 py-3 bg-blue-50">
+                  <span className="text-xs text-gray-500 font-medium w-28">IBAN</span>
+                  <div className="flex items-center">
+                    <span className="text-sm font-bold text-blue-700 font-mono tracking-wide">{BANKA.iban}</span>
+                    <KopyalaButon metin={BANKA.iban} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Tutar */}
-            {!tutarP && (
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Tutar ({secili?.sembol})</label>
-                <input
-                  type="number" min="1" step="0.01" required
-                  value={tutar} onChange={e => setTutar(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
-
-            {tutarP && (
-              <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
-                <span className="text-sm text-gray-600">Ödenecek Tutar</span>
-                <span className="text-lg font-bold text-blue-700">{secili?.sembol}{tutarP}</span>
-              </div>
-            )}
-
-            {/* Kart no */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Kart Numarası</label>
-              <input
-                type="text" inputMode="numeric" required
-                value={kart.no}
-                onChange={e => setKart(k => ({ ...k, no: kartFormat(e.target.value) }))}
-                placeholder="0000 0000 0000 0000"
-                maxLength={19}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Uyarı */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+              <p className="font-semibold mb-1">Dikkat</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li>Açıklama kısmına <strong>adınızı</strong> yazın.</li>
+                <li>Havale sonrası aşağıdaki formu doldurun — hesabınız manuel aktifleştirilir.</li>
+                <li>Aktivasyon: iş saatleri içinde <strong>1–4 saat</strong>.</li>
+              </ul>
             </div>
 
-            {/* Kart sahibi */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Kart Üzerindeki İsim</label>
-              <input
-                type="text" required
-                value={kart.isim}
-                onChange={e => setKart(k => ({ ...k, isim: e.target.value.toUpperCase() }))}
-                placeholder="AD SOYAD"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Bildirim formu */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <p className="font-bold text-gray-900 text-sm mb-4">Havale Yaptım — Bildir</p>
+              <HavaleFormu ustaId={ustaId} />
             </div>
 
-            {/* Son kullanma + CVV */}
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Ay</label>
-                <input
-                  type="text" inputMode="numeric" required maxLength={2}
-                  value={kart.ay}
-                  onChange={e => setKart(k => ({ ...k, ay: e.target.value.replace(/\D/g, '').slice(0,2) }))}
-                  placeholder="AA"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Yıl</label>
-                <input
-                  type="text" inputMode="numeric" required maxLength={2}
-                  value={kart.yil}
-                  onChange={e => setKart(k => ({ ...k, yil: e.target.value.replace(/\D/g, '').slice(0,2) }))}
-                  placeholder="YY"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">CVV</label>
-                <input
-                  type="password" inputMode="numeric" required maxLength={4}
-                  value={kart.cvv}
-                  onChange={e => setKart(k => ({ ...k, cvv: e.target.value.replace(/\D/g, '').slice(0,4) }))}
-                  placeholder="•••"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {hata && (
-              <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{hata}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={yukleniyor}
-              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              {yukleniyor ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Lock size={14} />
-              )}
-              {yukleniyor ? '3D Secure sayfasına yönlendiriliyorsunuz...' : `Güvenli Öde — ${secili?.sembol}${tutar || '0'}`}
-            </button>
-          </form>
-
-          <div className="mt-4 flex items-center justify-center gap-4">
-            <img src="/images/garanti-bbva.svg" alt="Garanti BBVA" className="h-5 opacity-60" />
-            <img src="/images/visa.svg" alt="Visa" className="h-4 opacity-60" />
-            <img src="/images/mastercard.svg" alt="Mastercard" className="h-5 opacity-60" />
-            <img src="/images/3dsecure.svg" alt="3D Secure" className="h-5 opacity-60" />
           </div>
+        )}
 
-          <p className="text-center text-xs text-gray-400 mt-3">
-            Ödeme işleminiz Garanti BBVA Sanal POS altyapısı üzerinden güvenle gerçekleştirilir.
-          </p>
-        </div>
+        {/* Kredi kartı paneli */}
+        {sekme === 'kart' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+            <p className="text-lg font-bold text-gray-900 mb-2">Kredi Kartı ile Ödeme</p>
+            <p className="text-gray-500 text-sm mb-4">Garanti BBVA 3D Secure entegrasyonu hazırlanıyor.</p>
+            <span className="inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold px-4 py-2 rounded-full">
+              Yapım Aşamasında
+            </span>
+            <p className="text-xs text-gray-400 mt-4">Şimdilik Havale / EFT yöntemini kullanabilirsiniz.</p>
+            <button
+              onClick={() => setSekme('havale')}
+              className="mt-3 text-blue-600 text-sm font-semibold hover:underline block mx-auto"
+            >
+              Havale ile öde
+            </button>
+          </div>
+        )}
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          <a href="/iade-politikasi" className="hover:text-blue-600 underline">İade Politikası</a>
-          {' · '}
-          <a href="/mesafeli-satis" className="hover:text-blue-600 underline">Mesafeli Satış Sözleşmesi</a>
-          {' · '}
-          <a href="/gizlilik" className="hover:text-blue-600 underline">Gizlilik</a>
+        <p className="text-center text-xs text-gray-400 mt-5 space-x-2">
+          <Link to="/iade-politikasi" className="hover:text-blue-600 underline">İade Politikası</Link>
+          <span>·</span>
+          <Link to="/mesafeli-satis" className="hover:text-blue-600 underline">Mesafeli Satış</Link>
+          <span>·</span>
+          <Link to="/iletisim" className="hover:text-blue-600 underline">İletişim</Link>
         </p>
       </div>
     </div>
