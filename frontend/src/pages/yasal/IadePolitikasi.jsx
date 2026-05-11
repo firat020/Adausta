@@ -27,7 +27,7 @@ export default function IadePolitikasi() {
 
         <section>
           <h2 className="text-base font-bold text-gray-900 mb-2">3. İade Süreci</h2>
-          <p>İade talepleri <strong>info@adausta.com</strong> adresine yazılı olarak iletilir. Onaylanan iadeler, ödemenin yapıldığı kartına <strong>5–10 iş günü</strong> içinde yansır.</p>
+          <p>İade talepleri <strong>adausta@gmail.com</strong> adresine yazılı olarak iletilir. Onaylanan iadeler, ödemenin yapıldığı kartına <strong>5–10 iş günü</strong> içinde yansır.</p>
         </section>
 
         <section>

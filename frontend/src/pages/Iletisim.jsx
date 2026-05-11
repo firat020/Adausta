@@ -17,8 +17,8 @@ export default function Iletisim() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 mb-0.5">E-posta</p>
-              <a href="mailto:info@adausta.com" className="text-sm text-blue-600 hover:underline font-medium">
-                info@adausta.com
+              <a href="mailto:adausta@gmail.com" className="text-sm text-blue-600 hover:underline font-medium">
+                adausta@gmail.com
               </a>
             </div>
           </div>
@@ -29,8 +29,8 @@ export default function Iletisim() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 mb-0.5">Telefon / WhatsApp</p>
-              <a href="tel:+905334265890" className="text-sm text-green-700 hover:underline font-medium">
-                +90 533 426 58 90
+              <a href="tel:+905488510700" className="text-sm text-green-700 hover:underline font-medium">
+                +90 548 851 07 00
               </a>
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function Iletisim() {
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-5">
           <h2 className="text-sm font-bold text-gray-900 mb-4">Mesaj Gönderin</h2>
           <form
-            onSubmit={e => { e.preventDefault(); window.location.href = `mailto:info@adausta.com?subject=${encodeURIComponent(e.target.konu.value)}&body=${encodeURIComponent(e.target.mesaj.value)}` }}
+            onSubmit={e => { e.preventDefault(); window.location.href = `mailto:adausta@gmail.com?subject=${encodeURIComponent(e.target.konu.value)}&body=${encodeURIComponent(e.target.mesaj.value)}` }}
             className="space-y-3"
           >
             <input
@@ -89,7 +89,7 @@ export default function Iletisim() {
       <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-xl text-sm text-gray-700">
         <p className="font-semibold text-blue-800 mb-1">Ödeme & İade Sorunları</p>
         <p>
-          Ödeme veya iade talepleriniz için <strong>info@adausta.com</strong> adresine sipariş numaranızı
+          Ödeme veya iade talepleriniz için <strong>adausta@gmail.com</strong> adresine sipariş numaranızı
           belirterek yazabilirsiniz. İadeler ödemenin yapıldığı karta 5–10 iş günü içinde yansır.
         </p>
       </div>

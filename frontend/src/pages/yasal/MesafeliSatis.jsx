@@ -16,7 +16,7 @@ export default function MesafeliSatis() {
               <tr className="border-b border-gray-100"><td className="py-1.5 font-medium w-36">Ticari Unvan</td><td>Adissa Enterprises Ltd.</td></tr>
               <tr className="border-b border-gray-100"><td className="py-1.5 font-medium">Platform</td><td>Ada Usta (adausta.com)</td></tr>
               <tr className="border-b border-gray-100"><td className="py-1.5 font-medium">Faaliyet Alanı</td><td>Kuzey Kıbrıs Türk Cumhuriyeti</td></tr>
-              <tr className="border-b border-gray-100"><td className="py-1.5 font-medium">E-posta</td><td>info@adausta.com</td></tr>
+              <tr className="border-b border-gray-100"><td className="py-1.5 font-medium">E-posta</td><td>adausta@gmail.com</td></tr>
             </tbody>
           </table>
         </section>
@@ -38,7 +38,7 @@ export default function MesafeliSatis() {
         <section>
           <h2 className="text-base font-bold text-gray-900 mb-2">MADDE 4 — CAYMA HAKKI</h2>
           <p>Alıcı, hizmetin ifasına başlanmamış olması koşuluyla, sözleşme tarihinden itibaren <strong>14 (on dört) gün içinde</strong> herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir.</p>
-          <p className="mt-2">Cayma hakkı kullanımı için: <strong>info@adausta.com</strong> adresine yazılı bildirim yeterlidir.</p>
+          <p className="mt-2">Cayma hakkı kullanımı için: <strong>adausta@gmail.com</strong> adresine yazılı bildirim yeterlidir.</p>
         </section>
 
         <section>

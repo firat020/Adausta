@@ -41,13 +41,13 @@ export default function Hakkimizda() {
               <tr className="border-b border-gray-100">
                 <td className="py-2 font-semibold text-gray-600">E-posta</td>
                 <td className="py-2">
-                  <a href="mailto:info@adausta.com" className="text-blue-600 hover:underline">info@adausta.com</a>
+                  <a href="mailto:adausta@gmail.com" className="text-blue-600 hover:underline">adausta@gmail.com</a>
                 </td>
               </tr>
               <tr className="border-b border-gray-100">
                 <td className="py-2 font-semibold text-gray-600">Telefon</td>
                 <td className="py-2">
-                  <a href="tel:+905334265890" className="text-blue-600 hover:underline">+90 533 426 58 90</a>
+                  <a href="tel:+905488510700" className="text-blue-600 hover:underline">+90 548 851 07 00</a>
                 </td>
               </tr>
               <tr className="border-b border-gray-100">

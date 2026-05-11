@@ -93,9 +93,9 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm mb-4">{t('footer.iletisim')}</h4>
             <ul className="space-y-3 text-sm mb-5">
               <li>
-                <a href="tel:+905334265890" className="flex items-center gap-2 hover:text-white transition-colors">
+                <a href="tel:+905488510700" className="flex items-center gap-2 hover:text-white transition-colors">
                   <Phone size={14} className="text-blue-400" />
-                  +90 533 426 58 90
+                  +90 548 851 07 00
                 </a>
               </li>
               <li className="flex items-start gap-2 text-blue-300 text-xs leading-relaxed">

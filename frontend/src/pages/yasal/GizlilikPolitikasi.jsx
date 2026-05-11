@@ -52,7 +52,7 @@ export default function GizlilikPolitikasi() {
 
         <section>
           <h2 className="text-base font-bold text-gray-900 mb-2">7. Haklarınız</h2>
-          <p>Verilerinize erişim, düzeltme, silme ve işlemeye itiraz hakkına sahipsiniz. Talepleriniz için: <strong>info@adausta.com</strong></p>
+          <p>Verilerinize erişim, düzeltme, silme ve işlemeye itiraz hakkına sahipsiniz. Talepleriniz için: <strong>adausta@gmail.com</strong></p>
         </section>
 
       </div>
