@@ -182,7 +182,11 @@ export default function UstaKayit() {
       }
       // Google Ads dönüşüm — Kaydolma işlemi
       if (typeof window.gtag === 'function') {
-        window.gtag('event', 'conversion', { send_to: 'AW-18139050345/3g4tCJaFu6gcEOnir8ID' })
+        window.gtag('event', 'conversion', {
+          send_to: 'AW-18139050345/3g4tCJaFu6gcEOnir8lD',
+          value: 1.0,
+          currency: 'USD',
+        })
       }
       setBasarili(true)
       setTimeout(() => navigate('/usta/panel'), 3000)

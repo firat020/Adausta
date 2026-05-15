@@ -174,7 +174,7 @@ export default function Footer() {
         <div className="border-t border-blue-900 pt-5 space-y-2 text-xs text-blue-400 text-center md:text-left">
           <p className="font-semibold text-blue-300">{t('footer.firma')}</p>
           <div className="flex flex-col md:flex-row items-center justify-between gap-1">
-            <span>© 2026 Ada Usta — {t('footer.telif')}</span>
+            <span>© 2026 Adausta — Bir ADİSSA ENTERPRİSES LTD. kuruluşudur</span>
             <span>{t('common.kuzeyKibris')}</span>
           </div>
         </div>
