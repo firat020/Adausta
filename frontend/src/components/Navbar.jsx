@@ -64,6 +64,10 @@ export default function Navbar() {
               <Building2 size={14} />
               Şirketler
             </Link>
+            <Link to="/magaza"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/magaza') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              Mağaza
+            </Link>
           </div>
 
           {/* CTA + Dil */}
@@ -177,6 +181,9 @@ export default function Navbar() {
             </Link>
             <Link to="/en-yakin" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <MapPin size={14} /> {t('nav.enYakin')}
+            </Link>
+            <Link to="/magaza" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              Mağaza
             </Link>
             {kullanici?.rol === 'sirket' ? (
               <>

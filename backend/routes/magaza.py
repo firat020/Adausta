@@ -239,6 +239,58 @@ def gorsel_yukle(uid):
     db.session.commit()
     return jsonify({'yol': g.dosya_yolu, 'id': g.id}), 201
 
+# ─── PUBLIC MAĞAZA ─────────────────────────────────────────
+
+@magaza_bp.route('/public/urunler', methods=['GET'])
+def public_urunler():
+    arama = request.args.get('arama', '')
+    sayfa = request.args.get('sayfa', 1, type=int)
+    limit = 20
+    q = Urun.query.filter_by(aktif=True)
+    if arama:
+        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+    total = q.count()
+    urunler = q.order_by(Urun.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
+    return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total})
+
+@magaza_bp.route('/public/siparis', methods=['POST'])
+def public_siparis():
+    data = request.get_json()
+    items = data.get('items', [])
+    ad = (data.get('ad') or '').strip()
+    telefon = (data.get('telefon') or '').strip()
+    if not items:
+        return jsonify({'hata': 'Sepet boş'}), 400
+    if not ad or not telefon:
+        return jsonify({'hata': 'Ad ve telefon zorunlu'}), 400
+
+    siparis_kodu = uuid.uuid4().hex[:8].upper()
+    for item in items:
+        urun = Urun.query.get(item.get('urun_id'))
+        if not urun or not urun.aktif:
+            continue
+        miktar = max(1, int(item.get('miktar') or 1))
+        if urun.stok is not None and urun.stok < miktar:
+            return jsonify({'hata': f'"{urun.ad}" için yeterli stok yok'}), 400
+        s = UrunSiparis(
+            urun_id=urun.id,
+            miktar=miktar,
+            birim_fiyat_tl=urun.tl_fiyat,
+            toplam_tl=round(urun.tl_fiyat * miktar, 2),
+            birim_fiyat_usd=urun.usd_fiyat,
+            toplam_usd=round(urun.usd_fiyat * miktar, 2),
+            siparis_kodu=siparis_kodu,
+            misafir_ad=ad,
+            misafir_telefon=telefon,
+            misafir_email=(data.get('email') or '').strip(),
+            misafir_adres=(data.get('adres') or '').strip(),
+        )
+        if urun.stok is not None:
+            urun.stok -= miktar
+        db.session.add(s)
+    db.session.commit()
+    return jsonify({'ok': True, 'siparis_kodu': siparis_kodu}), 201
+
 # ─── USTA MAĞAZA ───────────────────────────────────────────
 
 @magaza_bp.route('/usta/urunler', methods=['GET'])

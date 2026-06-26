@@ -623,14 +623,21 @@ class UrunGorsel(db.Model):
 
 class UrunSiparis(db.Model):
     __tablename__ = 'urun_siparisler'
-    id             = db.Column(db.Integer, primary_key=True)
-    urun_id        = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=False)
-    usta_id        = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=True)
-    miktar         = db.Column(db.Integer, default=1)
-    birim_fiyat_tl = db.Column(db.Float, nullable=False)
-    toplam_tl      = db.Column(db.Float, nullable=False)
-    durum          = db.Column(db.String(30), default='bekliyor')
-    olusturma      = db.Column(db.DateTime, default=datetime.utcnow)
+    id              = db.Column(db.Integer, primary_key=True)
+    urun_id         = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=False)
+    usta_id         = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=True)
+    miktar          = db.Column(db.Integer, default=1)
+    birim_fiyat_tl  = db.Column(db.Float, nullable=False)
+    toplam_tl       = db.Column(db.Float, nullable=False)
+    birim_fiyat_usd = db.Column(db.Float, nullable=True)
+    toplam_usd      = db.Column(db.Float, nullable=True)
+    durum           = db.Column(db.String(30), default='bekliyor')
+    siparis_kodu    = db.Column(db.String(20), nullable=True)
+    misafir_ad      = db.Column(db.String(100), nullable=True)
+    misafir_telefon = db.Column(db.String(20), nullable=True)
+    misafir_email   = db.Column(db.String(120), nullable=True)
+    misafir_adres   = db.Column(db.Text, nullable=True)
+    olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -641,6 +648,13 @@ class UrunSiparis(db.Model):
             'miktar': self.miktar,
             'birim_fiyat_tl': self.birim_fiyat_tl,
             'toplam_tl': self.toplam_tl,
+            'birim_fiyat_usd': self.birim_fiyat_usd,
+            'toplam_usd': self.toplam_usd,
             'durum': self.durum,
+            'siparis_kodu': self.siparis_kodu,
+            'misafir_ad': self.misafir_ad,
+            'misafir_telefon': self.misafir_telefon,
+            'misafir_email': self.misafir_email,
+            'misafir_adres': self.misafir_adres,
             'olusturma': fmt(self.olusturma),
         }
