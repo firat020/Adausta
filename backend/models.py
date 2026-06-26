@@ -542,3 +542,105 @@ class Reklam(db.Model):
             'goruntuleme': self.goruntuleme,
             'olusturma': fmt(self.olusturma),
         }
+
+
+# ──────────────────────────────────────────────────────────
+# MAĞAZA
+# ──────────────────────────────────────────────────────────
+
+class Marka(db.Model):
+    __tablename__ = 'markalar'
+    id    = db.Column(db.Integer, primary_key=True)
+    ad    = db.Column(db.String(100), nullable=False, unique=True)
+    aktif = db.Column(db.Boolean, default=True)
+    modeller = db.relationship('UrunModeli', backref='marka', lazy=True)
+
+    def to_dict(self):
+        return {'id': self.id, 'ad': self.ad}
+
+
+class UrunModeli(db.Model):
+    __tablename__ = 'urun_modelleri'
+    id       = db.Column(db.Integer, primary_key=True)
+    ad       = db.Column(db.String(150), nullable=False)
+    marka_id = db.Column(db.Integer, db.ForeignKey('markalar.id'), nullable=False)
+    aktif    = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return {'id': self.id, 'ad': self.ad, 'marka_id': self.marka_id}
+
+
+class Urun(db.Model):
+    __tablename__ = 'urunler'
+    id           = db.Column(db.Integer, primary_key=True)
+    ad           = db.Column(db.String(200), nullable=False)
+    aciklama     = db.Column(db.Text, default='')
+    usd_fiyat    = db.Column(db.Float, nullable=False)
+    kur          = db.Column(db.Float, nullable=False)
+    kar_marji    = db.Column(db.Float, default=25.0)
+    kargo_ucreti = db.Column(db.Float, default=0.0)
+    kdv_dahil    = db.Column(db.Boolean, default=True)
+    tl_fiyat     = db.Column(db.Float, nullable=False)
+    sku          = db.Column(db.String(100), default='')
+    barkod       = db.Column(db.String(100), default='')
+    stok         = db.Column(db.Integer, default=0)
+    aktif        = db.Column(db.Boolean, default=True)
+    marka_id     = db.Column(db.Integer, db.ForeignKey('markalar.id'), nullable=True)
+    model_id     = db.Column(db.Integer, db.ForeignKey('urun_modelleri.id'), nullable=True)
+    kategori     = db.Column(db.String(100), default='')
+    olusturma    = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme   = db.Column(db.DateTime, default=datetime.utcnow)
+    gorseller    = db.relationship('UrunGorsel', backref='urun', lazy=True, order_by='UrunGorsel.sira')
+    siparisler   = db.relationship('UrunSiparis', backref='urun', lazy=True)
+
+    def to_dict(self, include_gorseller=False):
+        marka = Marka.query.get(self.marka_id) if self.marka_id else None
+        model = UrunModeli.query.get(self.model_id) if self.model_id else None
+        d = {
+            'id': self.id, 'ad': self.ad, 'aciklama': self.aciklama,
+            'usd_fiyat': self.usd_fiyat, 'kur': self.kur,
+            'kar_marji': self.kar_marji, 'kargo_ucreti': self.kargo_ucreti,
+            'kdv_dahil': self.kdv_dahil, 'tl_fiyat': self.tl_fiyat,
+            'sku': self.sku, 'barkod': self.barkod, 'stok': self.stok,
+            'aktif': self.aktif, 'kategori': self.kategori,
+            'marka_id': self.marka_id, 'marka_ad': marka.ad if marka else None,
+            'model_id': self.model_id, 'model_ad': model.ad if model else None,
+            'olusturma': fmt(self.olusturma),
+            'kapak_gorsel': self.gorseller[0].dosya_yolu if self.gorseller else None,
+        }
+        if include_gorseller:
+            d['gorseller'] = [{'id': g.id, 'yol': g.dosya_yolu, 'sira': g.sira} for g in self.gorseller]
+        return d
+
+
+class UrunGorsel(db.Model):
+    __tablename__ = 'urun_gorseller'
+    id         = db.Column(db.Integer, primary_key=True)
+    urun_id    = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=False)
+    dosya_yolu = db.Column(db.String(300), nullable=False)
+    sira       = db.Column(db.Integer, default=0)
+
+
+class UrunSiparis(db.Model):
+    __tablename__ = 'urun_siparisler'
+    id             = db.Column(db.Integer, primary_key=True)
+    urun_id        = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=False)
+    usta_id        = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=True)
+    miktar         = db.Column(db.Integer, default=1)
+    birim_fiyat_tl = db.Column(db.Float, nullable=False)
+    toplam_tl      = db.Column(db.Float, nullable=False)
+    durum          = db.Column(db.String(30), default='bekliyor')
+    olusturma      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'urun_id': self.urun_id,
+            'urun_ad': self.urun.ad if self.urun else None,
+            'usta_id': self.usta_id,
+            'miktar': self.miktar,
+            'birim_fiyat_tl': self.birim_fiyat_tl,
+            'toplam_tl': self.toplam_tl,
+            'durum': self.durum,
+            'olusturma': fmt(self.olusturma),
+        }

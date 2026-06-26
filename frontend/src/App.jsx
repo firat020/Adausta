@@ -43,6 +43,8 @@ import AdminReklamlar from './pages/admin/AdminReklamlar'
 import AdminPlanlar from './pages/admin/AdminPlanlar'
 import AdminAbonelikler from './pages/admin/AdminAbonelikler'
 import AdminOdemeler from './pages/admin/AdminOdemeler'
+import AdminUrunler from './pages/admin/AdminUrunler'
+import AdminUrunEkle from './pages/admin/AdminUrunEkle'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
 import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
@@ -52,6 +54,7 @@ import UstaPanelMusteriler from './pages/usta-panel/UstaPanelMusteriler'
 import UstaPanelIstatistik from './pages/usta-panel/UstaPanelIstatistik'
 import UstaPanelYorumlar from './pages/usta-panel/UstaPanelYorumlar'
 import UstaPanelProfil from './pages/usta-panel/UstaPanelProfil'
+import UstaPanelMagaza from './pages/usta-panel/UstaPanelMagaza'
 // Şirket Paneli
 import SirketGiris from './pages/sirket-panel/SirketGiris'
 import SirketPanelLayout from './pages/sirket-panel/SirketPanelLayout'
@@ -136,6 +139,8 @@ export default function App() {
         <Route path="planlar" element={<AdminPlanlar />} />
         <Route path="abonelikler" element={<AdminAbonelikler />} />
         <Route path="odemeler" element={<AdminOdemeler />} />
+        <Route path="urunler" element={<AdminUrunler />} />
+        <Route path="urun-ekle" element={<AdminUrunEkle />} />
       </Route>
 
       {/* Usta Paneli */}
@@ -146,6 +151,7 @@ export default function App() {
         <Route path="panel/musteriler" element={<UstaPanelMusteriler />} />
         <Route path="panel/istatistik" element={<UstaPanelIstatistik />} />
         <Route path="panel/yorumlar" element={<UstaPanelYorumlar />} />
+        <Route path="panel/magaza" element={<UstaPanelMagaza />} />
         <Route path="panel/profil" element={<UstaPanelProfil />} />
       </Route>
 

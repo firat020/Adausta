@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, ClipboardList, User, BarChart2,
-  LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star
+  LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag
 } from 'lucide-react'
 import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik } from '../../api'
 
@@ -12,6 +12,7 @@ const menuItems = [
   { to: '/usta/panel/musteriler', icon: Users,         label: 'Müşterilerim' },
   { to: '/usta/panel/istatistik', icon: BarChart2,     label: 'İstatistikler' },
   { to: '/usta/panel/yorumlar',  icon: Star,           label: 'Yorumlar' },
+  { to: '/usta/panel/magaza',    icon: ShoppingBag,    label: 'Mağaza' },
   { to: '/usta/panel/profil',    icon: User,           label: 'Profilim' },
 ]
 

@@ -38,6 +38,7 @@ from routes.ayarlar import ayarlar_bp
 from routes.sirketler import sirketler_bp
 from routes.sirket_panel import sirket_panel_bp
 from routes.odeme import odeme_bp
+from routes.magaza import magaza_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
@@ -51,6 +52,7 @@ app.register_blueprint(ayarlar_bp, url_prefix='/api/ayarlar')
 app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
 app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 app.register_blueprint(odeme_bp, url_prefix='/api/odeme')
+app.register_blueprint(magaza_bp, url_prefix='/api/magaza')
 
 @app.after_request
 def guvenlik_basliklari(response):

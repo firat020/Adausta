@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
-  CreditCard, PackageCheck, Wallet, Power, PowerOff
+  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -20,6 +20,7 @@ const menuItems = [
   { to: '/admin/yorumlar',     icon: Star,            label: 'Yorumlar' },
   { to: '/admin/kategoriler',  icon: Tag,             label: 'Kategoriler' },
   { to: '/admin/reklamlar',    icon: Megaphone,       label: 'Reklam Yönetimi' },
+  { to: '/admin/urunler',      icon: ShoppingBag,     label: 'Ürün Yönetimi' },
   { to: '/admin/loglar',       icon: FileText,        label: 'İşlem Logu' },
 ]
 
