@@ -21,6 +21,7 @@ export default function MusteriGiris() {
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
   const [basarili, setBasarili] = useState('')
+  const [googleRendered, setGoogleRendered] = useState(false)
 
   // Zaten giriş yapılmışsa yönlendir
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function MusteriGiris() {
           text: 'continue_with',
           logo_alignment: 'center',
         })
+        setGoogleRendered(true)
       }
     }
     document.head.appendChild(script)
@@ -142,15 +144,14 @@ export default function MusteriGiris() {
           <div className="p-8">
 
             {/* Google ile giriş */}
-            {GOOGLE_CLIENT_ID ? (
-              <div className="mb-6">
-                <div ref={googleBtnRef} className="w-full" />
-              </div>
-            ) : (
+            {/* Div her zaman DOM'da olmalı — Google SDK buraya render eder */}
+            <div className={`mb-6 ${GOOGLE_CLIENT_ID && googleRendered ? '' : 'hidden'}`}>
+              <div ref={googleBtnRef} className="w-full" />
+            </div>
+            {(!GOOGLE_CLIENT_ID || !googleRendered) && (
               <button
                 disabled
-                className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 mb-6 cursor-not-allowed bg-gray-50"
-                title="VITE_GOOGLE_CLIENT_ID tanımlanmamış">
+                className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 mb-6 cursor-not-allowed bg-gray-50">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path fill="#9ca3af" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#9ca3af" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
