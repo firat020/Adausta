@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard, Building2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import AdaUstaLogo from './AdaUstaLogo'
 import DilSecici from './DilSecici'
 import { benimBilgilerim, cikis } from '../api'
 
@@ -41,7 +40,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-11 w-auto sm:h-14 object-contain" style={{imageRendering:'crisp-edges'}} />
+            <img src="/ada-usta-logo-transparent.png" alt="Ada Usta" className="h-14 w-auto sm:h-16 object-contain" />
           </Link>
 
           {/* Desktop Links */}
