@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
-import { Package, DollarSign, Image, BarChart2, ChevronLeft, Check, RefreshCw, Plus } from 'lucide-react'
+import { Package, DollarSign, Image, BarChart2, ChevronLeft, Check, RefreshCw, Plus, X } from 'lucide-react'
 import API from '../../config.js'
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0)
@@ -28,20 +28,25 @@ export default function AdminUrunEkle() {
   const [yeniModel, setYeniModel] = useState('')
   const [markaAc, setMarkaAc] = useState(false)
   const [modelAc, setModelAc] = useState(false)
+  const [kategoriAc, setKategoriAc] = useState(false)
+  const [yeniKategori, setYeniKategori] = useState('')
   const [kurYukleniyor, setKurYukleniyor] = useState(false)
   const [kurZaman, setKurZaman] = useState('—')
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [basari, setBasari] = useState(false)
+  const [gorseller, setGorseller] = useState([])
+  const [gorselYukleniyor, setGorselYukleniyor] = useState(false)
+  const gorselRef = useRef(null)
 
   const tl = hesapla(
     parseFloat(form.usd) || 0,
     parseFloat(form.kur) || 0,
-    parseFloat(form.marj) || 0,
+    form.marj !== '' ? parseFloat(form.marj) : 0,
     parseFloat(form.kargo) || 0,
     form.kdvDahil
   )
   const base = (parseFloat(form.usd) || 0) * (parseFloat(form.kur) || 0)
-  const marjTL = base * ((parseFloat(form.marj) || 0) / 100)
+  const marjTL = base * ((form.marj !== '' ? parseFloat(form.marj) : 0) / 100)
   const kargoTL = parseFloat(form.kargo) || 0
   const kdvTL = form.kdvDahil ? (base + marjTL + kargoTL) * 0.20 : 0
 
@@ -52,10 +57,12 @@ export default function AdminUrunEkle() {
         const u = r.data
         setForm({
           ad: u.ad, aciklama: u.aciklama, usd: u.usd_fiyat, kur: u.kur,
-          marj: u.kar_marji, kargo: u.kargo_ucreti, kdvDahil: u.kdv_dahil,
+          marj: u.kar_marji !== null && u.kar_marji !== undefined ? String(u.kar_marji) : '25',
+          kargo: u.kargo_ucreti, kdvDahil: u.kdv_dahil,
           sku: u.sku, barkod: u.barkod, stok: u.stok, aktif: u.aktif,
           markaId: u.marka_id || '', modelId: u.model_id || '', kategori: u.kategori,
         })
+        if (u.gorseller) setGorseller(u.gorseller)
       }).catch(() => {})
     }
   }, [duzenlemeId])
@@ -99,6 +106,43 @@ export default function AdminUrunEkle() {
     setModelAc(false)
   }
 
+  const kategoriEkle = () => {
+    if (!yeniKategori.trim()) return
+    set('kategori', yeniKategori.trim())
+    setYeniKategori('')
+    setKategoriAc(false)
+  }
+
+  const gorselYukle = async (files) => {
+    if (!duzenlemeId) {
+      alert('Önce ürünü kaydedin, sonra resim ekleyebilirsiniz.')
+      return
+    }
+    setGorselYukleniyor(true)
+    for (const file of Array.from(files)) {
+      try {
+        const fd = new FormData()
+        fd.append('gorsel', file)
+        const r = await axios.post(
+          `${API}/api/magaza/urunler/${duzenlemeId}/gorsel`,
+          fd,
+          { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } }
+        )
+        setGorseller(g => [...g, { id: r.data.id, yol: r.data.yol, sira: g.length }])
+      } catch (e) {
+        alert(e.response?.data?.hata || 'Resim yüklenemedi')
+      }
+    }
+    setGorselYukleniyor(false)
+  }
+
+  const gorselSil = async (gorselId) => {
+    try {
+      await axios.delete(`${API}/api/magaza/gorseller/${gorselId}`, { withCredentials: true })
+    } catch {}
+    setGorseller(g => g.filter(x => x.id !== gorselId))
+  }
+
   const kaydet = async () => {
     if (!form.ad.trim() || !form.usd || !form.kur) {
       alert('Ürün adı ve USD fiyatı zorunlu.')
@@ -108,7 +152,7 @@ export default function AdminUrunEkle() {
     const payload = {
       ad: form.ad, aciklama: form.aciklama,
       usd_fiyat: parseFloat(form.usd), kur: parseFloat(form.kur),
-      kar_marji: parseFloat(form.marj) || 25,
+      kar_marji: form.marj !== '' ? parseFloat(form.marj) : 25,
       kargo_ucreti: parseFloat(form.kargo) || 0,
       kdv_dahil: form.kdvDahil, sku: form.sku, barkod: form.barkod,
       stok: parseInt(form.stok) || 0, aktif: form.aktif,
@@ -156,6 +200,7 @@ export default function AdminUrunEkle() {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
+        onWheel={e => e.currentTarget.blur()}
         className="flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder-[#3a4a60]"
       />
       {suffix && <span className="flex items-center px-3 bg-[#1a2744] text-[#6a7ea0] text-sm font-semibold border-l border-[#1a2744]">{suffix}</span>}
@@ -223,12 +268,48 @@ export default function AdminUrunEkle() {
           </Card>
 
           <Card icon={Image} title="Ürün Görselleri">
-            <div className="border-2 border-dashed border-[#1a2744] hover:border-[#0052CC] rounded-xl p-8 text-center cursor-pointer transition-colors">
-              <div className="w-11 h-11 bg-[#003d99]/30 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Image size={20} className="text-[#4d8aff]" />
+            <input
+              ref={gorselRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              className="hidden"
+              onChange={e => gorselYukle(e.target.files)}
+            />
+            {gorseller.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {gorseller.map(g => (
+                  <div key={g.id} className="relative group rounded-lg overflow-hidden border border-[#1a2744] aspect-square bg-[#121929]">
+                    <img
+                      src={`${API}/uploads/${g.yol}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => gorselSil(g.id)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center"
+                    >
+                      <X size={10} className="text-white" />
+                    </button>
+                  </div>
+                ))}
               </div>
-              <p className="text-sm font-semibold text-white mb-1">Dosya seç ya da sürükle</p>
-              <p className="text-xs text-[#6a7ea0]">PNG, JPG, WEBP · en fazla 5 MB</p>
+            )}
+            <div
+              onClick={() => gorselRef.current?.click()}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => { e.preventDefault(); gorselYukle(e.dataTransfer.files) }}
+              className="border-2 border-dashed border-[#1a2744] hover:border-[#0052CC] rounded-xl p-8 text-center cursor-pointer transition-colors"
+            >
+              <div className="w-11 h-11 bg-[#003d99]/30 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Image size={20} className={`text-[#4d8aff] ${gorselYukleniyor ? 'animate-pulse' : ''}`} />
+              </div>
+              <p className="text-sm font-semibold text-white mb-1">
+                {gorselYukleniyor ? 'Yükleniyor...' : 'Dosya seç ya da sürükle'}
+              </p>
+              <p className="text-xs text-[#6a7ea0]">
+                {!duzenlemeId ? 'Önce kaydedin, sonra resim ekleyebilirsiniz' : 'PNG, JPG, WEBP · en fazla 5 MB'}
+              </p>
             </div>
           </Card>
 
@@ -425,12 +506,33 @@ export default function AdminUrunEkle() {
           {/* Kategori */}
           <div className="bg-[#0d1322] border border-[#1a2744] rounded-2xl p-5">
             <p className="text-xs font-bold text-[#6a7ea0] uppercase tracking-wide mb-3">KATEGORİ</p>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-[#6a7ea0]">Kategori seçin</span>
+              <button onClick={() => setKategoriAc(v => !v)} className="text-xs font-bold text-[#4d8aff] hover:underline flex items-center gap-1">
+                <Plus size={11} /> Yeni
+              </button>
+            </div>
             <Select value={form.kategori} onChange={v => set('kategori', v)}>
               <option value="">— Kategori seçin —</option>
               {['Elektrikli El Aletleri', 'Akülü Aletler', 'Ölçüm Cihazları', 'Kesme Ekipmanları', 'Koruyucu Ekipmanlar', 'Tamir Malzemeleri'].map(k => (
                 <option key={k} value={k}>{k}</option>
               ))}
+              {form.kategori && !['Elektrikli El Aletleri', 'Akülü Aletler', 'Ölçüm Cihazları', 'Kesme Ekipmanları', 'Koruyucu Ekipmanlar', 'Tamir Malzemeleri'].includes(form.kategori) && (
+                <option value={form.kategori}>{form.kategori}</option>
+              )}
             </Select>
+            {kategoriAc && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  value={yeniKategori}
+                  onChange={e => setYeniKategori(e.target.value)}
+                  placeholder="Yeni kategori adı"
+                  onKeyDown={e => e.key === 'Enter' && kategoriEkle()}
+                  className="flex-1 h-8 bg-[#121929] border border-[#1a2744] rounded-lg px-2.5 text-xs text-white outline-none focus:border-[#0052CC]"
+                />
+                <button onClick={kategoriEkle} className="px-3 h-8 bg-[#0052CC] text-white text-xs font-bold rounded-lg">Ekle</button>
+              </div>
+            )}
           </div>
 
         </div>

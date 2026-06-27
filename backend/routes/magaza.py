@@ -150,7 +150,8 @@ def urun_olustur():
     if not ad or not usd or not kur:
         return jsonify({'hata': 'Ad, usd_fiyat ve kur zorunlu'}), 400
 
-    marj = float(data.get('kar_marji') or 25)
+    kar_marji_val = data.get('kar_marji')
+    marj = float(kar_marji_val) if kar_marji_val is not None else 25
     kargo = float(data.get('kargo_ucreti') or 0)
     kdv_dahil = bool(data.get('kdv_dahil', True))
     tl = _hesapla_tl(usd, kur, marj, kargo, kdv_dahil)
@@ -214,6 +215,21 @@ def urun_sil(uid):
         return jsonify({'hata': 'Yetkisiz'}), 403
     u = Urun.query.get_or_404(uid)
     u.aktif = False
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@magaza_bp.route('/gorseller/<int:gid>', methods=['DELETE'])
+def gorsel_sil(gid):
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+    g = UrunGorsel.query.get_or_404(gid)
+    dosya_tam = os.path.join(os.path.dirname(__file__), '..', 'uploads', g.dosya_yolu)
+    try:
+        if os.path.exists(dosya_tam):
+            os.remove(dosya_tam)
+    except Exception:
+        pass
+    db.session.delete(g)
     db.session.commit()
     return jsonify({'ok': True})
 
