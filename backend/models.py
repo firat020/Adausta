@@ -637,6 +637,7 @@ class UrunSiparis(db.Model):
     misafir_telefon = db.Column(db.String(20), nullable=True)
     misafir_email   = db.Column(db.String(120), nullable=True)
     misafir_adres   = db.Column(db.Text, nullable=True)
+    odeme_yontemi   = db.Column(db.String(50), nullable=True)
     olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -656,5 +657,6 @@ class UrunSiparis(db.Model):
             'misafir_telefon': self.misafir_telefon,
             'misafir_email': self.misafir_email,
             'misafir_adres': self.misafir_adres,
+            'odeme_yontemi': self.odeme_yontemi,
             'olusturma': fmt(self.olusturma),
         }

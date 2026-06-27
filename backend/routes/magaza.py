@@ -260,14 +260,29 @@ def gorsel_yukle(uid):
 @magaza_bp.route('/public/urunler', methods=['GET'])
 def public_urunler():
     arama = request.args.get('arama', '')
+    kategori = request.args.get('kategori', '')
     sayfa = request.args.get('sayfa', 1, type=int)
     limit = 20
     q = Urun.query.filter_by(aktif=True)
     if arama:
         q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+    if kategori:
+        q = q.filter_by(kategori=kategori)
     total = q.count()
     urunler = q.order_by(Urun.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
     return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total})
+
+@magaza_bp.route('/public/urunler/<int:uid>', methods=['GET'])
+def public_urun_detay(uid):
+    u = Urun.query.filter_by(id=uid, aktif=True).first_or_404()
+    return jsonify(u.to_dict(include_gorseller=True))
+
+@magaza_bp.route('/public/kategoriler', methods=['GET'])
+def public_kategoriler():
+    sonuc = db.session.query(Urun.kategori).filter(
+        Urun.aktif == True, Urun.kategori != None, Urun.kategori != ''
+    ).distinct().all()
+    return jsonify([r[0] for r in sonuc])
 
 @magaza_bp.route('/public/siparis', methods=['POST'])
 def public_siparis():
@@ -280,6 +295,7 @@ def public_siparis():
     if not ad or not telefon:
         return jsonify({'hata': 'Ad ve telefon zorunlu'}), 400
 
+    odeme_yontemi = (data.get('odeme_yontemi') or 'belirtilmedi').strip()
     siparis_kodu = uuid.uuid4().hex[:8].upper()
     for item in items:
         urun = Urun.query.get(item.get('urun_id'))
@@ -300,6 +316,7 @@ def public_siparis():
             misafir_telefon=telefon,
             misafir_email=(data.get('email') or '').strip(),
             misafir_adres=(data.get('adres') or '').strip(),
+            odeme_yontemi=odeme_yontemi,
         )
         if urun.stok is not None:
             urun.stok -= miktar

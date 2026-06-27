@@ -18,6 +18,8 @@ export default function Magaza() {
   const [urunler, setUrunler] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [arama, setArama] = useState('')
+  const [kategori, setKategori] = useState('')
+  const [kategoriler, setKategoriler] = useState([])
   const [sepet, setSepetState] = useState(getSepet)
   const [sepetAcik, setSepetAcik] = useState(false)
   const navigate = useNavigate()
@@ -31,12 +33,18 @@ export default function Magaza() {
   }
 
   useEffect(() => {
+    axios.get(`${API}/api/magaza/public/kategoriler`)
+      .then(r => setKategoriler(r.data))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     setYukleniyor(true)
-    axios.get(`${API}/api/magaza/public/urunler`, { params: { arama } })
+    axios.get(`${API}/api/magaza/public/urunler`, { params: { arama, kategori: kategori || undefined } })
       .then(r => setUrunler(r.data.urunler))
       .catch(() => {})
       .finally(() => setYukleniyor(false))
-  }, [arama])
+  }, [arama, kategori])
 
   const sepeteEkle = (urun) => {
     setSepet(s => ({ ...s, [urun.id]: (s[urun.id] || 0) + 1 }))
@@ -102,6 +110,31 @@ export default function Magaza() {
         />
       </div>
 
+      {/* Kategoriler */}
+      {kategoriler.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setKategori('')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${
+              kategori === '' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
+            }`}
+          >
+            Tümü
+          </button>
+          {kategoriler.map(k => (
+            <button
+              key={k}
+              onClick={() => setKategori(k === kategori ? '' : k)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${
+                kategori === k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
+              }`}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Ürünler */}
       {yukleniyor ? (
         <div className="flex items-center justify-center py-24">
@@ -119,7 +152,10 @@ export default function Magaza() {
             const sepetteMi = !!sepet[u.id]
             return (
               <div key={u.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-40 bg-gray-50 flex items-center justify-center border-b border-gray-100">
+                <div
+                  className="h-40 bg-gray-50 flex items-center justify-center border-b border-gray-100 cursor-pointer"
+                  onClick={() => navigate(`/magaza/urun/${u.id}`)}
+                >
                   {u.kapak_gorsel
                     ? <img src={`${API}/uploads/${u.kapak_gorsel}`} className="h-full w-full object-contain p-3" alt={u.ad} />
                     : <Package size={36} className="text-gray-200" />
@@ -127,7 +163,10 @@ export default function Magaza() {
                 </div>
                 <div className="p-3">
                   {u.marka_ad && <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">{u.marka_ad}</p>}
-                  <h3 className="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2">{u.ad}</h3>
+                  <h3
+                    className="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => navigate(`/magaza/urun/${u.id}`)}
+                  >{u.ad}</h3>
 
                   <div className="mb-2">
                     <span className="text-xl font-black text-gray-900">${u.usd_fiyat}</span>

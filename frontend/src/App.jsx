@@ -32,6 +32,7 @@ import OdemeFormu from './pages/OdemeFormu'
 import OdemeSonuc from './pages/OdemeSonuc'
 import Magaza from './pages/Magaza'
 import MagazaOdeme from './pages/MagazaOdeme'
+import MagazaUrunDetay from './pages/MagazaUrunDetay'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -100,6 +101,7 @@ function PublicSite() {
           <Route path="/odeme" element={<OdemeFormu />} />
           <Route path="/odeme-sonuc" element={<OdemeSonuc />} />
           <Route path="/magaza" element={<Magaza />} />
+          <Route path="/magaza/urun/:id" element={<MagazaUrunDetay />} />
           <Route path="/magaza/odeme" element={<MagazaOdeme />} />
         </Routes>
       </main>
