@@ -35,6 +35,7 @@ export default function AdminUrunEkle() {
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [basari, setBasari] = useState(false)
   const [gorseller, setGorseller] = useState([])
+  const [bekleyenGorseller, setBekleyenGorseller] = useState([])
   const [gorselYukleniyor, setGorselYukleniyor] = useState(false)
   const gorselRef = useRef(null)
 
@@ -115,7 +116,10 @@ export default function AdminUrunEkle() {
 
   const gorselYukle = async (files) => {
     if (!duzenlemeId) {
-      alert('Önce ürünü kaydedin, sonra resim ekleyebilirsiniz.')
+      for (const file of Array.from(files)) {
+        const previewUrl = URL.createObjectURL(file)
+        setBekleyenGorseller(g => [...g, { file, previewUrl, tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}` }])
+      }
       return
     }
     setGorselYukleniyor(true)
@@ -136,7 +140,15 @@ export default function AdminUrunEkle() {
     setGorselYukleniyor(false)
   }
 
-  const gorselSil = async (gorselId) => {
+  const gorselSil = async (gorselId, isBekleyen) => {
+    if (isBekleyen) {
+      setBekleyenGorseller(g => {
+        const item = g.find(x => x.tempId === gorselId)
+        if (item) URL.revokeObjectURL(item.previewUrl)
+        return g.filter(x => x.tempId !== gorselId)
+      })
+      return
+    }
     try {
       await axios.delete(`${API}/api/magaza/gorseller/${gorselId}`, { withCredentials: true })
     } catch {}
@@ -160,10 +172,27 @@ export default function AdminUrunEkle() {
       kategori: form.kategori,
     }
     try {
+      let hedefId = duzenlemeId
       if (duzenlemeId) {
         await axios.put(`${API}/api/magaza/urunler/${duzenlemeId}`, payload, { withCredentials: true })
       } else {
-        await axios.post(`${API}/api/magaza/urunler`, payload, { withCredentials: true })
+        const r = await axios.post(`${API}/api/magaza/urunler`, payload, { withCredentials: true })
+        hedefId = r.data.id
+      }
+      if (bekleyenGorseller.length > 0) {
+        for (const g of bekleyenGorseller) {
+          try {
+            const fd = new FormData()
+            fd.append('gorsel', g.file)
+            await axios.post(
+              `${API}/api/magaza/urunler/${hedefId}/gorsel`,
+              fd,
+              { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } }
+            )
+            URL.revokeObjectURL(g.previewUrl)
+          } catch {}
+        }
+        setBekleyenGorseller([])
       }
       setBasari(true)
       setTimeout(() => navigate('/admin/urunler'), 1500)
@@ -276,17 +305,25 @@ export default function AdminUrunEkle() {
               className="hidden"
               onChange={e => gorselYukle(e.target.files)}
             />
-            {gorseller.length > 0 && (
+            {(gorseller.length > 0 || bekleyenGorseller.length > 0) && (
               <div className="grid grid-cols-4 gap-2 mb-3">
                 {gorseller.map(g => (
                   <div key={g.id} className="relative group rounded-lg overflow-hidden border border-[#1a2744] aspect-square bg-[#121929]">
-                    <img
-                      src={`${API}/uploads/${g.yol}`}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={`${API}/uploads/${g.yol}`} alt="" className="w-full h-full object-cover" />
                     <button
-                      onClick={() => gorselSil(g.id)}
+                      onClick={() => gorselSil(g.id, false)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center"
+                    >
+                      <X size={10} className="text-white" />
+                    </button>
+                  </div>
+                ))}
+                {bekleyenGorseller.map(g => (
+                  <div key={g.tempId} className="relative group rounded-lg overflow-hidden border border-[#0052CC]/60 aspect-square bg-[#121929]">
+                    <img src={g.previewUrl} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#0052CC]/80 text-white text-[8px] font-bold text-center py-0.5">bekliyor</div>
+                    <button
+                      onClick={() => gorselSil(g.tempId, true)}
                       className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center"
                     >
                       <X size={10} className="text-white" />
@@ -308,7 +345,11 @@ export default function AdminUrunEkle() {
                 {gorselYukleniyor ? 'Yükleniyor...' : 'Dosya seç ya da sürükle'}
               </p>
               <p className="text-xs text-[#6a7ea0]">
-                {!duzenlemeId ? 'Önce kaydedin, sonra resim ekleyebilirsiniz' : 'PNG, JPG, WEBP · en fazla 5 MB'}
+                {!duzenlemeId
+                  ? bekleyenGorseller.length > 0
+                    ? `${bekleyenGorseller.length} resim seçildi — kaydet ile yüklenecek`
+                    : 'Resimleri seçin, kaydet butonuyla yüklenecek'
+                  : 'PNG, JPG, WEBP · en fazla 5 MB'}
               </p>
             </div>
           </Card>

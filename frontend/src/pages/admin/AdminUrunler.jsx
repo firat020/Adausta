@@ -107,7 +107,7 @@ export default function AdminUrunler() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#1a2744]">
-                {['Ürün', 'Marka / Model', 'USD', 'TL Satış', 'Stok', 'Durum', ''].map(h => (
+                {['Ürün', 'Açıklama', 'Marka / Model', 'USD', 'TL Satış', 'Stok', 'Durum', ''].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-[#6a7ea0] px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -128,6 +128,11 @@ export default function AdminUrunler() {
                         {u.sku && <p className="text-xs text-[#6a7ea0]">SKU: {u.sku}</p>}
                       </div>
                     </div>
+                  </td>
+                  <td className="px-4 py-3 max-w-[200px]">
+                    <p className="text-xs text-[#6a7ea0] line-clamp-2 leading-relaxed">
+                      {u.aciklama || '—'}
+                    </p>
                   </td>
                   <td className="px-4 py-3 text-sm text-[#6a7ea0]">
                     {u.marka_ad || '—'}{u.model_ad ? ` / ${u.model_ad}` : ''}
