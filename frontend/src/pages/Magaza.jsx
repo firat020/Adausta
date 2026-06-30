@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { ShoppingCart, Search, Package, Plus, Minus, X, Trash2 } from 'lucide-react'
+import { ShoppingCart, Search, Package, Plus, Minus, X, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import API from '../config.js'
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0)
@@ -14,12 +14,100 @@ function saveSepet(s) {
   localStorage.setItem(CART_KEY, JSON.stringify(s))
 }
 
+// Sabit kategori agaci
+const KATEGORI_AGACI = [
+  {
+    id: 'teknoloji',
+    label: 'Teknolojik Ürünler',
+    altlar: [
+      {
+        id: 'cep-telefonlari',
+        label: 'Cep Telefonları',
+        filtre: { kategori: 'Cep Telefonu' },
+        altlar: [
+          {
+            id: 'ulefone',
+            label: 'Ulefone',
+            filtre: { markaId: 2 },
+            altlar: [
+              { id: 'ulefone-cep', label: 'Cep Telefonu', filtre: { markaId: 2, kategori: 'Cep Telefonu' } },
+              { id: 'ulefone-tablet', label: 'Tablet', filtre: { markaId: 2, kategori: 'Tablet' } },
+              { id: 'ulefone-aksesuar', label: 'Aksesuar', filtre: { markaId: 2, kategori: 'Aksesuar' } },
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+
+function KategoriNode({ node, aktifId, setAktif, aciklar, setAciklar, derinlik = 0 }) {
+  const hasAlt = node.altlar && node.altlar.length > 0
+  const acik = aciklar.has(node.id)
+  const secili = aktifId === node.id
+
+  const tikla = () => {
+    if (hasAlt) {
+      setAciklar(prev => {
+        const yeni = new Set(prev)
+        if (yeni.has(node.id)) yeni.delete(node.id)
+        else yeni.add(node.id)
+        return yeni
+      })
+    }
+    if (node.filtre) {
+      setAktif(node.id, node.filtre)
+    }
+  }
+
+  const paddingLeft = 12 + derinlik * 14
+
+  return (
+    <div>
+      <button
+        onClick={tikla}
+        className={`w-full flex items-center justify-between text-left py-1.5 pr-2 rounded-lg transition-colors text-sm ${
+          secili
+            ? 'bg-blue-50 text-blue-700 font-semibold'
+            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+        }`}
+        style={{ paddingLeft }}
+      >
+        <span className={derinlik === 0 ? 'font-bold text-gray-900 text-xs uppercase tracking-wide' : ''}>
+          {node.label}
+        </span>
+        {hasAlt && (
+          acik
+            ? <ChevronDown size={13} className="text-gray-400 flex-shrink-0" />
+            : <ChevronRight size={13} className="text-gray-400 flex-shrink-0" />
+        )}
+      </button>
+      {hasAlt && acik && (
+        <div>
+          {node.altlar.map(alt => (
+            <KategoriNode
+              key={alt.id}
+              node={alt}
+              aktifId={aktifId}
+              setAktif={setAktif}
+              aciklar={aciklar}
+              setAciklar={setAciklar}
+              derinlik={derinlik + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Magaza() {
   const [urunler, setUrunler] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [arama, setArama] = useState('')
-  const [kategori, setKategori] = useState('')
-  const [kategoriler, setKategoriler] = useState([])
+  const [filtre, setFiltre] = useState({})
+  const [aktifId, setAktifId] = useState(null)
+  const [aciklar, setAciklar] = useState(new Set(['teknoloji', 'cep-telefonlari', 'ulefone']))
   const [sepet, setSepetState] = useState(getSepet)
   const [sepetAcik, setSepetAcik] = useState(false)
   const navigate = useNavigate()
@@ -32,19 +120,26 @@ export default function Magaza() {
     })
   }
 
-  useEffect(() => {
-    axios.get(`${API}/api/magaza/public/kategoriler`)
-      .then(r => setKategoriler(r.data))
-      .catch(() => {})
-  }, [])
+  const setAktifFiltre = (id, yeniFiltre) => {
+    setAktifId(id)
+    setFiltre(yeniFiltre)
+  }
+
+  const filtreTemizle = () => {
+    setAktifId(null)
+    setFiltre({})
+  }
 
   useEffect(() => {
     setYukleniyor(true)
-    axios.get(`${API}/api/magaza/public/urunler`, { params: { arama, kategori: kategori || undefined } })
+    const params = { arama: arama || undefined }
+    if (filtre.kategori) params.kategori = filtre.kategori
+    if (filtre.markaId) params.marka_id = filtre.markaId
+    axios.get(`${API}/api/magaza/public/urunler`, { params })
       .then(r => setUrunler(r.data.urunler))
       .catch(() => {})
       .finally(() => setYukleniyor(false))
-  }, [arama, kategori])
+  }, [arama, filtre])
 
   const sepeteEkle = (urun) => {
     setSepet(s => ({ ...s, [urun.id]: (s[urun.id] || 0) + 1 }))
@@ -78,9 +173,9 @@ export default function Magaza() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      {/* Başlık */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Baslik + Sepet */}
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900">Mağaza</h1>
           <p className="text-gray-500 mt-1">Alet, ekipman ve malzeme siparişi</p>
@@ -99,112 +194,115 @@ export default function Magaza() {
         </button>
       </div>
 
-      {/* Arama */}
-      <div className="relative max-w-lg">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          value={arama}
-          onChange={e => setArama(e.target.value)}
-          placeholder="Ürün ara..."
-          className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 shadow-sm"
-        />
-      </div>
+      <div className="flex gap-6 items-start">
 
-      {/* Kategoriler */}
-      {kategoriler.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setKategori('')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${
-              kategori === '' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
-            }`}
-          >
-            Tümü
-          </button>
-          {kategoriler.map(k => (
-            <button
-              key={k}
-              onClick={() => setKategori(k === kategori ? '' : k)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${
-                kategori === k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
-              }`}
-            >
-              {k}
-            </button>
+        {/* Sol sidebar - kategori agaci */}
+        <aside className="w-52 flex-shrink-0 bg-white border border-gray-200 rounded-2xl p-4 sticky top-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kategoriler</span>
+            {aktifId && (
+              <button onClick={filtreTemizle} className="text-xs text-blue-600 hover:underline">Temizle</button>
+            )}
+          </div>
+          {KATEGORI_AGACI.map(node => (
+            <KategoriNode
+              key={node.id}
+              node={node}
+              aktifId={aktifId}
+              setAktif={setAktifFiltre}
+              aciklar={aciklar}
+              setAciklar={setAciklar}
+              derinlik={0}
+            />
           ))}
-        </div>
-      )}
+        </aside>
 
-      {/* Ürünler */}
-      {yukleniyor ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
-        </div>
-      ) : urunler.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <Package size={48} className="mx-auto mb-4 opacity-20" />
-          <p className="font-medium text-lg">Ürün bulunamadı</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {urunler.map(u => {
-            const stokYok = u.stok !== null && u.stok <= 0
-            const sepetteMi = !!sepet[u.id]
-            return (
-              <div key={u.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div
-                  className="h-40 bg-gray-50 flex items-center justify-center border-b border-gray-100 cursor-pointer"
-                  onClick={() => navigate(`/magaza/urun/${u.id}`)}
-                >
-                  {u.kapak_gorsel
-                    ? <img src={`${API}/uploads/${u.kapak_gorsel}`} className="h-full w-full object-contain p-3" alt={u.ad} />
-                    : <Package size={36} className="text-gray-200" />
-                  }
-                </div>
-                <div className="p-3">
-                  {u.marka_ad && <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">{u.marka_ad}</p>}
-                  <h3
-                    className="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => navigate(`/magaza/urun/${u.id}`)}
-                  >{u.ad}</h3>
+        {/* Sag - arama + urunler */}
+        <div className="flex-1 min-w-0 space-y-5">
 
-                  <div className="mb-2">
-                    <span className="text-xl font-black text-gray-900">${u.usd_fiyat}</span>
-                    <p className="text-xs text-gray-400">{fmt(u.tl_fiyat)}</p>
+          {/* Arama */}
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={arama}
+              onChange={e => setArama(e.target.value)}
+              placeholder="Ürün ara..."
+              className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 shadow-sm"
+            />
+          </div>
+
+          {/* Urun grid */}
+          {yukleniyor ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+            </div>
+          ) : urunler.length === 0 ? (
+            <div className="text-center py-24 text-gray-400">
+              <Package size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="font-medium text-lg">Ürün bulunamadı</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {urunler.map(u => {
+                const stokYok = u.stok !== null && u.stok <= 0
+                const sepetteMi = !!sepet[u.id]
+                return (
+                  <div key={u.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div
+                      className="h-40 bg-gray-50 flex items-center justify-center border-b border-gray-100 cursor-pointer"
+                      onClick={() => navigate(`/magaza/urun/${u.id}`)}
+                    >
+                      {u.kapak_gorsel
+                        ? <img src={`${API}/uploads/${u.kapak_gorsel}`} className="h-full w-full object-contain p-3" alt={u.ad} />
+                        : <Package size={36} className="text-gray-200" />
+                      }
+                    </div>
+                    <div className="p-3">
+                      {u.marka_ad && <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">{u.marka_ad}</p>}
+                      <h3
+                        className="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => navigate(`/magaza/urun/${u.id}`)}
+                      >{u.ad}</h3>
+
+                      <div className="mb-2">
+                        <span className="text-xl font-black text-gray-900">${u.usd_fiyat}</span>
+                        <p className="text-xs text-gray-400">{fmt(u.tl_fiyat)}</p>
+                      </div>
+
+                      <p className={`text-xs font-semibold mb-3 ${
+                        u.stok === null || u.stok > 5 ? 'text-green-600'
+                        : u.stok > 0 ? 'text-orange-500'
+                        : 'text-red-500'
+                      }`}>
+                        {u.stok === null ? 'Stokta' : u.stok > 5 ? `Stokta (${u.stok})` : u.stok > 0 ? `Son ${u.stok} adet!` : 'Stok yok'}
+                      </p>
+
+                      {stokYok ? (
+                        <button disabled className="w-full py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed">Stok Yok</button>
+                      ) : sepetteMi ? (
+                        <button
+                          onClick={() => setSepetAcik(true)}
+                          className="w-full py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                        >
+                          Sepette ({sepet[u.id]})
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => sepeteEkle(u)}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        >
+                          <Plus size={12} />
+                          Sepete Ekle
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  <p className={`text-xs font-semibold mb-3 ${
-                    u.stok === null || u.stok > 5 ? 'text-green-600'
-                    : u.stok > 0 ? 'text-orange-500'
-                    : 'text-red-500'
-                  }`}>
-                    {u.stok === null ? 'Stokta' : u.stok > 5 ? `Stokta (${u.stok})` : u.stok > 0 ? `Son ${u.stok} adet!` : 'Stok yok'}
-                  </p>
-
-                  {stokYok ? (
-                    <button disabled className="w-full py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed">Stok Yok</button>
-                  ) : sepetteMi ? (
-                    <button
-                      onClick={() => setSepetAcik(true)}
-                      className="w-full py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                    >
-                      Sepette ({sepet[u.id]})
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => sepeteEkle(u)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                    >
-                      <Plus size={12} />
-                      Sepete Ekle
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Sepet drawer */}
       {sepetAcik && (
@@ -274,7 +372,7 @@ export default function Magaza() {
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                 >
                   <ShoppingCart size={16} />
-                  Siparisi Tamamla
+                  Siparişi Tamamla
                 </button>
               </div>
             )}

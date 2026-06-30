@@ -261,6 +261,7 @@ def gorsel_yukle(uid):
 def public_urunler():
     arama = request.args.get('arama', '')
     kategori = request.args.get('kategori', '')
+    marka_id = request.args.get('marka_id', type=int)
     sayfa = request.args.get('sayfa', 1, type=int)
     limit = 20
     q = Urun.query.filter_by(aktif=True)
@@ -268,6 +269,8 @@ def public_urunler():
         q = q.filter(Urun.ad.ilike(f'%{arama}%'))
     if kategori:
         q = q.filter_by(kategori=kategori)
+    if marka_id:
+        q = q.filter_by(marka_id=marka_id)
     total = q.count()
     urunler = q.order_by(Urun.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
     return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total})
