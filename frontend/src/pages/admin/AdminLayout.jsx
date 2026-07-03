@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
-  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag
+  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -21,6 +21,7 @@ const menuItems = [
   { to: '/admin/kategoriler',  icon: Tag,             label: 'Kategoriler' },
   { to: '/admin/reklamlar',    icon: Megaphone,       label: 'Reklam Yönetimi' },
   { to: '/admin/urunler',      icon: ShoppingBag,     label: 'Ürün Yönetimi' },
+  { to: '/admin/siparisler',   icon: ShoppingCart,    label: 'Siparişler', badge: true },
   { to: '/admin/loglar',       icon: FileText,        label: 'İşlem Logu' },
 ]
 
@@ -29,6 +30,7 @@ export default function AdminLayout() {
   const [kontrol, setKontrol] = useState(true)
   const [bakimModu, setBakimModu] = useState(false)
   const [bakimYukleniyor, setBakimYukleniyor] = useState(false)
+  const [bekleyenSiparis, setBekleyenSiparis] = useState(0)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -38,6 +40,8 @@ export default function AdminLayout() {
           navigate('/admin/login', { replace: true })
         } else {
           setKontrol(false)
+          axios.get(`${API}/api/magaza/admin/siparisler/ozet`, { withCredentials: true })
+            .then(r => setBekleyenSiparis(r.data.bekliyor || 0)).catch(() => {})
         }
       })
       .catch(() => navigate('/admin/login', { replace: true }))
@@ -90,7 +94,7 @@ export default function AdminLayout() {
 
         {/* Navigasyon */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {menuItems.map(({ to, icon: Icon, label }) => (
+          {menuItems.map(({ to, icon: Icon, label, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -106,7 +110,12 @@ export default function AdminLayout() {
               {({ isActive }) => (
                 <>
                   <Icon size={17} className="flex-shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
-                  <span>{label}</span>
+                  <span className="flex-1">{label}</span>
+                  {badge && bekleyenSiparis > 0 && (
+                    <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {bekleyenSiparis}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>

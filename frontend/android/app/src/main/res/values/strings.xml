@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Adausta</string>
+    <string name="title_activity_main">Adausta</string>
+    <string name="package_name">com.adausta.app</string>
+    <string name="custom_url_scheme">com.adausta.app</string>
+</resources>

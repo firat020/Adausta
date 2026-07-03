@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, AreaChart, Area
 } from 'recharts'
-import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle } from 'lucide-react'
+import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle, ShoppingCart } from 'lucide-react'
 
 import API from '../../config.js'
 // API
@@ -46,17 +47,24 @@ export default function AdminDashboard() {
   const [veri, setVeri] = useState(null)
   const [mali, setMali] = useState(null)
   const [kur, setKur] = useState(null)
+  const [sipOzet, setSipOzet] = useState(null)
+  const [sonSiparisler, setSonSiparisler] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     Promise.all([
       axios.get(`${API}/api/admin/istatistik`, { withCredentials: true }),
       axios.get(`${API}/api/admin/mali/ozet`, { withCredentials: true }),
       axios.get(`${API}/api/odeme/kur`),
-    ]).then(([r1, r2, r3]) => {
+      axios.get(`${API}/api/magaza/admin/siparisler/ozet`, { withCredentials: true }),
+      axios.get(`${API}/api/magaza/admin/siparisler`, { params: { sayfa: 1 }, withCredentials: true }),
+    ]).then(([r1, r2, r3, r4, r5]) => {
       setVeri(r1.data)
       setMali(r2.data)
       setKur(r3.data.USD_TRY)
+      setSipOzet(r4.data)
+      setSonSiparisler((r5.data.siparisler || []).slice(0, 5))
       setYukleniyor(false)
     }).catch(() => setYukleniyor(false))
   }, [])
@@ -84,6 +92,66 @@ export default function AdminDashboard() {
         <StatKart baslik="Bu Ay Kayıt" deger={veri.bu_ay_kayit} trend={trend} ikon={TrendingUp} renk="bg-green-500" />
         <StatKart baslik="Bekleyen Yorum" deger={veri.bekleyen_yorum} alt={`${veri.toplam_yorum} toplam`} ikon={Star} renk="bg-yellow-500" />
       </div>
+
+      {/* Sipariş Özeti */}
+      {sipOzet && (
+        <div
+          className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5 cursor-pointer hover:border-[#0052CC] transition-colors"
+          onClick={() => navigate('/admin/siparisler')}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-amber-100 rounded-lg"><ShoppingCart size={16} className="text-amber-600" /></div>
+              <h3 className="font-semibold text-[#1e293b] text-sm">Mağaza Siparişleri</h3>
+            </div>
+            {sipOzet.bekliyor > 0 && (
+              <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                {sipOzet.bekliyor} yeni
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-3 text-center">
+            <div>
+              <p className="text-xl font-bold text-[#1e293b]">{sipOzet.toplam}</p>
+              <p className="text-xs text-gray-500">Toplam</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-amber-600">{sipOzet.bekliyor}</p>
+              <p className="text-xs text-gray-500">Bekliyor</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-violet-600">{sipOzet.kargoda}</p>
+              <p className="text-xs text-gray-500">Kargoda</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-green-600">{sipOzet.teslim_edildi}</p>
+              <p className="text-xs text-gray-500">Teslim</p>
+            </div>
+          </div>
+          {sonSiparisler.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#F0F2F5] space-y-2">
+              {sonSiparisler.map(s => (
+                <div key={s.id} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-[#0052CC] font-bold">#{s.siparis_kodu || s.id}</span>
+                    <span className="text-[#1e293b]">{s.misafir_ad || '-'}</span>
+                    <span className="text-gray-400 text-xs">{s.urun_ad ? `— ${s.urun_ad}` : ''}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-[#1e293b]">{s.toplam_tl?.toLocaleString('tr-TR')} ₺</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                      s.durum === 'bekliyor' ? 'bg-amber-100 text-amber-700' :
+                      s.durum === 'teslim_edildi' ? 'bg-green-100 text-green-700' :
+                      s.durum === 'kargoda' ? 'bg-violet-100 text-violet-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>{s.durum}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Finansal widget'lar */}
       {mali && (

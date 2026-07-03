@@ -381,12 +381,49 @@ def usta_siparislerim():
 
 # ─── ADMİN SİPARİŞLER ──────────────────────────────────────
 
+@magaza_bp.route('/admin/siparisler/ozet', methods=['GET'])
+def admin_siparisler_ozet():
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+    toplam      = UrunSiparis.query.count()
+    bekliyor    = UrunSiparis.query.filter_by(durum='bekliyor').count()
+    hazirlaniyor = UrunSiparis.query.filter_by(durum='hazırlanıyor').count()
+    kargoda     = UrunSiparis.query.filter_by(durum='kargoda').count()
+    teslim      = UrunSiparis.query.filter_by(durum='teslim_edildi').count()
+    iptal       = UrunSiparis.query.filter_by(durum='iptal').count()
+    ciro        = db.session.query(db.func.sum(UrunSiparis.toplam_tl)).filter(
+        UrunSiparis.durum == 'teslim_edildi'
+    ).scalar() or 0
+    return jsonify({
+        'toplam': toplam,
+        'bekliyor': bekliyor,
+        'hazirlaniyor': hazirlaniyor,
+        'kargoda': kargoda,
+        'teslim_edildi': teslim,
+        'iptal': iptal,
+        'teslim_ciro': round(float(ciro), 2),
+    })
+
 @magaza_bp.route('/admin/siparisler', methods=['GET'])
 def admin_siparisler():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
-    siparisler = UrunSiparis.query.order_by(UrunSiparis.olusturma.desc()).limit(100).all()
-    return jsonify([s.to_dict() for s in siparisler])
+    durum = request.args.get('durum', '')
+    arama = request.args.get('arama', '')
+    sayfa = request.args.get('sayfa', 1, type=int)
+    limit = 50
+    q = UrunSiparis.query
+    if durum:
+        q = q.filter_by(durum=durum)
+    if arama:
+        q = q.filter(db.or_(
+            UrunSiparis.misafir_ad.ilike(f'%{arama}%'),
+            UrunSiparis.siparis_kodu.ilike(f'%{arama}%'),
+            UrunSiparis.misafir_telefon.ilike(f'%{arama}%'),
+        ))
+    total = q.count()
+    siparisler = q.order_by(UrunSiparis.olusturma.desc()).offset((sayfa - 1) * limit).limit(limit).all()
+    return jsonify({'siparisler': [s.to_dict() for s in siparisler], 'total': total, 'sayfa': sayfa})
 
 @magaza_bp.route('/admin/siparisler/<int:sid>', methods=['PUT'])
 def siparis_durum(sid):

@@ -1,10 +1,12 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { initGA, trackPage } from './analytics'
 import ScrollToTop from './components/ScrollToTop'
 import axios from 'axios'
 import API from './config.js'
+import { Capacitor } from '@capacitor/core'
 import CokYakinda from './pages/CokYakinda'
+import Hosgeldin from './pages/Hosgeldin'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WhatsappButon from './components/WhatsappButon'
@@ -48,6 +50,7 @@ import AdminAbonelikler from './pages/admin/AdminAbonelikler'
 import AdminOdemeler from './pages/admin/AdminOdemeler'
 import AdminUrunler from './pages/admin/AdminUrunler'
 import AdminUrunEkle from './pages/admin/AdminUrunEkle'
+import AdminSiparisler from './pages/admin/AdminSiparisler'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
 import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
@@ -114,6 +117,7 @@ export default function App() {
   const [bakimModu, setBakimModu] = useState(false)
   const [kontrol, setKontrol] = useState(true)
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => { initGA() }, [])
   useEffect(() => { trackPage(location.pathname) }, [location])
@@ -124,6 +128,15 @@ export default function App() {
       .catch(() => setKontrol(false))
   }, [])
 
+  // APK'da ilk açılışta /hosgeldin'e yönlendir
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    const girisYapildi = localStorage.getItem('adausta_giris')
+    if (!girisYapildi && location.pathname === '/') {
+      navigate('/hosgeldin', { replace: true })
+    }
+  }, [])
+
   if (kontrol) return null
   if (bakimModu) return <CokYakinda />
 
@@ -131,6 +144,9 @@ export default function App() {
     <>
     <ScrollToTop />
     <Routes>
+      {/* APK Karşılama */}
+      <Route path="/hosgeldin" element={<Hosgeldin />} />
+
       {/* Admin */}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
@@ -147,6 +163,7 @@ export default function App() {
         <Route path="odemeler" element={<AdminOdemeler />} />
         <Route path="urunler" element={<AdminUrunler />} />
         <Route path="urun-ekle" element={<AdminUrunEkle />} />
+        <Route path="siparisler" element={<AdminSiparisler />} />
       </Route>
 
       {/* Usta Paneli */}

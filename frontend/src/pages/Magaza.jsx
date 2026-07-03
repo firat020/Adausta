@@ -110,6 +110,8 @@ export default function Magaza() {
   const [aciklar, setAciklar] = useState(new Set(['teknoloji', 'cep-telefonlari', 'ulefone']))
   const [sepet, setSepetState] = useState(getSepet)
   const [sepetAcik, setSepetAcik] = useState(false)
+  const [mobilFiltreAcik, setMobilFiltreAcik] = useState(false)
+  const [hata, setHata] = useState(false)
   const navigate = useNavigate()
 
   const setSepet = (fn) => {
@@ -135,9 +137,10 @@ export default function Magaza() {
     const params = { arama: arama || undefined }
     if (filtre.kategori) params.kategori = filtre.kategori
     if (filtre.markaId) params.marka_id = filtre.markaId
+    setHata(false)
     axios.get(`${API}/api/magaza/public/urunler`, { params })
       .then(r => setUrunler(r.data.urunler))
-      .catch(() => {})
+      .catch(() => setHata(true))
       .finally(() => setYukleniyor(false))
   }, [arama, filtre])
 
@@ -173,19 +176,19 @@ export default function Magaza() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8 pb-24">
       {/* Baslik + Sepet */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-black text-gray-900">Mağaza</h1>
-          <p className="text-gray-500 mt-1">Alet, ekipman ve malzeme siparişi</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Mağaza</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Alet, ekipman ve malzeme siparişi</p>
         </div>
         <button
           onClick={() => setSepetAcik(true)}
-          className="relative flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
+          className="relative flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
         >
           <ShoppingCart size={16} />
-          Sepetim
+          <span className="hidden sm:inline">Sepetim</span>
           {sepetToplamAdet > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black rounded-full w-5 h-5 flex items-center justify-center">
               {sepetToplamAdet}
@@ -194,10 +197,30 @@ export default function Magaza() {
         </button>
       </div>
 
-      <div className="flex gap-6 items-start">
+      {/* Arama + Mobil filtre butonu */}
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={arama}
+            onChange={e => setArama(e.target.value)}
+            placeholder="Ürün ara..."
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 shadow-sm"
+          />
+        </div>
+        <button
+          onClick={() => setMobilFiltreAcik(true)}
+          className="md:hidden flex items-center gap-1.5 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 shadow-sm"
+        >
+          <ChevronDown size={14} />
+          Kategori
+        </button>
+      </div>
 
-        {/* Sol sidebar - kategori agaci */}
-        <aside className="w-52 flex-shrink-0 bg-white border border-gray-200 rounded-2xl p-4 sticky top-4">
+      <div className="flex gap-5 items-start">
+
+        {/* Sol sidebar - sadece tablet+ */}
+        <aside className="hidden md:block w-52 flex-shrink-0 bg-white border border-gray-200 rounded-2xl p-4 sticky top-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kategoriler</span>
             {aktifId && (
@@ -217,24 +240,17 @@ export default function Magaza() {
           ))}
         </aside>
 
-        {/* Sag - arama + urunler */}
-        <div className="flex-1 min-w-0 space-y-5">
-
-          {/* Arama */}
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={arama}
-              onChange={e => setArama(e.target.value)}
-              placeholder="Ürün ara..."
-              className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 shadow-sm"
-            />
-          </div>
-
-          {/* Urun grid */}
+        {/* Urunler - tam genislik mobilde */}
+        <div className="flex-1 min-w-0">
           {yukleniyor ? (
             <div className="flex items-center justify-center py-24">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+            </div>
+          ) : hata ? (
+            <div className="text-center py-24 text-red-400">
+              <Package size={48} className="mx-auto mb-4 opacity-30" />
+              <p className="font-semibold">Bağlantı hatası</p>
+              <p className="text-sm mt-1 text-gray-400">İnternet bağlantınızı kontrol edin</p>
             </div>
           ) : urunler.length === 0 ? (
             <div className="text-center py-24 text-gray-400">
@@ -242,39 +258,39 @@ export default function Magaza() {
               <p className="font-medium text-lg">Ürün bulunamadı</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {urunler.map(u => {
                 const stokYok = u.stok !== null && u.stok <= 0
                 const sepetteMi = !!sepet[u.id]
                 return (
-                  <div key={u.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div key={u.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div
-                      className="h-40 bg-gray-50 flex items-center justify-center border-b border-gray-100 cursor-pointer"
+                      className="h-36 sm:h-44 bg-gray-50 flex items-center justify-center border-b border-gray-100 cursor-pointer"
                       onClick={() => navigate(`/magaza/urun/${u.id}`)}
                     >
                       {u.kapak_gorsel
-                        ? <img src={`${API}/uploads/${u.kapak_gorsel}`} className="h-full w-full object-contain p-3" alt={u.ad} />
+                        ? <img src={`${API}/uploads/${u.kapak_gorsel}`} className="h-full w-full object-contain p-2" alt={u.ad} />
                         : <Package size={36} className="text-gray-200" />
                       }
                     </div>
-                    <div className="p-3">
-                      {u.marka_ad && <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">{u.marka_ad}</p>}
+                    <div className="p-2.5 flex flex-col flex-1">
+                      {u.marka_ad && <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5 truncate">{u.marka_ad}</p>}
                       <h3
-                        className="text-sm font-bold text-gray-900 leading-snug mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+                        className="text-xs sm:text-sm font-bold text-gray-900 leading-snug mb-1.5 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors flex-1"
                         onClick={() => navigate(`/magaza/urun/${u.id}`)}
                       >{u.ad}</h3>
 
-                      <div className="mb-2">
-                        <span className="text-xl font-black text-gray-900">${u.usd_fiyat}</span>
-                        <p className="text-xs text-gray-400">{fmt(u.tl_fiyat)}</p>
+                      <div className="mb-1.5">
+                        <span className="text-base sm:text-lg font-black text-gray-900">${u.usd_fiyat}</span>
+                        <p className="text-xs text-gray-400 leading-none">{fmt(u.tl_fiyat)}</p>
                       </div>
 
-                      <p className={`text-xs font-semibold mb-3 ${
+                      <p className={`text-xs font-semibold mb-2 ${
                         u.stok === null || u.stok > 5 ? 'text-green-600'
                         : u.stok > 0 ? 'text-orange-500'
                         : 'text-red-500'
                       }`}>
-                        {u.stok === null ? 'Stokta' : u.stok > 5 ? `Stokta (${u.stok})` : u.stok > 0 ? `Son ${u.stok} adet!` : 'Stok yok'}
+                        {u.stok === null ? 'Stokta' : u.stok > 5 ? 'Stokta' : u.stok > 0 ? `Son ${u.stok}!` : 'Stok yok'}
                       </p>
 
                       {stokYok ? (
@@ -282,17 +298,17 @@ export default function Magaza() {
                       ) : sepetteMi ? (
                         <button
                           onClick={() => setSepetAcik(true)}
-                          className="w-full py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                          className="w-full py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200"
                         >
                           Sepette ({sepet[u.id]})
                         </button>
                       ) : (
                         <button
                           onClick={() => sepeteEkle(u)}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white"
                         >
                           <Plus size={12} />
-                          Sepete Ekle
+                          Ekle
                         </button>
                       )}
                     </div>
@@ -303,6 +319,33 @@ export default function Magaza() {
           )}
         </div>
       </div>
+
+      {/* Mobil kategori drawer */}
+      {mobilFiltreAcik && (
+        <div className="fixed inset-0 z-50 flex items-end md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobilFiltreAcik(false)} />
+          <div className="relative w-full bg-white rounded-t-2xl p-5 shadow-2xl max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">Kategoriler</h3>
+              <div className="flex items-center gap-3">
+                {aktifId && <button onClick={() => { filtreTemizle(); setMobilFiltreAcik(false) }} className="text-sm text-blue-600">Temizle</button>}
+                <button onClick={() => setMobilFiltreAcik(false)} className="p-1"><X size={20} className="text-gray-500" /></button>
+              </div>
+            </div>
+            {KATEGORI_AGACI.map(node => (
+              <KategoriNode
+                key={node.id}
+                node={node}
+                aktifId={aktifId}
+                setAktif={(id, f) => { setAktifFiltre(id, f); setMobilFiltreAcik(false) }}
+                aciklar={aciklar}
+                setAciklar={setAciklar}
+                derinlik={0}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sepet drawer */}
       {sepetAcik && (
