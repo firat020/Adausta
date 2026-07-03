@@ -22,6 +22,12 @@ CORS(app, supports_credentials=True, origins=[
     'http://localhost:8081',
     'http://192.168.88.253:5000',
     'http://192.168.88.253:8080',
+    # APK (Capacitor WebView)
+    'capacitor://localhost',
+    'https://localhost',
+    'http://localhost',
+    'https://adausta.com',
+    'http://adausta.com',
 ])
 
 db.init_app(app)
