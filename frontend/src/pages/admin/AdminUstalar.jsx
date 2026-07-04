@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
-import { Search, Check, X, Trash2, Eye, RefreshCw } from 'lucide-react'
+import { Search, Check, X, Trash2, Eye, RefreshCw, Plus } from 'lucide-react'
 
 import API from '../../config.js'
-// API
 
 const FILTRELER = [
   { key: 'hepsi', label: 'Hepsi' },
@@ -18,6 +17,123 @@ function Rozet({ onaylanmis, aktif }) {
   return <span className="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700 font-medium">Bekliyor</span>
 }
 
+function KategoriYonetim({ ustaId, onGuncelle }) {
+  const [veriler, setVeriler] = useState(null)
+  const [yukleniyor, setYukleniyor] = useState(true)
+  const [islem, setIslem] = useState(false)
+
+  const yukle = useCallback(async () => {
+    setYukleniyor(true)
+    try {
+      const r = await axios.get(`${API}/api/admin/ustalar/${ustaId}/kategoriler`, { withCredentials: true })
+      setVeriler(r.data)
+    } catch (e) { console.error(e) }
+    setYukleniyor(false)
+  }, [ustaId])
+
+  useEffect(() => { yukle() }, [yukle])
+
+  const ekle = async (kategoriId) => {
+    setIslem(true)
+    try {
+      await axios.post(`${API}/api/admin/ustalar/${ustaId}/kategoriler/ekle`, { kategori_id: kategoriId }, { withCredentials: true })
+      await yukle()
+      onGuncelle && onGuncelle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+    setIslem(false)
+  }
+
+  const cikar = async (kategoriId) => {
+    setIslem(true)
+    try {
+      await axios.post(`${API}/api/admin/ustalar/${ustaId}/kategoriler/cikar`, { kategori_id: kategoriId }, { withCredentials: true })
+      await yukle()
+      onGuncelle && onGuncelle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+    setIslem(false)
+  }
+
+  const anaYap = async (kategoriId) => {
+    setIslem(true)
+    try {
+      await axios.post(`${API}/api/admin/ustalar/${ustaId}/kategoriler/ana`, { kategori_id: kategoriId }, { withCredentials: true })
+      await yukle()
+      onGuncelle && onGuncelle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+    setIslem(false)
+  }
+
+  if (yukleniyor) return <div className="text-xs text-gray-400 py-2">Yükleniyor...</div>
+  if (!veriler) return null
+
+  const ekKatIds = new Set(veriler.ek_kategoriler.map(k => k.id))
+  const secilmemisler = veriler.tum_kategoriler.filter(k => !ekKatIds.has(k.id) && k.id !== veriler.ana_kategori_id)
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-gray-500 mb-1.5">Ana Kategori</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {veriler.tum_kategoriler.filter(k => k.id === veriler.ana_kategori_id).map(k => (
+            <span key={k.id} className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-semibold">
+              {k.ad}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-gray-500 mb-1.5">Ek Kategoriler</p>
+        {veriler.ek_kategoriler.length === 0 ? (
+          <p className="text-xs text-gray-400">Ek kategori yok</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {veriler.ek_kategoriler.map(k => (
+              <span key={k.id} className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                {k.ad}
+                <button
+                  onClick={() => anaYap(k.id)}
+                  disabled={islem}
+                  title="Ana kategori yap"
+                  className="text-blue-500 hover:text-blue-700 ml-0.5 disabled:opacity-40"
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={() => cikar(k.id)}
+                  disabled={islem}
+                  title="Kaldır"
+                  className="text-red-400 hover:text-red-600 disabled:opacity-40"
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {secilmemisler.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-1.5">Kategori Ekle</p>
+          <div className="flex flex-wrap gap-1.5">
+            {secilmemisler.map(k => (
+              <button
+                key={k.id}
+                onClick={() => ekle(k.id)}
+                disabled={islem}
+                className="flex items-center gap-1 px-2.5 py-1 border border-dashed border-gray-300 text-gray-500 rounded-lg text-xs hover:border-blue-400 hover:text-blue-600 transition disabled:opacity-40"
+              >
+                <Plus size={10} /> {k.ad}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminUstalar() {
   const [ustalar, setUstalar] = useState([])
   const [filtre, setFiltre] = useState('hepsi')
@@ -25,6 +141,7 @@ export default function AdminUstalar() {
   const [yukleniyor, setYukleniyor] = useState(true)
   const [secili, setSecili] = useState([])
   const [detay, setDetay] = useState(null)
+  const [kategoriAc, setKategoriAc] = useState(false)
 
   const yukle = useCallback(async () => {
     setYukleniyor(true)
@@ -62,9 +179,10 @@ export default function AdminUstalar() {
   const hepsiniSec = (e) => setSecili(e.target.checked ? ustalar.map(u => u.id) : [])
   const toggleSec = (id) => setSecili(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
+  const detayAc = (u) => { setDetay(u); setKategoriAc(false) }
+
   return (
     <div className="space-y-4">
-      {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-[#1e293b]">Usta Yönetimi</h2>
@@ -75,7 +193,6 @@ export default function AdminUstalar() {
         </button>
       </div>
 
-      {/* Filtreler + Arama */}
       <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-center">
         <div className="flex gap-1.5 flex-wrap">
           {FILTRELER.map(f => (
@@ -104,7 +221,6 @@ export default function AdminUstalar() {
         </div>
       </div>
 
-      {/* Toplu işlem */}
       {secili.length > 0 && (
         <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
           <span className="text-sm font-semibold text-[#1D4ED8]">{secili.length} usta seçildi</span>
@@ -115,7 +231,6 @@ export default function AdminUstalar() {
         </div>
       )}
 
-      {/* Tablo */}
       <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm overflow-hidden">
         {yukleniyor ? (
           <div className="flex items-center justify-center h-48">
@@ -143,7 +258,12 @@ export default function AdminUstalar() {
                       <input type="checkbox" checked={secili.includes(u.id)} onChange={() => toggleSec(u.id)} className="rounded border-gray-300" />
                     </td>
                     <td className="px-4 py-3 font-semibold text-[#1e293b]">{u.ad_soyad || `${u.ad} ${u.soyad}`}</td>
-                    <td className="px-4 py-3 text-gray-600">{u.kategori}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      <span>{u.kategori}</span>
+                      {u.ek_kategoriler && u.ek_kategoriler.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">+{u.ek_kategoriler.length}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{u.sehir || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 font-mono">{u.telefon}</td>
                     <td className="px-4 py-3">
@@ -155,7 +275,7 @@ export default function AdminUstalar() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setDetay(u)} title="Detay" className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"><Eye size={14} /></button>
+                        <button onClick={() => detayAc(u)} title="Detay" className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"><Eye size={14} /></button>
                         {!u.onaylanmis && u.aktif && (
                           <button onClick={() => islem(u.id, 'onayla')} title="Onayla" className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 transition"><Check size={14} /></button>
                         )}
@@ -173,17 +293,15 @@ export default function AdminUstalar() {
         )}
       </div>
 
-      {/* Detay Modal */}
       {detay && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetay(null)}>
-          <div className="bg-white border border-[#C8CDD4] rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4]">
+          <div className="bg-white border border-[#C8CDD4] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4] sticky top-0 bg-white rounded-t-2xl z-10">
               <h3 className="font-bold text-[#1e293b]">{detay.ad_soyad || `${detay.ad} ${detay.soyad}`}</h3>
               <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
             </div>
             <div className="px-6 py-4 space-y-3 text-sm text-gray-700">
               {[
-                ['Kategori', detay.kategori],
                 ['Telefon', detay.telefon],
                 ['E-posta', detay.email],
                 ['Şehir', detay.sehir],
@@ -200,6 +318,20 @@ export default function AdminUstalar() {
                   {detay.aciklama}
                 </div>
               )}
+
+              <div className="border-t border-[#E0E0E0] pt-3">
+                <button
+                  onClick={() => setKategoriAc(p => !p)}
+                  className="flex items-center gap-2 text-sm font-semibold text-[#0052CC] hover:underline"
+                >
+                  Kategori Yönetimi {kategoriAc ? '▲' : '▼'}
+                </button>
+                {kategoriAc && (
+                  <div className="mt-3">
+                    <KategoriYonetim ustaId={detay.id} onGuncelle={yukle} />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex gap-2 px-6 pb-5">
               {!detay.onaylanmis && detay.aktif && (

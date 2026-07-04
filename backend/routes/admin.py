@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme
+from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -160,6 +160,60 @@ def sil(id):
     db.session.commit()
     log_kaydet('USTA_SIL', f'Usta #{id} {ad} silindi')
     return jsonify({'mesaj': 'Silindi'})
+
+
+@admin_bp.route('/ustalar/<int:id>/kategoriler', methods=['GET'])
+@admin_gerekli
+def usta_kategoriler_listele(id):
+    u = Usta.query.get_or_404(id)
+    tum = Kategori.query.filter_by(aktif=True).order_by(Kategori.sira).all()
+    ek_ids = {k.id for k in u.ek_kategoriler}
+    return jsonify({
+        'ana_kategori_id': u.kategori_id,
+        'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in u.ek_kategoriler],
+        'tum_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon, 'secili': k.id in ek_ids} for k in tum]
+    })
+
+
+@admin_bp.route('/ustalar/<int:id>/kategoriler/ekle', methods=['POST'])
+@admin_gerekli
+def usta_kategori_ekle(id):
+    u = Usta.query.get_or_404(id)
+    data = request.get_json()
+    kategori_id = data.get('kategori_id')
+    k = Kategori.query.get_or_404(kategori_id)
+    if k not in u.ek_kategoriler:
+        u.ek_kategoriler.append(k)
+        db.session.commit()
+        log_kaydet('USTA_KATEGORI_EKLE', f'Usta #{id} {u.ad} → kategori "{k.ad}" eklendi')
+    return jsonify({'mesaj': f'{k.ad} eklendi'})
+
+
+@admin_bp.route('/ustalar/<int:id>/kategoriler/cikar', methods=['POST'])
+@admin_gerekli
+def usta_kategori_cikar(id):
+    u = Usta.query.get_or_404(id)
+    data = request.get_json()
+    kategori_id = data.get('kategori_id')
+    k = Kategori.query.get_or_404(kategori_id)
+    if k in u.ek_kategoriler:
+        u.ek_kategoriler.remove(k)
+        db.session.commit()
+        log_kaydet('USTA_KATEGORI_CIKAR', f'Usta #{id} {u.ad} → kategori "{k.ad}" çıkarıldı')
+    return jsonify({'mesaj': f'{k.ad} çıkarıldı'})
+
+
+@admin_bp.route('/ustalar/<int:id>/kategoriler/ana', methods=['POST'])
+@admin_gerekli
+def usta_ana_kategori_degistir(id):
+    u = Usta.query.get_or_404(id)
+    data = request.get_json()
+    kategori_id = data.get('kategori_id')
+    k = Kategori.query.get_or_404(kategori_id)
+    u.kategori_id = k.id
+    db.session.commit()
+    log_kaydet('USTA_ANA_KATEGORI', f'Usta #{id} {u.ad} → ana kategori "{k.ad}" yapıldı')
+    return jsonify({'mesaj': f'Ana kategori {k.ad} olarak değiştirildi'})
 
 
 @admin_bp.route('/ustalar/toplu', methods=['POST'])

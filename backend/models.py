@@ -96,6 +96,14 @@ class Ilce(db.Model):
         return {'id': self.id, 'ad': self.ad, 'sehir_id': self.sehir_id}
 
 
+# Many-to-many: usta ↔ ek kategoriler
+usta_kategoriler = db.Table(
+    'usta_kategoriler',
+    db.Column('usta_id', db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('kategori_id', db.Integer, db.ForeignKey('kategoriler.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
 class Kategori(db.Model):
     __tablename__ = 'kategoriler'
     id = db.Column(db.Integer, primary_key=True)
@@ -148,6 +156,7 @@ class Usta(db.Model):
     is_talepleri = db.relationship('IsTalebi', backref='usta', lazy=True, cascade='all, delete-orphan')
     sehir = db.relationship('Sehir', foreign_keys=[sehir_id])
     ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
+    ek_kategoriler = db.relationship('Kategori', secondary=usta_kategoriler, lazy=True)
 
     def ortalama_puan(self):
         if not self.yorumlar:
@@ -194,7 +203,11 @@ class Usta(db.Model):
             'musaitlik': self.musaitlik,
             'plan': self.plan,
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
-            'olusturma': self.olusturma.isoformat()
+            'olusturma': self.olusturma.isoformat(),
+            'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler],
+            'tum_kategoriler': (
+                [{'id': self.kategori_id, 'ad': self.kategori.ad, 'ikon': self.kategori.ikon}] if self.kategori else []
+            ) + [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler if k.id != self.kategori_id]
         }
 
 
