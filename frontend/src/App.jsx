@@ -48,6 +48,7 @@ import AdminReklamlar from './pages/admin/AdminReklamlar'
 import AdminPlanlar from './pages/admin/AdminPlanlar'
 import AdminAbonelikler from './pages/admin/AdminAbonelikler'
 import AdminOdemeler from './pages/admin/AdminOdemeler'
+import TalepTakip from './pages/TalepTakip'
 import AdminUrunler from './pages/admin/AdminUrunler'
 import AdminUrunEkle from './pages/admin/AdminUrunEkle'
 import AdminSiparisler from './pages/admin/AdminSiparisler'
@@ -106,6 +107,7 @@ function PublicSite() {
           <Route path="/magaza" element={<Magaza />} />
           <Route path="/magaza/urun/:id" element={<MagazaUrunDetay />} />
           <Route path="/magaza/odeme" element={<MagazaOdeme />} />
+          <Route path="/talep-takip" element={<TalepTakip />} />
         </Routes>
       </main>
       <Footer />
