@@ -3,7 +3,6 @@ import axios from 'axios'
 import { AlertCircle, Plus, X } from 'lucide-react'
 
 import API from '../../config.js'
-// API
 
 const durumRenk = {
   aktif: 'bg-green-100 text-green-700',
@@ -15,9 +14,11 @@ export default function AdminAbonelikler() {
   const [liste, setListe] = useState([])
   const [planlar, setPlanlar] = useState([])
   const [ustalar, setUstalar] = useState([])
+  const [kategoriler, setKategoriler] = useState([])
   const [filtre, setFiltre] = useState('hepsi')
   const [arama, setArama] = useState('')
   const [yeniForm, setYeniForm] = useState(null)
+  const [modalKategori, setModalKategori] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
 
   const yukle = () =>
@@ -28,6 +29,7 @@ export default function AdminAbonelikler() {
     yukle()
     axios.get(`${API}/api/admin/planlar`, { withCredentials: true }).then(r => setPlanlar(r.data.planlar))
     axios.get(`${API}/api/admin/ustalar`, { withCredentials: true }).then(r => setUstalar(r.data.ustalar))
+    axios.get(`${API}/api/kategoriler`).then(r => setKategoriler(r.data.kategoriler || []))
   }, [filtre])
 
   const durumDegistir = async (id, durum) => {
@@ -41,6 +43,7 @@ export default function AdminAbonelikler() {
     try {
       await axios.post(`${API}/api/admin/abonelik-listesi`, yeniForm, { withCredentials: true })
       setYeniForm(null)
+      setModalKategori('')
       yukle()
     } catch {}
     setYukleniyor(false)
@@ -60,6 +63,14 @@ export default function AdminAbonelikler() {
     ? liste.filter(a => a.usta_ad.toLowerCase().includes(arama.toLowerCase()))
     : liste
 
+  // Modal'da kategori filtresine göre usta listesi
+  const modalUstalar = modalKategori
+    ? ustalar.filter(u =>
+        u.kategori_id == modalKategori ||
+        (u.ek_kategoriler && u.ek_kategoriler.some(k => k.id == modalKategori))
+      )
+    : ustalar
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -67,7 +78,7 @@ export default function AdminAbonelikler() {
           <h2 className="text-xl font-bold text-[#1e293b]">Abonelik Takibi</h2>
           <p className="text-gray-500 text-sm">Usta aboneliklerini yönetin</p>
         </div>
-        <button onClick={() => setYeniForm({ usta_id: '', plan_id: '' })}
+        <button onClick={() => { setYeniForm({ usta_id: '', plan_id: '' }); setModalKategori('') }}
           className="flex items-center gap-2 px-4 py-2 bg-[#0052CC] text-white rounded-lg text-sm font-medium hover:bg-[#003d99] transition">
           <Plus size={16} /> Yeni Abonelik
         </button>
@@ -150,12 +161,26 @@ export default function AdminAbonelikler() {
               <button onClick={() => setYeniForm(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <form onSubmit={abonelikEkle} className="p-6 space-y-4">
+              {/* Kategori filtresi */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Usta</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Kategoriye Göre Filtrele</label>
+                <select
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#0052CC]"
+                  value={modalKategori}
+                  onChange={e => { setModalKategori(e.target.value); setYeniForm({ ...yeniForm, usta_id: '' }) }}
+                >
+                  <option value="">Tüm kategoriler</option>
+                  {kategoriler.map(k => <option key={k.id} value={k.id}>{k.ad}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+                  Usta {modalKategori && <span className="text-[#0052CC] normal-case">({modalUstalar.length} usta)</span>}
+                </label>
                 <select required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#0052CC]"
                   value={yeniForm.usta_id} onChange={e => setYeniForm({ ...yeniForm, usta_id: parseInt(e.target.value) })}>
                   <option value="">Usta seçin</option>
-                  {ustalar.map(u => <option key={u.id} value={u.id}>{u.ad} {u.soyad}</option>)}
+                  {modalUstalar.map(u => <option key={u.id} value={u.id}>{u.ad} {u.soyad} — {u.kategori}</option>)}
                 </select>
               </div>
               <div>

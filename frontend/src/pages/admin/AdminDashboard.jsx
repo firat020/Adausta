@@ -5,10 +5,28 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, AreaChart, Area
 } from 'recharts'
-import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle, ShoppingCart } from 'lucide-react'
+import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle, ShoppingCart, X } from 'lucide-react'
 
 import API from '../../config.js'
-// API
+
+const KART_ACIKLAMALARI = {
+  'Toplam Ciro': {
+    baslik: 'Toplam Ciro',
+    aciklama: 'Tüm zamanların başarılı ödeme toplamı. Kart, havale ve nakit ödemelerin USD karşılığını gösterir. Günlük döviz kuru ile hesaplanır.',
+  },
+  'Aktif Abonelik': {
+    baslik: 'Aktif Abonelik',
+    aciklama: 'Şu an aktif durumda olan usta abonelik sayısı. Askıya alınan veya iptal edilen abonelikler dahil değildir.',
+  },
+  'Bekleyen Tahsilat': {
+    baslik: 'Bekleyen Tahsilat',
+    aciklama: 'Henüz onaylanmamış veya işleme alınmamış bekleyen ödeme tutarının USD karşılığı. Bu ödemeler tahsil edilmemiştir.',
+  },
+  'Kayıt Geliri': {
+    baslik: 'Kayıt Geliri',
+    aciklama: 'Usta kayıt ücretlerinden elde edilen toplam gelir. USD olarak alınan ödemeler direkt, TL olanlar günlük kur ile gösterilir.',
+  },
+}
 
 function StatKart({ baslik, deger, alt, ikon: Icon, renk, trend }) {
   return (
@@ -26,6 +44,39 @@ function StatKart({ baslik, deger, alt, ikon: Icon, renk, trend }) {
       </div>
       <div className={`p-3 rounded-xl ${renk}`}>
         <Icon size={20} className="text-white" />
+      </div>
+    </div>
+  )
+}
+
+function MaliKart({ baslik, deger, altSatir, renk, ikon: Icon, onClick }) {
+  return (
+    <div
+      className={`${renk} rounded-xl p-5 text-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity`}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{baslik}</p>
+        <div className="p-2 bg-white/10 rounded-lg"><Icon size={16} /></div>
+      </div>
+      <p className="text-3xl font-bold">{deger}</p>
+      {altSatir && <p className="text-xs opacity-60 mt-1">{altSatir}</p>}
+    </div>
+  )
+}
+
+function AciklamaModal({ kart, onKapat }) {
+  if (!kart) return null
+  const bilgi = KART_ACIKLAMALARI[kart]
+  if (!bilgi) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onKapat}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-[#1e293b]">{bilgi.baslik}</h3>
+          <button onClick={onKapat} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed">{bilgi.aciklama}</p>
       </div>
     </div>
   )
@@ -50,6 +101,7 @@ export default function AdminDashboard() {
   const [sipOzet, setSipOzet] = useState(null)
   const [sonSiparisler, setSonSiparisler] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [aciklamaKart, setAciklamaKart] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -78,11 +130,14 @@ export default function AdminDashboard() {
 
   const trend = veri.bu_ay_kayit - veri.gecen_ay_kayit
 
+  const tlToUsd = (tl) => kur ? `$${(tl / kur).toFixed(2)}` : `${tl.toLocaleString('tr-TR')} ₺`
+  const tlAlt = (tl) => kur ? `${tl.toLocaleString('tr-TR')} ₺` : null
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-[#1e293b]">Dashboard</h2>
-        <p className="text-gray-500 text-sm">Genel bakış</p>
+        <p className="text-gray-500 text-sm">Genel bakış {kur && <span className="text-xs text-gray-400 ml-1">· 1$ = {kur} ₺</span>}</p>
       </div>
 
       {/* Stat kartları */}
@@ -138,7 +193,9 @@ export default function AdminDashboard() {
                     <span className="text-gray-400 text-xs">{s.urun_ad ? `— ${s.urun_ad}` : ''}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[#1e293b]">{s.toplam_tl?.toLocaleString('tr-TR')} ₺</span>
+                    <span className="font-semibold text-[#1e293b]">
+                      {kur ? `$${(s.toplam_tl / kur).toFixed(2)}` : `${s.toplam_tl?.toLocaleString('tr-TR')} ₺`}
+                    </span>
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                       s.durum === 'bekliyor' ? 'bg-amber-100 text-amber-700' :
                       s.durum === 'teslim_edildi' ? 'bg-green-100 text-green-700' :
@@ -153,57 +210,45 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Finansal widget'lar */}
+      {/* Finansal kartlar — tıklanabilir, USD gösterim */}
       {mali && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-[#0052CC] to-[#003d99] rounded-xl p-5 text-white shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Toplam Ciro</p>
-              <div className="p-2 bg-white/10 rounded-lg"><DollarSign size={16} /></div>
-            </div>
-            <p className="text-3xl font-bold">{mali.toplam_ciro.toLocaleString('tr-TR')} ₺</p>
-            <p className="text-xs opacity-60 mt-1">Bu ay: {mali.bu_ay_ciro.toLocaleString('tr-TR')} ₺</p>
-          </div>
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl p-5 text-white shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Aktif Abonelik</p>
-              <div className="p-2 bg-white/10 rounded-lg"><CreditCard size={16} /></div>
-            </div>
-            <p className="text-3xl font-bold">{mali.aktif_abone}</p>
-            {mali.yaklasan_yenileme > 0 && (
-              <p className="text-xs mt-1 flex items-center gap-1 text-yellow-200">
-                <AlertCircle size={11} /> {mali.yaklasan_yenileme} abonelik 3 gün içinde yenileniyor
-              </p>
-            )}
-          </div>
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Bekleyen Tahsilat</p>
-              <div className="p-2 bg-white/10 rounded-lg"><AlertCircle size={16} /></div>
-            </div>
-            <p className="text-3xl font-bold">{mali.bekleyen_tahsilat.toLocaleString('tr-TR')} ₺</p>
-            <p className="text-xs opacity-60 mt-1">Geçen ay: {mali.gecen_ay_ciro.toLocaleString('tr-TR')} ₺</p>
-          </div>
-          <div className="bg-gradient-to-br from-violet-600 to-violet-700 rounded-xl p-5 text-white shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Kayıt Geliri</p>
-              <div className="p-2 bg-white/10 rounded-lg"><Tag size={16} /></div>
-            </div>
-            <p className="text-2xl font-bold">${mali.usd_toplam?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-            {kur && mali.usd_toplam > 0 && (
-              <p className="text-xs opacity-75 mt-0.5">≈ {(mali.usd_toplam * kur).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺</p>
-            )}
-            <div className="mt-2 pt-2 border-t border-white/20">
-              <p className="text-xs opacity-80">{mali.try_toplam?.toLocaleString('tr-TR')} ₺ <span className="opacity-60">(TL ödemeleri)</span></p>
-              <p className="text-xs opacity-60 mt-0.5">
-                Bu ay: ${mali.usd_bu_ay?.toFixed(2)} / {mali.try_bu_ay?.toLocaleString('tr-TR')} ₺
-              </p>
-            </div>
-          </div>
+          <MaliKart
+            baslik="Toplam Ciro"
+            deger={tlToUsd(mali.toplam_ciro)}
+            altSatir={tlAlt(mali.toplam_ciro) ? `Bu ay: ${tlToUsd(mali.bu_ay_ciro)}` : null}
+            renk="bg-gradient-to-br from-[#0052CC] to-[#003d99]"
+            ikon={DollarSign}
+            onClick={() => setAciklamaKart('Toplam Ciro')}
+          />
+          <MaliKart
+            baslik="Aktif Abonelik"
+            deger={mali.aktif_abone}
+            altSatir={mali.yaklasan_yenileme > 0 ? `${mali.yaklasan_yenileme} abonelik 3 gün içinde yenileniyor` : null}
+            renk="bg-gradient-to-br from-emerald-600 to-emerald-700"
+            ikon={CreditCard}
+            onClick={() => setAciklamaKart('Aktif Abonelik')}
+          />
+          <MaliKart
+            baslik="Bekleyen Tahsilat"
+            deger={tlToUsd(mali.bekleyen_tahsilat)}
+            altSatir={tlAlt(mali.bekleyen_tahsilat)}
+            renk="bg-gradient-to-br from-orange-500 to-orange-600"
+            ikon={AlertCircle}
+            onClick={() => setAciklamaKart('Bekleyen Tahsilat')}
+          />
+          <MaliKart
+            baslik="Kayıt Geliri"
+            deger={`$${mali.usd_toplam?.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+            altSatir={kur && mali.usd_toplam > 0 ? `≈ ${(mali.usd_toplam * kur).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺` : null}
+            renk="bg-gradient-to-br from-violet-600 to-violet-700"
+            ikon={Tag}
+            onClick={() => setAciklamaKart('Kayıt Geliri')}
+          />
         </div>
       )}
 
-      {/* Aylık gelir area chart */}
+      {/* Aylık gelir chart */}
       {mali && mali.aylik_gelir?.length > 0 && (
         <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5">
           <h3 className="font-semibold text-[#1e293b] text-sm mb-4">Son 6 Ay Gelir Trendi</h3>
@@ -218,7 +263,7 @@ export default function AdminDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f8" />
               <XAxis dataKey="ay" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(v) => [`${v.toLocaleString('tr-TR')} ₺`, 'Gelir']} />
+              <Tooltip formatter={(v) => [kur ? `$${(v / kur).toFixed(2)}` : `${v.toLocaleString('tr-TR')} ₺`, 'Gelir']} />
               <Area type="monotone" dataKey="gelir" stroke="#0052CC" strokeWidth={2.5} fill="url(#gelirGrad)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -227,7 +272,6 @@ export default function AdminDashboard() {
 
       {/* Grafikler */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {/* Son 7 gün çizgi grafik */}
         <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5">
           <h3 className="font-semibold text-[#1e293b] text-sm mb-4">Son 7 Gün — Yeni Kayıtlar</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -241,7 +285,6 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Kategori bar grafik */}
         <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5">
           <h3 className="font-semibold text-[#1e293b] text-sm mb-4">Kategoriye Göre Usta Dağılımı</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -273,6 +316,9 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Açıklama Modal */}
+      <AciklamaModal kart={aciklamaKart} onKapat={() => setAciklamaKart(null)} />
     </div>
   )
 }
