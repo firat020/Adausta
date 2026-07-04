@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ClipboardList, Phone, MapPin, Calendar, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
 import { ustaPanelIsTalepleri, ustaPanelTalepGuncelle } from '../../api'
+import axios from 'axios'
+import API from '../../config.js'
 
 const DURUM_RENK = {
   bekliyor:   'bg-yellow-100 text-yellow-700 border-yellow-300',
@@ -25,6 +27,16 @@ function TalepKart({ talep, onGuncelle }) {
   const [acik, setAcik] = useState(false)
   const [not, setNot] = useState(talep.usta_notu || '')
   const [yukleniyor, setYukleniyor] = useState(false)
+  const [okundu, setOkundu] = useState(talep.okundu)
+
+  const handleAc = () => {
+    if (!okundu) {
+      axios.post(`${API}/api/usta/is-talepleri/${talep.id}/okundu`, {}, { withCredentials: true })
+        .then(() => setOkundu(true))
+        .catch(() => {})
+    }
+    setAcik(p => !p)
+  }
 
   const durumGuncelle = async (yeniDurum) => {
     setYukleniyor(true)
@@ -50,15 +62,18 @@ function TalepKart({ talep, onGuncelle }) {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Kart başlığı */}
       <div
-        className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition"
-        onClick={() => setAcik(!acik)}
+        className={`flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition ${!okundu ? 'bg-blue-50' : ''}`}
+        onClick={handleAc}
       >
         <div className="flex items-start gap-3 min-w-0">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-            <ClipboardList size={18} className="text-blue-600" />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${!okundu ? 'bg-blue-600' : 'bg-blue-100'}`}>
+            <ClipboardList size={18} className={!okundu ? 'text-white' : 'text-blue-600'} />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-gray-900 truncate">{talep.baslik}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-gray-900 truncate">{talep.baslik}</p>
+              {!okundu && <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold">Yeni</span>}
+            </div>
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {talep.musteri_telefon}</span>
               <span>{talep.olusturma}</span>

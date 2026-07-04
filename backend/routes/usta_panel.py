@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori
 from datetime import datetime, timedelta
 from functools import wraps
 import uuid, os
@@ -290,3 +290,36 @@ def yorumlar(usta):
     tum = Yorum.query.filter_by(usta_id=usta.id)\
         .order_by(Yorum.tarih.desc()).all()
     return jsonify({'yorumlar': [y.to_dict() for y in tum]})
+
+
+# ──────────────────────────────────────────────────────────
+# Kategoriler — usta kendi kategorilerini görür
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/kategorilerim', methods=['GET'])
+@usta_gerekli
+def kategorilerim(usta):
+    ana = {'id': usta.kategori_id, 'ad': usta.kategori.ad, 'ikon': usta.kategori.ikon} if usta.kategori else None
+    ek = [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in usta.ek_kategoriler]
+    return jsonify({'ana_kategori': ana, 'ek_kategoriler': ek})
+
+
+# ──────────────────────────────────────────────────────────
+# İş talebi okundu işaretle
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/is-talepleri/<int:tid>/okundu', methods=['POST'])
+@usta_gerekli
+def talep_okundu(usta, tid):
+    talep = IsTalebi.query.filter_by(id=tid, usta_id=usta.id).first_or_404()
+    talep.okundu = True
+    db.session.commit()
+    return jsonify({'mesaj': 'Okundu'})
+
+
+# ──────────────────────────────────────────────────────────
+# Okunmamış talep sayısı (badge için)
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/okunmamis-sayisi', methods=['GET'])
+@usta_gerekli
+def okunmamis_sayisi(usta):
+    sayi = IsTalebi.query.filter_by(usta_id=usta.id, okundu=False).count()
+    return jsonify({'sayi': sayi})

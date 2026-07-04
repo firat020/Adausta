@@ -2,6 +2,7 @@ from flask import Flask, send_from_directory, Response
 from flask_cors import CORS
 from models import db
 import os
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = 'adausta-kktc-2026-gizli-anahtar'
@@ -116,7 +117,37 @@ def google_dogrulama():
 def saglik():
     return {'durum': 'OK', 'platform': 'AdaUsta KKTC'}
 
+def abonelik_kontrol():
+    """Süresi dolmuş abonelikleri pasife al, 3 gün içinde dolacakları işaretle."""
+    from models import Abonelik, Usta
+    simdi = datetime.utcnow()
+    bitis_gecmis = Abonelik.query.filter(
+        Abonelik.durum == 'aktif',
+        Abonelik.bitis != None,
+        Abonelik.bitis < simdi
+    ).all()
+    for a in bitis_gecmis:
+        a.durum = 'askida'
+        usta = Usta.query.get(a.usta_id)
+        if usta:
+            usta.plan = 'ucretsiz'
+    if bitis_gecmis:
+        db.session.commit()
+
+
+def _baslat_scheduler():
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(func=lambda: app.app_context().__enter__() or abonelik_kontrol(),
+                          trigger='interval', hours=12, id='abonelik_kontrol')
+        scheduler.start()
+    except Exception:
+        pass  # APScheduler yoksa sessizce atla
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    _baslat_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000)

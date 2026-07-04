@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
-import { Search, Check, X, Trash2, Eye, RefreshCw, Plus } from 'lucide-react'
+import { Search, Check, X, Trash2, Eye, RefreshCw, Plus, Download, Tag } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -142,6 +142,10 @@ export default function AdminUstalar() {
   const [secili, setSecili] = useState([])
   const [detay, setDetay] = useState(null)
   const [kategoriAc, setKategoriAc] = useState(false)
+  const [topluKatModal, setTopluKatModal] = useState(false)
+  const [tumKategoriler, setTumKategoriler] = useState([])
+  const [seciliKategori, setSeciliKategori] = useState('')
+  const [katTip, setKatTip] = useState('ek')
 
   const yukle = useCallback(async () => {
     setYukleniyor(true)
@@ -181,6 +185,33 @@ export default function AdminUstalar() {
 
   const detayAc = (u) => { setDetay(u); setKategoriAc(false) }
 
+  const topluKatModalAc = async () => {
+    if (!secili.length) return
+    if (!tumKategoriler.length) {
+      const r = await axios.get(`${API}/api/kategoriler`, { withCredentials: true })
+      setTumKategoriler(r.data.kategoriler || [])
+    }
+    setTopluKatModal(true)
+  }
+
+  const topluKategoriAta = async () => {
+    if (!seciliKategori) return
+    try {
+      await axios.post(`${API}/api/admin/ustalar/toplu-kategori`, {
+        usta_idler: secili,
+        kategori_id: parseInt(seciliKategori),
+        tip: katTip
+      }, { withCredentials: true })
+      setTopluKatModal(false)
+      setSecili([])
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+  }
+
+  const excelIndir = () => {
+    window.open(`${API}/api/admin/export/ustalar`, '_blank')
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -188,9 +219,14 @@ export default function AdminUstalar() {
           <h2 className="text-xl font-bold text-[#1e293b]">Usta Yönetimi</h2>
           <p className="text-gray-500 text-sm">{ustalar.length} kayıt</p>
         </div>
-        <button onClick={yukle} className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#0052CC] transition">
-          <RefreshCw size={15} /> Yenile
-        </button>
+        <div className="flex gap-2">
+          <button onClick={excelIndir} className="flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition border border-gray-200 px-3 py-1.5 rounded-lg hover:border-green-400">
+            <Download size={15} /> Excel
+          </button>
+          <button onClick={yukle} className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#0052CC] transition">
+            <RefreshCw size={15} /> Yenile
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-center">
@@ -227,6 +263,9 @@ export default function AdminUstalar() {
           <button onClick={() => topluIslem('onayla')} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700">Toplu Onayla</button>
           <button onClick={() => topluIslem('reddet')} className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600">Toplu Reddet</button>
           <button onClick={() => topluIslem('sil')} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700">Toplu Sil</button>
+          <button onClick={topluKatModalAc} className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700">
+            <Tag size={12} /> Kategori Ata
+          </button>
           <button onClick={() => setSecili([])} className="ml-auto text-[#1D4ED8] text-xs hover:underline">Seçimi Kaldır</button>
         </div>
       )}
@@ -339,6 +378,39 @@ export default function AdminUstalar() {
               )}
               <button onClick={() => { islem(detay.id, 'reddet'); setDetay(null) }} className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600">Yasakla</button>
               <button onClick={() => { islem(detay.id, 'sil'); setDetay(null) }} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700">Sil</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toplu Kategori Atama Modal */}
+      {topluKatModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="font-bold text-[#1e293b] mb-4">Toplu Kategori Ata ({secili.length} usta)</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Kategori</label>
+                <select
+                  value={seciliKategori}
+                  onChange={e => setSeciliKategori(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#0052CC]"
+                >
+                  <option value="">Seçin</option>
+                  {tumKategoriler.map(k => <option key={k.id} value={k.id}>{k.ad}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Atama Tipi</label>
+                <div className="flex gap-2">
+                  <button onClick={() => setKatTip('ek')} className={`flex-1 py-2 rounded-lg text-xs font-semibold border ${katTip === 'ek' ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-gray-600 border-gray-200'}`}>Ek Kategori</button>
+                  <button onClick={() => setKatTip('ana')} className={`flex-1 py-2 rounded-lg text-xs font-semibold border ${katTip === 'ana' ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-gray-600 border-gray-200'}`}>Ana Kategori Yap</button>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={topluKategoriAta} disabled={!seciliKategori} className="flex-1 py-2.5 bg-[#0052CC] text-white rounded-lg text-sm font-semibold hover:bg-[#003d99] disabled:opacity-50">Ata</button>
+                <button onClick={() => setTopluKatModal(false)} className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50">İptal</button>
+              </div>
             </div>
           </div>
         </div>

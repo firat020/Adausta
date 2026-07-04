@@ -87,6 +87,24 @@ def talep_iptal(musteri, tid):
     return jsonify({'mesaj': 'Talep iptal edildi'})
 
 
+@musteri_panel_bp.route('/talep-takip', methods=['GET'])
+def talep_takip():
+    """Misafir kullanıcı telefon numarası ile taleplerini takip edebilir."""
+    telefon = request.args.get('telefon', '').strip()
+    if not telefon or len(telefon) < 7:
+        return jsonify({'hata': 'Geçerli telefon numarası girin'}), 400
+    talepler = IsTalebi.query.filter_by(musteri_telefon=telefon)\
+        .order_by(IsTalebi.olusturma.desc()).all()
+    sonuc = []
+    for t in talepler:
+        d = t.to_dict()
+        usta = Usta.query.get(t.usta_id)
+        d['usta_ad'] = f"{usta.ad} {usta.soyad}".strip() if usta else '-'
+        d['usta_kategori'] = usta.kategori.ad if usta and usta.kategori else '-'
+        sonuc.append(d)
+    return jsonify({'talepler': sonuc})
+
+
 @musteri_panel_bp.route('/profil', methods=['GET'])
 @musteri_gerekli
 def profil_getir(musteri):

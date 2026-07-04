@@ -242,6 +242,100 @@ def toplu_islem():
     return jsonify({'mesaj': f'{len(ustalar)} usta için işlem tamamlandı'})
 
 
+@admin_bp.route('/ustalar/toplu-kategori', methods=['POST'])
+@admin_gerekli
+def toplu_kategori():
+    data = request.get_json()
+    usta_idler = data.get('usta_idler', [])
+    kategori_id = data.get('kategori_id')
+    tip = data.get('tip', 'ek')  # ek veya ana
+
+    if not usta_idler or not kategori_id:
+        return jsonify({'hata': 'Usta listesi ve kategori gerekli'}), 400
+
+    k = Kategori.query.get_or_404(kategori_id)
+    ustalar = Usta.query.filter(Usta.id.in_(usta_idler)).all()
+
+    for u in ustalar:
+        if tip == 'ana':
+            u.kategori_id = k.id
+        else:
+            if k not in u.ek_kategoriler:
+                u.ek_kategoriler.append(k)
+
+    db.session.commit()
+    log_kaydet('TOPLU_KATEGORİ', f'{len(ustalar)} ustaya "{k.ad}" kategorisi eklendi (tip: {tip})')
+    return jsonify({'mesaj': f'{len(ustalar)} ustaya kategori atandı'})
+
+
+@admin_bp.route('/export/ustalar', methods=['GET'])
+@admin_gerekli
+def export_ustalar():
+    try:
+        import openpyxl
+        from flask import send_file
+        import io
+
+        ustalar = Usta.query.order_by(Usta.olusturma.desc()).all()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Ustalar'
+        basliklar = ['ID', 'Ad', 'Soyad', 'Telefon', 'Email', 'Kategori', 'Şehir', 'Puan', 'Yorum Sayısı', 'Plan', 'Durum', 'Kayıt Tarihi']
+        ws.append(basliklar)
+        for u in ustalar:
+            ws.append([
+                u.id, u.ad, u.soyad, u.telefon, u.email,
+                u.kategori.ad if u.kategori else '',
+                u.sehir.ad if u.sehir else '',
+                u.ortalama_puan(), len(u.yorumlar),
+                u.plan,
+                'Onaylı' if u.onaylanmis else ('Yasaklı' if not u.aktif else 'Bekliyor'),
+                u.olusturma.strftime('%d.%m.%Y') if u.olusturma else '',
+            ])
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return send_file(buf, as_attachment=True, download_name='ustalar.xlsx',
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except ImportError:
+        return jsonify({'hata': 'openpyxl paketi yüklü değil. Sunucuya: pip install openpyxl'}), 500
+
+
+@admin_bp.route('/export/istatistik', methods=['GET'])
+@admin_gerekli
+def export_istatistik():
+    try:
+        import openpyxl
+        from flask import send_file
+        import io
+        from sqlalchemy import func
+
+        wb = openpyxl.Workbook()
+
+        # Sayfa 1: Genel istatistik
+        ws1 = wb.active
+        ws1.title = 'Genel'
+        ws1.append(['Metrik', 'Değer'])
+        ws1.append(['Toplam Usta', Usta.query.count()])
+        ws1.append(['Onaylı Usta', Usta.query.filter_by(onaylanmis=True).count()])
+        ws1.append(['Toplam Yorum', Yorum.query.count()])
+        ws1.append(['Toplam Kategori', Kategori.query.count()])
+
+        # Sayfa 2: Kategoriye göre usta
+        ws2 = wb.create_sheet('Kategori Dağılımı')
+        ws2.append(['Kategori', 'Usta Sayısı'])
+        for k in Kategori.query.all():
+            ws2.append([k.ad, len([u for u in k.ustalar if u.onaylanmis])])
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return send_file(buf, as_attachment=True, download_name='istatistik.xlsx',
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except ImportError:
+        return jsonify({'hata': 'openpyxl paketi yüklü değil'}), 500
+
+
 # ─── YORUM YÖNETİMİ ────────────────────────────────────────────
 
 @admin_bp.route('/yorumlar', methods=['GET'])

@@ -253,6 +253,57 @@ def doviz_kur():
 
 
 # ---------------------------------------------------------------------------
+# POST /api/odeme/admin/onayla/<id>  — Bekleyen ödemeyi onayla + abonelik aktifleştir
+# ---------------------------------------------------------------------------
+@odeme_bp.route('/admin/onayla/<int:id>', methods=['POST'])
+def admin_odeme_onayla(id):
+    from flask import session as s
+    if s.get('rol') != 'admin':
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
+    odeme = Odeme.query.get_or_404(id)
+    if odeme.durum != 'bekliyor':
+        return jsonify({'hata': 'Sadece bekleyen ödemeler onaylanabilir'}), 400
+
+    odeme.durum = 'basarili'
+
+    # Abonelik yoksa yeni oluştur, varsa aktifleştir
+    usta = Usta.query.get(odeme.usta_id)
+    if usta:
+        mevcut = Abonelik.query.filter_by(usta_id=usta.id, durum='askida').first()
+        if mevcut:
+            mevcut.durum = 'aktif'
+            mevcut.baslangic = datetime.utcnow()
+            if mevcut.plan and mevcut.plan.sure_tip == 'yillik':
+                mevcut.bitis = datetime.utcnow() + timedelta(days=365)
+                mevcut.yenileme_tarihi = mevcut.bitis
+            else:
+                mevcut.bitis = datetime.utcnow() + timedelta(days=30)
+                mevcut.yenileme_tarihi = mevcut.bitis
+            usta.plan = mevcut.plan.ad if mevcut.plan else 'aylik'
+            usta.plan_bitis = mevcut.bitis
+            odeme.abonelik_id = mevcut.id
+        else:
+            plan = Plan.query.filter_by(aktif=True).first()
+            bitis = datetime.utcnow() + timedelta(days=30)
+            ab = Abonelik(
+                usta_id=usta.id,
+                plan_id=plan.id if plan else None,
+                durum='aktif',
+                bitis=bitis,
+                yenileme_tarihi=bitis,
+            )
+            db.session.add(ab)
+            db.session.flush()
+            odeme.abonelik_id = ab.id
+            usta.plan = plan.ad if plan else 'aylik'
+            usta.plan_bitis = bitis
+
+    db.session.commit()
+    return jsonify({'mesaj': 'Ödeme onaylandı, abonelik aktifleştirildi'})
+
+
+# ---------------------------------------------------------------------------
 # GET /api/odeme/durum/<siparis_no>
 # ---------------------------------------------------------------------------
 @odeme_bp.route('/durum/<siparis_no>', methods=['GET'])

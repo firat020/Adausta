@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler
 from werkzeug.utils import secure_filename
 import os, uuid
 
@@ -32,7 +32,15 @@ def listele():
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
 
     if kategori_id:
-        q = q.filter_by(kategori_id=kategori_id)
+        # Ana kategori VEYA ek kategoriler içinde ara
+        q = q.filter(
+            (Usta.kategori_id == kategori_id) |
+            Usta.id.in_(
+                db.session.query(usta_kategoriler.c.usta_id).filter(
+                    usta_kategoriler.c.kategori_id == kategori_id
+                )
+            )
+        )
     if sehir_id:
         q = q.filter_by(sehir_id=sehir_id)
     if ilce_id:

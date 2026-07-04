@@ -308,6 +308,7 @@ class IsTalebi(db.Model):
     tercih_tarih = db.Column(db.String(100), default='')  # Müşterinin tercih ettiği tarih
     durum = db.Column(db.String(30), default='bekliyor')  # bekliyor / kabul / red / tamamlandi
     usta_notu = db.Column(db.Text, default='')  # Ustanın notu
+    okundu = db.Column(db.Boolean, default=False)  # Usta tarafından okundu mu
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -326,6 +327,7 @@ class IsTalebi(db.Model):
             'tercih_tarih': self.tercih_tarih,
             'durum': self.durum,
             'usta_notu': self.usta_notu,
+            'okundu': self.okundu,
             'olusturma': fmt(self.olusturma),
             'guncelleme': fmt(self.guncelleme),
         }

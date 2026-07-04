@@ -23,6 +23,14 @@ export default function AdminOdemeler() {
     axios.get(`${API}/api/admin/odemeler?filtre=${filtre}`, { withCredentials: true })
       .then(r => setListe(r.data.odemeler))
 
+  const onayla = async (id) => {
+    if (!confirm('Bu ödemeyi onaylayıp aboneliği aktifleştirmek istiyor musunuz?')) return
+    try {
+      await axios.post(`${API}/api/odeme/admin/onayla/${id}`, {}, { withCredentials: true })
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+  }
+
   useEffect(() => {
     yukle()
     axios.get(`${API}/api/admin/ustalar`, { withCredentials: true }).then(r => setUstalar(r.data.ustalar))
@@ -113,7 +121,7 @@ export default function AdminOdemeler() {
           <table className="w-full text-sm">
             <thead className="bg-[#F8F9FA] border-b border-[#E0E0E0]">
               <tr>
-                {['#', 'Usta', 'Tutar (USD)', 'TL Karşılığı', 'Durum', 'Açıklama', 'Tarih'].map(h => (
+                {['#', 'Usta', 'Tutar (USD)', 'TL Karşılığı', 'Durum', 'Açıklama', 'Tarih', 'İşlem'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -140,6 +148,16 @@ export default function AdminOdemeler() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{o.aciklama || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{o.tarih}</td>
+                    <td className="px-4 py-3">
+                      {o.durum === 'bekliyor' && (
+                        <button
+                          onClick={() => onayla(o.id)}
+                          className="px-2.5 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition"
+                        >
+                          Onayla
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 )
               })}

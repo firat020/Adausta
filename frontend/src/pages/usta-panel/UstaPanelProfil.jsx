@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle } from 'lucide-react'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag } from 'lucide-react'
 import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir } from '../../api'
+import axios from 'axios'
 
 import API from '../../config.js'
 const API_URL = API
@@ -8,6 +9,7 @@ const API_URL = API
 export default function UstaPanelProfil() {
   const [usta, setUsta] = useState(null)
   const [sehirler, setSehirler] = useState([])
+  const [kategoriler, setKategoriler] = useState({ ana_kategori: null, ek_kategoriler: [] })
   const [form, setForm] = useState({})
   const [yukleniyor, setYukleniyor] = useState(true)
   const [kayıtYukleniyor, setKayitYukleniyor] = useState(false)
@@ -15,8 +17,11 @@ export default function UstaPanelProfil() {
   const fileRef = useRef()
 
   useEffect(() => {
-    Promise.all([ustaPanelProfil(), sehirleriGetir()])
-      .then(([r, s]) => {
+    Promise.all([
+      ustaPanelProfil(),
+      sehirleriGetir(),
+      axios.get(`${API_URL}/api/usta/kategorilerim`, { withCredentials: true }).catch(() => ({ data: {} }))
+    ]).then(([r, s, k]) => {
         setUsta(r.data.usta)
         setForm({
           ad: r.data.usta.ad || '',
@@ -29,6 +34,7 @@ export default function UstaPanelProfil() {
           sehir_id: r.data.usta.sehir_id || '',
         })
         setSehirler(s.data.sehirler || [])
+        if (k.data.ana_kategori) setKategoriler(k.data)
       })
       .finally(() => setYukleniyor(false))
   }, [])
@@ -235,6 +241,38 @@ export default function UstaPanelProfil() {
           )}
         </button>
       </form>
+
+      {/* Kategorilerim */}
+      {(kategoriler.ana_kategori || kategoriler.ek_kategoriler?.length > 0) && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Tag size={18} className="text-blue-600" /> Kategorilerim
+          </h2>
+          <div className="space-y-3">
+            {kategoriler.ana_kategori && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">Ana Kategori</p>
+                <span className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold">
+                  {kategoriler.ana_kategori.ad}
+                </span>
+              </div>
+            )}
+            {kategoriler.ek_kategoriler?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">Ek Kategoriler</p>
+                <div className="flex flex-wrap gap-2">
+                  {kategoriler.ek_kategoriler.map(k => (
+                    <span key={k.id} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
+                      {k.ad}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-gray-400">Kategori değişikliği için admin ile iletişime geçin.</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
