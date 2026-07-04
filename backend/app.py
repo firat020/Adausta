@@ -146,8 +146,10 @@ def _baslat_scheduler():
         pass  # APScheduler yoksa sessizce atla
 
 
+with app.app_context():
+    db.create_all()
+
+_baslat_scheduler()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    _baslat_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000)

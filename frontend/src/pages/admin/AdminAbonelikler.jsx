@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { AlertCircle, Plus, X } from 'lucide-react'
+import { AlertCircle, Plus, X, MessageCircle, RefreshCw } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -20,6 +20,9 @@ export default function AdminAbonelikler() {
   const [yeniForm, setYeniForm] = useState(null)
   const [modalKategori, setModalKategori] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
+  const [waPanel, setWaPanel] = useState(false)
+  const [waListe, setWaListe] = useState([])
+  const [waYukleniyor, setWaYukleniyor] = useState(false)
 
   const yukle = () =>
     axios.get(`${API}/api/admin/abonelik-listesi?filtre=${filtre}&arama=${arama}`, { withCredentials: true })
@@ -35,6 +38,30 @@ export default function AdminAbonelikler() {
   const durumDegistir = async (id, durum) => {
     await axios.post(`${API}/api/admin/abonelik-listesi/${id}/durum`, { durum }, { withCredentials: true })
     yukle()
+  }
+
+  const waListeYukle = async () => {
+    setWaYukleniyor(true)
+    try {
+      const r = await axios.get(`${API}/api/admin/whatsapp/odemesizler`, { withCredentials: true })
+      setWaListe(r.data.ustalar)
+    } catch {}
+    setWaYukleniyor(false)
+  }
+
+  const waPanelAc = () => {
+    setWaPanel(true)
+    waListeYukle()
+  }
+
+  const waGonder = (link) => { window.open(link, '_blank') }
+
+  const waHepsineGonder = async () => {
+    const linkler = waListe.filter(u => u.wa_link)
+    if (!linkler.length) { alert('WhatsApp numarası olan usta yok'); return }
+    const ids = linkler.map(u => u.id)
+    await axios.post(`${API}/api/admin/whatsapp/bildirim-log`, { usta_idler: ids }, { withCredentials: true }).catch(() => {})
+    linkler.forEach((u, i) => setTimeout(() => window.open(u.wa_link, '_blank'), i * 800))
   }
 
   const abonelikEkle = async (e) => {
@@ -78,10 +105,16 @@ export default function AdminAbonelikler() {
           <h2 className="text-xl font-bold text-[#1e293b]">Abonelik Takibi</h2>
           <p className="text-gray-500 text-sm">Usta aboneliklerini yönetin</p>
         </div>
-        <button onClick={() => { setYeniForm({ usta_id: '', plan_id: '' }); setModalKategori('') }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#0052CC] text-white rounded-lg text-sm font-medium hover:bg-[#003d99] transition">
-          <Plus size={16} /> Yeni Abonelik
-        </button>
+        <div className="flex gap-2">
+          <button onClick={waPanelAc}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition">
+            <MessageCircle size={16} /> WhatsApp Bildirim
+          </button>
+          <button onClick={() => { setYeniForm({ usta_id: '', plan_id: '' }); setModalKategori('') }}
+            className="flex items-center gap-2 px-4 py-2 bg-[#0052CC] text-white rounded-lg text-sm font-medium hover:bg-[#003d99] transition">
+            <Plus size={16} /> Yeni Abonelik
+          </button>
+        </div>
       </div>
 
       {/* Filtreler */}
@@ -151,6 +184,58 @@ export default function AdminAbonelikler() {
           </table>
         </div>
       </div>
+
+      {/* WhatsApp Bildirim Paneli */}
+      {waPanel && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-[#1e293b]">WhatsApp Bildirim</h3>
+                <p className="text-xs text-gray-500 mt-0.5">30+ gün geçmiş, ödeme yapmamış ustalar</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={waListeYukle} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                  <RefreshCw size={16} className={waYukleniyor ? 'animate-spin' : ''} />
+                </button>
+                <button onClick={() => setWaPanel(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-sm text-gray-600 font-semibold">{waListe.length} usta bildirim bekliyor</span>
+              <button onClick={waHepsineGonder} disabled={!waListe.filter(u => u.wa_link).length}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
+                <MessageCircle size={14} /> Hepsine Gönder
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+              {waYukleniyor ? (
+                <div className="text-center py-8 text-gray-400">Yükleniyor...</div>
+              ) : waListe.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">Ödeme bekleyen usta yok</div>
+              ) : waListe.map(u => (
+                <div key={u.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#1e293b] text-sm">{u.ad}</p>
+                    <p className="text-xs text-gray-500">{u.kategori} · {u.sehir} · {u.gun} gün önce kayıt</p>
+                    <p className="text-xs text-gray-400">{u.telefon}{u.whatsapp && u.whatsapp !== u.telefon ? ` · WA: ${u.whatsapp}` : ''}</p>
+                  </div>
+                  {u.wa_link ? (
+                    <button onClick={() => waGonder(u.wa_link)}
+                      className="shrink-0 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 flex items-center gap-1">
+                      <MessageCircle size={12} /> WhatsApp
+                    </button>
+                  ) : (
+                    <span className="text-xs text-red-400 shrink-0">WA yok</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Yeni Abonelik Modal */}
       {yeniForm && (

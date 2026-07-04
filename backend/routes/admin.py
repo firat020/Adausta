@@ -804,6 +804,74 @@ def abonelik_durum(id):
     return jsonify({'mesaj': f'Abonelik durumu güncellendi: {yeni_durum}'})
 
 
+# ─── WHATSAPP BİLDİRİM ────────────────────────────────────────
+
+@admin_bp.route('/whatsapp/odemesizler', methods=['GET'])
+@admin_gerekli
+def whatsapp_odemesizler():
+    """1 aydan fazla süredir ödeme yapmamış aktif ustaları döner."""
+    sinir = datetime.utcnow() - timedelta(days=30)
+    # Ücretsiz planda olan ustas who joined > 30 days ago
+    ustalar = Usta.query.filter(
+        Usta.aktif == True,
+        Usta.olusturma <= sinir
+    ).all()
+
+    # Paid abonelik'i olan ustalari exclude et
+    odeme_yapan_ids = set(
+        row.usta_id for row in
+        Odeme.query.filter(Odeme.durum == 'basarili').all()
+    )
+
+    # Also exclude ustas with active paid abonelik
+    aktif_paid_ids = set()
+    for ab in Abonelik.query.filter(Abonelik.durum == 'aktif').all():
+        if ab.plan and ab.plan.fiyat > 0:
+            aktif_paid_ids.add(ab.usta_id)
+
+    odeme_beklenen = []
+    for u in ustalar:
+        if u.id in odeme_yapan_ids or u.id in aktif_paid_ids:
+            continue
+        # Determine days since registration
+        gun = (datetime.utcnow() - u.olusturma).days
+        tel = u.whatsapp or u.telefon or ''
+        # Format phone for wa.me: strip non-digits, ensure starts with country code
+        tel_temiz = ''.join(c for c in tel if c.isdigit())
+        if tel_temiz.startswith('0'):
+            tel_temiz = '90' + tel_temiz[1:]  # assume TR
+
+        mesaj = (
+            f"Merhaba {u.ad}, AdaUsta platformundaki ücretsiz deneme süreniz sona erdi. "
+            f"Aboneliğinizi aktifleştirmek için: https://adausta.com/odeme"
+        )
+        import urllib.parse
+        wa_link = f"https://wa.me/{tel_temiz}?text={urllib.parse.quote(mesaj)}" if tel_temiz else ''
+
+        odeme_beklenen.append({
+            'id': u.id,
+            'ad': f"{u.ad} {u.soyad}".strip(),
+            'telefon': u.telefon,
+            'whatsapp': u.whatsapp,
+            'wa_link': wa_link,
+            'gun': gun,
+            'sehir': u.sehir.ad if u.sehir else '',
+            'kategori': u.kategori.ad if u.kategori else '',
+        })
+
+    return jsonify({'ustalar': odeme_beklenen, 'toplam': len(odeme_beklenen)})
+
+
+@admin_bp.route('/whatsapp/bildirim-log', methods=['POST'])
+@admin_gerekli
+def whatsapp_bildirim_log():
+    """Admin'in WA bildirim gönderdiğini loglar."""
+    data = request.get_json()
+    usta_idler = data.get('usta_idler', [])
+    log_kaydet('WA_BİLDİRİM', f'{len(usta_idler)} ustaya WhatsApp bildirimi gönderildi: {usta_idler}')
+    return jsonify({'mesaj': f'{len(usta_idler)} usta için bildirim loglandı'})
+
+
 # ─── ÖDEME GEÇMİŞİ ────────────────────────────────────────────
 
 @admin_bp.route('/odemeler', methods=['GET'])
