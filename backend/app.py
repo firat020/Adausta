@@ -1,6 +1,7 @@
 from flask import Flask, send_from_directory, Response
 from flask_cors import CORS
 from models import db
+from extensions import limiter
 import os
 from datetime import datetime, timedelta
 
@@ -49,6 +50,7 @@ CORS(app, supports_credentials=True, origins=[
 ])
 
 db.init_app(app)
+limiter.init_app(app)
 
 from routes.auth import auth_bp
 from routes.ustalar import ustalar_bp

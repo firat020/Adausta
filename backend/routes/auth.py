@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from models import db, Kullanici, AdminLog
 from datetime import datetime, timedelta
+from extensions import limiter
 import requests as http_requests
 
 auth_bp = Blueprint('auth', __name__)
@@ -22,6 +23,7 @@ def log_kaydet(islem, detay=''):
     db.session.commit()
 
 @auth_bp.route('/giris', methods=['POST'])
+@limiter.limit('10 per minute; 30 per hour')
 def giris():
     data = request.get_json()
     kullanici = Kullanici.query.filter_by(email=data.get('email')).first()
@@ -59,6 +61,7 @@ def giris():
     return jsonify({'mesaj': 'Giriş başarılı', 'kullanici': kullanici.to_dict()})
 
 @auth_bp.route('/kayit', methods=['POST'])
+@limiter.limit('5 per minute; 20 per hour')
 def kayit():
     data = request.get_json()
     sifre = data.get('sifre', '')
@@ -75,6 +78,7 @@ def kayit():
     return jsonify({'mesaj': 'Kayıt başarılı', 'kullanici': k.to_dict()}), 201
 
 @auth_bp.route('/google', methods=['POST'])
+@limiter.limit('10 per minute')
 def google_giris():
     data = request.get_json()
     credential = data.get('credential')       # GIS ID token (JWT)
