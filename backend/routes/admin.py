@@ -143,12 +143,48 @@ def guncelle(id):
     u = Usta.query.get_or_404(id)
     data = request.get_json()
     for alan in ['ad', 'soyad', 'telefon', 'whatsapp', 'email', 'aciklama',
-                 'sehir_id', 'ilce_id', 'kategori_id', 'deneyim_yil', 'onaylanmis', 'aktif']:
+                 'sehir_id', 'ilce_id', 'kategori_id', 'deneyim_yil', 'onaylanmis', 'aktif', 'plan']:
         if alan in data:
             setattr(u, alan, data[alan])
     db.session.commit()
     log_kaydet('USTA_GUNCELLE', f'Usta #{id} {u.ad} {u.soyad} güncellendi')
-    return jsonify({'mesaj': 'Güncellendi'})
+    return jsonify({'mesaj': 'Güncellendi', 'usta': {
+        'id': u.id, 'ad': u.ad, 'soyad': u.soyad, 'telefon': u.telefon,
+        'whatsapp': u.whatsapp, 'email': u.email,
+        'sehir_id': u.sehir_id, 'sehir': u.sehir.ad if u.sehir else '',
+        'plan': u.plan,
+    }})
+
+
+@admin_bp.route('/ustalar/<int:id>/abonelik', methods=['POST'])
+@admin_gerekli
+def abonelik_olustur(id):
+    u = Usta.query.get_or_404(id)
+    data = request.get_json()
+    plan_id  = data.get('plan_id')
+    sure_gun = int(data.get('sure_gun', 30))
+
+    plan = Plan.query.get(plan_id) if plan_id else Plan.query.filter_by(aktif=True).first()
+    bitis = datetime.utcnow() + timedelta(days=sure_gun)
+
+    mevcut = Abonelik.query.filter_by(usta_id=id, durum='aktif').first()
+    if mevcut:
+        mevcut.durum = 'askida'
+
+    ab = Abonelik(
+        usta_id=id,
+        plan_id=plan.id if plan else None,
+        durum='aktif',
+        baslangic=datetime.utcnow(),
+        bitis=bitis,
+        yenileme_tarihi=bitis,
+    )
+    db.session.add(ab)
+    u.plan = plan.ad if plan else 'aylik'
+    u.plan_bitis = bitis
+    db.session.commit()
+    log_kaydet('ABONELIK_OLUSTUR', f'Usta #{id} {sure_gun} günlük abonelik oluşturuldu (plan: {u.plan})')
+    return jsonify({'mesaj': 'Abonelik oluşturuldu', 'bitis': bitis.strftime('%d.%m.%Y')})
 
 
 @admin_bp.route('/ustalar/<int:id>', methods=['DELETE'])

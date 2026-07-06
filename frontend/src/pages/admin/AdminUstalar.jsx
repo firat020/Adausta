@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
-import { Search, Check, X, Trash2, Eye, RefreshCw, Plus, Download, Tag } from 'lucide-react'
+import { Search, Check, X, Trash2, Eye, RefreshCw, Plus, Download, Tag, Pencil, Save } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -142,6 +142,13 @@ export default function AdminUstalar() {
   const [secili, setSecili] = useState([])
   const [detay, setDetay] = useState(null)
   const [kategoriAc, setKategoriAc] = useState(false)
+  const [duzenle, setDuzenle] = useState(false)
+  const [form, setForm] = useState({})
+  const [sehirler, setSehirler] = useState([])
+  const [planlar, setPlanlar] = useState([])
+  const [kaydetYukleniyor, setKaydetYukleniyor] = useState(false)
+  const [abonelikForm, setAbonelikForm] = useState({ plan_id: '', sure_gun: 30 })
+  const [abonelikYukleniyor, setAbonelikYukleniyor] = useState(false)
   const [topluKatModal, setTopluKatModal] = useState(false)
   const [tumKategoriler, setTumKategoriler] = useState([])
   const [seciliKategori, setSeciliKategori] = useState('')
@@ -183,7 +190,40 @@ export default function AdminUstalar() {
   const hepsiniSec = (e) => setSecili(e.target.checked ? ustalar.map(u => u.id) : [])
   const toggleSec = (id) => setSecili(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
-  const detayAc = (u) => { setDetay(u); setKategoriAc(false) }
+  const detayAc = async (u) => {
+    setDetay(u)
+    setKategoriAc(false)
+    setDuzenle(false)
+    setForm({ ad: u.ad || '', soyad: u.soyad || '', telefon: u.telefon || '', whatsapp: u.whatsapp || '', email: u.email || '', sehir_id: u.sehir_id || '' })
+    if (!sehirler.length) {
+      try { const r = await axios.get(`${API}/api/kategoriler/sehirler`); setSehirler(r.data.sehirler || []) } catch {}
+    }
+    if (!planlar.length) {
+      try { const r = await axios.get(`${API}/api/admin/planlar`, { withCredentials: true }); setPlanlar(r.data.planlar || []) } catch {}
+    }
+  }
+
+  const kaydet = async () => {
+    setKaydetYukleniyor(true)
+    try {
+      await axios.put(`${API}/api/admin/ustalar/${detay.id}`, form, { withCredentials: true })
+      setDuzenle(false)
+      setDetay(d => ({ ...d, ...form, sehir: sehirler.find(s => s.id === parseInt(form.sehir_id))?.ad || d.sehir }))
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Kayıt başarısız') }
+    setKaydetYukleniyor(false)
+  }
+
+  const abonelikOlustur = async () => {
+    if (!abonelikForm.plan_id) return alert('Plan seçin')
+    setAbonelikYukleniyor(true)
+    try {
+      const r = await axios.post(`${API}/api/admin/ustalar/${detay.id}/abonelik`, abonelikForm, { withCredentials: true })
+      alert(`Abonelik oluşturuldu. Bitiş: ${r.data.bitis}`)
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Hata') }
+    setAbonelikYukleniyor(false)
+  }
 
   const topluKatModalAc = async () => {
     if (!secili.length) return
@@ -335,43 +375,116 @@ export default function AdminUstalar() {
       {detay && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetay(null)}>
           <div className="bg-white border border-[#C8CDD4] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4] sticky top-0 bg-white rounded-t-2xl z-10">
               <h3 className="font-bold text-[#1e293b]">{detay.ad_soyad || `${detay.ad} ${detay.soyad}`}</h3>
-              <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDuzenle(p => !p)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${duzenle ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-[#EFF6FF] text-[#0052CC] border-[#BFDBFE] hover:bg-[#DBEAFE]'}`}
+                >
+                  <Pencil size={12} /> {duzenle ? 'Vazgec' : 'Duzenle'}
+                </button>
+                <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
+              </div>
             </div>
-            <div className="px-6 py-4 space-y-3 text-sm text-gray-700">
-              {[
-                ['Telefon', detay.telefon],
-                ['E-posta', detay.email],
-                ['Şehir', detay.sehir],
-                ['Puan', detay.puan ? `${detay.puan} / 5.0 (${detay.yorum_sayisi} yorum)` : null],
-                ['Deneyim', detay.deneyim_yil ? `${detay.deneyim_yil} yıl` : null],
-              ].filter(([, v]) => v).map(([k, v]) => (
-                <div key={k} className="flex gap-2">
-                  <span className="font-semibold text-gray-500 w-24 shrink-0">{k}:</span>
-                  <span>{v}</span>
+
+            <div className="px-6 py-4 space-y-4 text-sm text-gray-700">
+              {duzenle ? (
+                /* ── EDIT MODE ── */
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[['Ad', 'ad'], ['Soyad', 'soyad']].map(([label, key]) => (
+                      <div key={key}>
+                        <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                        <input value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]/20" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[['Telefon', 'telefon'], ['WhatsApp', 'whatsapp']].map(([label, key]) => (
+                      <div key={key}>
+                        <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                        <input value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]/20" />
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">E-posta</label>
+                    <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] focus:ring-1 focus:ring-[#0052CC]/20" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">Sehir</label>
+                    <select value={form.sehir_id} onChange={e => setForm(p => ({ ...p, sehir_id: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC]">
+                      <option value="">Secin</option>
+                      {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={kaydet} disabled={kaydetYukleniyor}
+                    className="w-full flex items-center justify-center gap-2 bg-[#0052CC] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-[#003d99] disabled:opacity-50 transition">
+                    <Save size={14} /> {kaydetYukleniyor ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+
+                  {/* Abonelik oluşturma */}
+                  <div className="border-t border-[#E0E0E0] pt-3">
+                    <p className="text-xs font-semibold text-gray-500 mb-2">Abonelik Olustur</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={abonelikForm.plan_id} onChange={e => setAbonelikForm(p => ({ ...p, plan_id: e.target.value }))}
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0052CC]">
+                        <option value="">Plan secin</option>
+                        {planlar.map(p => <option key={p.id} value={p.id}>{p.ad}</option>)}
+                      </select>
+                      <select value={abonelikForm.sure_gun} onChange={e => setAbonelikForm(p => ({ ...p, sure_gun: parseInt(e.target.value) }))}
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0052CC]">
+                        <option value={30}>30 gun</option>
+                        <option value={60}>60 gun</option>
+                        <option value={90}>90 gun</option>
+                        <option value={365}>1 yil</option>
+                      </select>
+                    </div>
+                    <button onClick={abonelikOlustur} disabled={abonelikYukleniyor || !abonelikForm.plan_id}
+                      className="mt-2 w-full bg-green-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition">
+                      {abonelikYukleniyor ? 'Olusturuluyor...' : 'Abonelik Olustur'}
+                    </button>
+                  </div>
                 </div>
-              ))}
-              {detay.aciklama && (
-                <div className="bg-[#F8F9FA] border border-[#E0E0E0] rounded-lg p-3 text-gray-600 text-xs mt-2">
-                  {detay.aciklama}
-                </div>
+              ) : (
+                /* ── VIEW MODE ── */
+                <>
+                  {[
+                    ['Telefon', detay.telefon],
+                    ['E-posta', detay.email],
+                    ['Sehir', detay.sehir],
+                    ['Plan', detay.plan],
+                    ['Puan', detay.puan ? `${detay.puan} / 5.0 (${detay.yorum_sayisi} yorum)` : null],
+                    ['Deneyim', detay.deneyim_yil ? `${detay.deneyim_yil} yil` : null],
+                  ].filter(([, v]) => v).map(([k, v]) => (
+                    <div key={k} className="flex gap-2">
+                      <span className="font-semibold text-gray-500 w-24 shrink-0">{k}:</span>
+                      <span>{v}</span>
+                    </div>
+                  ))}
+                  {detay.aciklama && (
+                    <div className="bg-[#F8F9FA] border border-[#E0E0E0] rounded-lg p-3 text-gray-600 text-xs mt-2">
+                      {detay.aciklama}
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="border-t border-[#E0E0E0] pt-3">
-                <button
-                  onClick={() => setKategoriAc(p => !p)}
-                  className="flex items-center gap-2 text-sm font-semibold text-[#0052CC] hover:underline"
-                >
-                  Kategori Yönetimi {kategoriAc ? '▲' : '▼'}
+                <button onClick={() => setKategoriAc(p => !p)}
+                  className="flex items-center gap-2 text-sm font-semibold text-[#0052CC] hover:underline">
+                  Kategori Yonetimi {kategoriAc ? '▲' : '▼'}
                 </button>
-                {kategoriAc && (
-                  <div className="mt-3">
-                    <KategoriYonetim ustaId={detay.id} onGuncelle={yukle} />
-                  </div>
-                )}
+                {kategoriAc && <div className="mt-3"><KategoriYonetim ustaId={detay.id} onGuncelle={yukle} /></div>}
               </div>
             </div>
+
             <div className="flex gap-2 px-6 pb-5">
               {!detay.onaylanmis && detay.aktif && (
                 <button onClick={() => { islem(detay.id, 'onayla'); setDetay(null) }} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700">Onayla</button>
