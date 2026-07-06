@@ -59,7 +59,7 @@ export default function UstaPanelLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen h-dvh bg-gray-100 overflow-hidden">
       {acik && (
         <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setAcik(false)} />
       )}
@@ -143,7 +143,7 @@ export default function UstaPanelLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
-          <button onClick={() => setAcik(true)} className="text-gray-600 hover:text-gray-900 p-1.5">
+          <button onClick={() => setAcik(true)} className="text-gray-600 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 transition-colors">
             <Menu size={22} />
           </button>
           <span className="font-bold text-gray-900">Usta Paneli</span>

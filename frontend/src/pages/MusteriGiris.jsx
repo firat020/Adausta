@@ -122,7 +122,7 @@ export default function MusteriGiris() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
           {/* Üst başlık */}
-          <div className="px-8 pt-8 pb-6 text-center border-b border-gray-100">
+          <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-6 text-center border-b border-gray-100">
             <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <User size={26} className="text-white" />
             </div>
@@ -141,7 +141,7 @@ export default function MusteriGiris() {
             ))}
           </div>
 
-          <div className="p-8">
+          <div className="p-4 sm:p-8">
 
             {/* Google ile giriş */}
             {/* Div her zaman DOM'da olmalı — Google SDK buraya render eder */}
@@ -217,7 +217,7 @@ export default function MusteriGiris() {
                     className="w-full pl-10 pr-11 py-3 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <button type="button" onClick={() => setSifreGoster(!sifreGoster)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600">
                     {sifreGoster ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>

@@ -164,7 +164,7 @@ export default function Navbar() {
           {/* Mobil */}
           <div className="md:hidden flex items-center gap-2">
             <DilSecici />
-            <button onClick={() => setMenuAcik(!menuAcik)} className="text-gray-500 hover:text-gray-900">
+            <button onClick={() => setMenuAcik(!menuAcik)} className="text-gray-500 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
               {menuAcik ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -173,50 +173,55 @@ export default function Navbar() {
         {/* Mobil menü */}
         {menuAcik && (
           <div className="md:hidden py-3 border-t border-gray-100 flex flex-col gap-1">
-            <Link to="/kategoriler" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.hizmetler')}</Link>
-            <Link to="/ustalar" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.ustalar')}</Link>
-            <Link to="/sirketler" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Link to="/kategoriler" onClick={() => setMenuAcik(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.hizmetler')}</Link>
+            <Link to="/ustalar" onClick={() => setMenuAcik(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">{t('nav.ustalar')}</Link>
+            <Link to="/sirketler" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <Building2 size={14} /> Şirketler
             </Link>
-            <Link to="/en-yakin" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Link to="/en-yakin" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <MapPin size={14} /> {t('nav.enYakin')}
             </Link>
-            <Link to="/magaza" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Link to="/magaza" onClick={() => setMenuAcik(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               Mağaza
             </Link>
             {kullanici?.rol === 'sirket' ? (
               <>
-                <Link to="/sirket/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+                <Link to="/sirket/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50">
                   <Building2 size={14} /> Şirket Paneli
                 </Link>
                 <button onClick={() => { handleCikis(); setMenuAcik(false) }}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
+                  className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
                   <LogOut size={14} /> Çıkış Yap
                 </button>
               </>
             ) : kullanici?.rol === 'usta' ? (
               <>
-                <Link to="/usta/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
+                <Link to="/usta/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
                   <Wrench size={14} /> Usta Paneli
                 </Link>
                 <button onClick={() => { handleCikis(); setMenuAcik(false) }}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
+                  className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
                   <LogOut size={14} /> Çıkış Yap
                 </button>
               </>
             ) : kullanici?.rol === 'musteri' ? (
-              <button onClick={() => { handleCikis(); setMenuAcik(false) }}
-                className="mt-1 flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
-                <LogOut size={14} /> {t('musteriGiris.cikisYap')}
-              </button>
+              <>
+                <Link to="/musteri/panel" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
+                  <LayoutDashboard size={14} /> Müşteri Paneli
+                </Link>
+                <button onClick={() => { handleCikis(); setMenuAcik(false) }}
+                  className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50">
+                  <LogOut size={14} /> {t('musteriGiris.cikisYap')}
+                </button>
+              </>
             ) : (
               <>
-                <Link to="/giris" onClick={() => setMenuAcik(false)} className="px-3 py-2.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">{t('nav.girisYap')}</Link>
-                <Link to="/usta/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
+                <Link to="/giris" onClick={() => setMenuAcik(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">{t('nav.girisYap')}</Link>
+                <Link to="/usta/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
                   <Wrench size={14} /> Usta Girişi
                 </Link>
-                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center">Kayıt Ol</Link>
-                <Link to="/sirket-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-indigo-600 text-white text-sm font-semibold px-3 py-2.5 rounded-lg text-center flex items-center gap-2 justify-center">
+                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center">Kayıt Ol</Link>
+                <Link to="/sirket-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-indigo-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center flex items-center gap-2 justify-center">
                   <Building2 size={14} /> Şirket Kaydı
                 </Link>
               </>

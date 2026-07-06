@@ -65,8 +65,8 @@ export default function Kategoriler() {
       </div>
 
       {/* Grup filtre şeridi */}
-      <div className="bg-white border-b border-blue-100 sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="bg-white border-b border-blue-100 sticky top-20 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
           <button onClick={() => { setAktifGrup('tumu'); setArama('') }}
             className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
               aktifGrup === 'tumu' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'

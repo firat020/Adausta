@@ -294,18 +294,18 @@ export default function Magaza() {
                       </p>
 
                       {stokYok ? (
-                        <button disabled className="w-full py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed">Stok Yok</button>
+                        <button disabled className="w-full py-3 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed">Stok Yok</button>
                       ) : sepetteMi ? (
                         <button
                           onClick={() => setSepetAcik(true)}
-                          className="w-full py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200"
+                          className="w-full py-3 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200"
                         >
                           Sepette ({sepet[u.id]})
                         </button>
                       ) : (
                         <button
                           onClick={() => sepeteEkle(u)}
-                          className="w-full flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white"
+                          className="w-full flex items-center justify-center gap-1 py-3 rounded-xl text-xs font-bold bg-blue-600 text-white"
                         >
                           <Plus size={12} />
                           Ekle
@@ -382,19 +382,19 @@ export default function Magaza() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => miktarDegistir(u.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 flex items-center justify-center">
-                      <Minus size={11} />
+                    <button onClick={() => miktarDegistir(u.id, -1)} className="w-10 h-10 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 flex items-center justify-center">
+                      <Minus size={13} />
                     </button>
-                    <span className="text-sm font-bold w-5 text-center">{sepet[u.id]}</span>
+                    <span className="text-sm font-bold w-6 text-center">{sepet[u.id]}</span>
                     <button
                       onClick={() => miktarDegistir(u.id, 1)}
                       disabled={u.stok !== null && sepet[u.id] >= u.stok}
-                      className="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 flex items-center justify-center disabled:opacity-40"
+                      className="w-10 h-10 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 flex items-center justify-center disabled:opacity-40"
                     >
-                      <Plus size={11} />
+                      <Plus size={13} />
                     </button>
-                    <button onClick={() => sepettenCikar(u.id)} className="w-7 h-7 ml-1 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500">
-                      <Trash2 size={12} />
+                    <button onClick={() => sepettenCikar(u.id)} className="w-10 h-10 ml-1 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500">
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>

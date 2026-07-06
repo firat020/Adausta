@@ -299,8 +299,8 @@ export default function UstaDetay() {
                 <p className="text-xs text-gray-700 mt-0.5 font-medium">{usta.ad_soyad} · {usta.kategori}</p>
               </div>
               <button onClick={teklifKapat}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/30 hover:bg-white/50 transition">
-                <X size={16} className="text-gray-800" />
+                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/30 hover:bg-white/50 transition">
+                <X size={18} className="text-gray-800" />
               </button>
             </div>
 

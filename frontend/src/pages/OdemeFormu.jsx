@@ -181,18 +181,18 @@ export default function OdemeFormu() {
                   { etiket: 'Şube Kodu',  deger: BANKA.sube,      kopyala: false },
                   { etiket: 'Hesap No',   deger: BANKA.hesapNo,   kopyala: true  },
                 ].map(row => (
-                  <div key={row.etiket} className="flex items-center justify-between px-5 py-3">
-                    <span className="text-xs text-gray-500 font-medium w-28">{row.etiket}</span>
-                    <div className="flex items-center">
-                      <span className="text-sm font-semibold text-gray-900">{row.deger}</span>
+                  <div key={row.etiket} className="flex items-center justify-between gap-2 px-4 py-3 flex-wrap">
+                    <span className="text-xs text-gray-500 font-medium shrink-0">{row.etiket}</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="text-sm font-semibold text-gray-900 break-all">{row.deger}</span>
                       {row.kopyala && <KopyalaButon metin={row.deger} />}
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center justify-between px-5 py-3 bg-blue-50">
-                  <span className="text-xs text-gray-500 font-medium w-28">IBAN</span>
-                  <div className="flex items-center">
-                    <span className="text-sm font-bold text-blue-700 font-mono tracking-wide">{BANKA.iban}</span>
+                <div className="flex items-center justify-between gap-2 px-4 py-3 bg-blue-50 flex-wrap">
+                  <span className="text-xs text-gray-500 font-medium shrink-0">IBAN</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className="text-xs font-bold text-blue-700 font-mono tracking-wide break-all">{BANKA.iban}</span>
                     <KopyalaButon metin={BANKA.iban} />
                   </div>
                 </div>

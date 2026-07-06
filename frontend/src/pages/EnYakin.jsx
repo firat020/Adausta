@@ -74,7 +74,7 @@ export default function EnYakin() {
 
       {/* Konum alma */}
       {!konumAlindi ? (
-        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-12 text-center mb-8">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 sm:p-12 text-center mb-8">
           <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <MapPin size={32} className="text-orange-500" />
           </div>

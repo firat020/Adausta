@@ -11,6 +11,8 @@ body {
   background: #f8fafc;
   color: #1e293b;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root { width: 100%; text-align: left; }
