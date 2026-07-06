@@ -9,7 +9,9 @@ def iletisim_log():
     """Kullanıcı bir usta ile iletişime geçince çağrılır (ara / whatsapp / goruntule / teklif)."""
     data = request.get_json(silent=True) or {}
     usta_id = data.get('usta_id')
-    tur = data.get('tur', 'goruntule')  # ara / whatsapp / goruntule / teklif
+    tur = data.get('tur', 'goruntule')
+    if tur not in ('ara', 'whatsapp', 'goruntule', 'teklif'):
+        tur = 'goruntule'
 
     if not usta_id:
         return jsonify({'hata': 'usta_id gerekli'}), 400

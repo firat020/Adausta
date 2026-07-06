@@ -1,5 +1,6 @@
 import os
 import hashlib
+import html as _html
 import uuid
 import requests as _requests
 from datetime import datetime, timedelta
@@ -89,27 +90,34 @@ def _verify_callback_hash(params: dict) -> bool:
 # ---------------------------------------------------------------------------
 @odeme_bp.route('/baslat', methods=['POST'])
 def odeme_baslat():
+    if not session.get('kullanici_id'):
+        return jsonify({'hata': 'Giriş gerekli'}), 401
     data = request.get_json()
     usta_id     = data.get('usta_id')
     plan_id     = data.get('plan_id')
-    tutar       = data.get('tutar')
     para_birimi = data.get('para_birimi', 'TRY').upper()
     kart_no     = data.get('kart_no', '').replace(' ', '')
     kart_ay     = str(data.get('kart_ay', '')).zfill(2)
-    kart_yil    = str(data.get('kart_yil', ''))[-2:]   # son 2 hane
+    kart_yil    = str(data.get('kart_yil', ''))[-2:]
     kart_isim   = data.get('kart_isim', '')
     cvv         = data.get('cvv', '')
     email       = data.get('email', '')
-    ip          = request.remote_addr or data.get('ip', '0.0.0.0')
+    ip          = request.remote_addr or '0.0.0.0'
 
-    if not all([usta_id, tutar, kart_no, kart_ay, kart_yil, kart_isim, cvv]):
+    # Tutar DB'deki plan fiyatından alınır — client değeri kabul edilmez
+    plan = Plan.query.get(plan_id) if plan_id else None
+    if not plan:
+        return jsonify({'hata': 'Geçersiz plan'}), 400
+    tutar = plan.fiyat
+
+    if not all([usta_id, kart_no, kart_ay, kart_yil, kart_isim, cvv]):
         return jsonify({'hata': 'Eksik alan'}), 400
 
     if para_birimi not in CURRENCY_CODES:
         return jsonify({'hata': 'Geçersiz para birimi'}), 400
 
     currency_code = CURRENCY_CODES[para_birimi]
-    amount_kurus  = str(int(float(tutar) * 100))  # örn 99.90 → "9990"
+    amount_kurus  = str(int(float(tutar) * 100))
     order_id      = 'ADA' + uuid.uuid4().hex[:16].upper()
 
     success_url = f'{BASE_URL}/api/odeme/basarili'
@@ -130,7 +138,16 @@ def odeme_baslat():
     db.session.add(odeme)
     db.session.commit()
 
-    # Garanti 3D Secure form HTML
+    # Garanti 3D Secure form HTML — kullanıcı değerleri HTML escape edilir
+    e_email    = _html.escape(email)
+    e_kart_no  = _html.escape(kart_no)
+    e_kart_ay  = _html.escape(kart_ay)
+    e_kart_yil = _html.escape(kart_yil)
+    e_kart_isim = _html.escape(kart_isim)
+    e_cvv      = _html.escape(cvv)
+    e_ip       = _html.escape(ip)
+    e_order_id = _html.escape(order_id)
+
     form_html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Ödeme Yönlendiriliyor...</title></head>
@@ -147,16 +164,16 @@ def odeme_baslat():
   <input type="hidden" name="txnamount"               value="{amount_kurus}">
   <input type="hidden" name="txncurrencycode"         value="{currency_code}">
   <input type="hidden" name="txninstallmentcount"     value="">
-  <input type="hidden" name="orderid"                 value="{order_id}">
+  <input type="hidden" name="orderid"                 value="{e_order_id}">
   <input type="hidden" name="successurl"              value="{success_url}">
   <input type="hidden" name="errorurl"                value="{error_url}">
-  <input type="hidden" name="customeremailaddress"    value="{email}">
-  <input type="hidden" name="customeripaddress"       value="{ip}">
-  <input type="hidden" name="cardnumber"              value="{kart_no}">
-  <input type="hidden" name="cardexpiredatemonth"     value="{kart_ay}">
-  <input type="hidden" name="cardexpiredateyear"      value="{kart_yil}">
-  <input type="hidden" name="cardholdername"          value="{kart_isim}">
-  <input type="hidden" name="cvv2"                    value="{cvv}">
+  <input type="hidden" name="customeremailaddress"    value="{e_email}">
+  <input type="hidden" name="customeripaddress"       value="{e_ip}">
+  <input type="hidden" name="cardnumber"              value="{e_kart_no}">
+  <input type="hidden" name="cardexpiredatemonth"     value="{e_kart_ay}">
+  <input type="hidden" name="cardexpiredateyear"      value="{e_kart_yil}">
+  <input type="hidden" name="cardholdername"          value="{e_kart_isim}">
+  <input type="hidden" name="cvv2"                    value="{e_cvv}">
   <input type="hidden" name="secure3dsecuritylevel"   value="3D_PAY">
   <input type="hidden" name="hashdata"                value="{hash_data}">
 </form>
@@ -217,6 +234,8 @@ def odeme_hata():
 # ---------------------------------------------------------------------------
 @odeme_bp.route('/havale', methods=['POST'])
 def havale_bildir():
+    if not session.get('kullanici_id'):
+        return jsonify({'hata': 'Giriş gerekli'}), 401
     data       = request.get_json()
     usta_id    = data.get('usta_id')
     ad_soyad   = data.get('ad_soyad', '').strip()

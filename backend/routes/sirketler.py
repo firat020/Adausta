@@ -131,6 +131,13 @@ def is_talebi_gonder(id):
 
 @sirketler_bp.route('/<int:id>/logo', methods=['POST'])
 def logo_yukle(id):
+    kid = session.get('kullanici_id')
+    if not kid:
+        return jsonify({'hata': 'Giriş gerekli'}), 401
+    if session.get('rol') != 'admin':
+        sahip = Sirket.query.filter_by(id=id, kullanici_id=kid).first()
+        if not sahip:
+            return jsonify({'hata': 'Yetkisiz'}), 403
     s = Sirket.query.get_or_404(id)
     if 'dosya' not in request.files:
         return jsonify({'hata': 'Dosya yok'}), 400

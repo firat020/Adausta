@@ -29,6 +29,9 @@ def giris():
     if not kullanici:
         return jsonify({'hata': 'Email veya şifre hatalı'}), 401
 
+    if kullanici.sifre_hash is None:
+        return jsonify({'hata': 'Bu hesap Google ile giriş yapıyor'}), 403
+
     if kullanici.kilitli_mi():
         return jsonify({'hata': f'Hesap kilitli. {KILIT_SURE_DK} dakika sonra tekrar deneyin.'}), 429
 
@@ -58,10 +61,13 @@ def giris():
 @auth_bp.route('/kayit', methods=['POST'])
 def kayit():
     data = request.get_json()
+    sifre = data.get('sifre', '')
+    if len(sifre) < 8:
+        return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
     if Kullanici.query.filter_by(email=data.get('email')).first():
         return jsonify({'hata': 'Bu email zaten kayıtlı'}), 400
     k = Kullanici(email=data.get('email'), rol='musteri')
-    k.sifre_set(data.get('sifre'))
+    k.sifre_set(sifre)
     db.session.add(k)
     db.session.commit()
     session['kullanici_id'] = k.id
@@ -106,7 +112,7 @@ def google_giris():
     kullanici = Kullanici.query.filter_by(email=email).first()
     if not kullanici:
         kullanici = Kullanici(email=email, rol='musteri')
-        kullanici.sifre_set('google_oauth_' + email)
+        kullanici.sifre_hash = None  # OAuth kullanıcısı — şifre yok
         db.session.add(kullanici)
         db.session.commit()
 

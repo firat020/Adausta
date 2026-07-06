@@ -88,8 +88,12 @@ export default function AdminLayout() {
         ${acik ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="border-b-2 border-[#1a2744] flex items-center px-4 py-4">
-          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-9 w-auto object-contain" loading="lazy" />
+        <div className="border-b-2 border-[#1a2744] px-4 py-5 bg-gradient-to-b from-[#111827] to-[#0d1322]">
+          <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" className="h-10 w-auto object-contain" loading="lazy" />
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-[10px] font-semibold tracking-widest uppercase text-[#3d5280] select-none">Admin Paneli</span>
+            <span className="flex-1 h-px bg-[#1a2744]" />
+          </div>
         </div>
 
         {/* Navigasyon */}

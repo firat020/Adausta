@@ -88,6 +88,8 @@ def kayit():
     for alan in zorunlu:
         if not data.get(alan):
             return jsonify({'hata': f'{alan} zorunludur'}), 400
+    if len(data.get('sifre', '')) < 8:
+        return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
 
     # Email zaten var mı kontrol et
     if Kullanici.query.filter_by(email=data['email']).first():
@@ -127,6 +129,13 @@ def kayit():
 
 @ustalar_bp.route('/<int:id>/fotograf', methods=['POST'])
 def fotograf_yukle(id):
+    kid = session.get('kullanici_id')
+    if not kid:
+        return jsonify({'hata': 'Giriş gerekli'}), 401
+    if session.get('rol') != 'admin':
+        sahip = Usta.query.filter_by(id=id, kullanici_id=kid).first()
+        if not sahip:
+            return jsonify({'hata': 'Yetkisiz'}), 403
     u = Usta.query.get_or_404(id)
     if 'dosya' not in request.files:
         return jsonify({'hata': 'Dosya yok'}), 400

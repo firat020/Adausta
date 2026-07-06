@@ -6,6 +6,7 @@ backend/**/*.pyc
 backend/adausta.db
 backend/instance/
 backend/uploads/
+backend/.env
 
 # Frontend
 frontend/node_modules/
