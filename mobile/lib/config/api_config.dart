@@ -11,9 +11,10 @@ class ApiConfig {
   static String ustaYorumlar(int id) => '$baseUrl/api/ustalar/$id/yorumlar';
 
   // Auth
-  static const String giris    = '$baseUrl/api/auth/giris';
-  static const String cikis    = '$baseUrl/api/auth/cikis';
-  static const String ben      = '$baseUrl/api/auth/ben';
+  static const String giris        = '$baseUrl/api/auth/giris';
+  static const String kayit        = '$baseUrl/api/auth/kayit';
+  static const String cikis        = '$baseUrl/api/auth/cikis';
+  static const String ben          = '$baseUrl/api/auth/ben';
 
   // Usta Paneli
   static const String ustaPanel           = '$baseUrl/api/usta/panel';
@@ -21,4 +22,7 @@ class ApiConfig {
   static const String ustaMusaitlik       = '$baseUrl/api/usta/musaitlik';
   static const String ustaIsTalepleri     = '$baseUrl/api/usta/is-talepleri';
   static String ustaTalepGuncelle(int id) => '$baseUrl/api/usta/is-talepleri/$id';
+
+  // Müşteri Talep
+  static const String musteriTalepler = '$baseUrl/api/musteri/talepler';
 }

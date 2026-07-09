@@ -93,15 +93,10 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
                 'Yakınımdaki Ustalar',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               background: Container(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                ),
+                decoration: const BoxDecoration(gradient: AppColors.heroGradient),
                 child: Stack(
                   children: [
                     Positioned(
@@ -127,8 +122,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                 if (!_loading && _hata == null && _ustalar.isEmpty && _konum == null)
                   _buildBaslangic(),
                 if (_ustalar.isNotEmpty) ...[
-                  if (_haritaGoster && _konum != null)
-                    _buildHarita(),
+                  if (_haritaGoster && _konum != null) _buildHarita(),
                   _buildSonucBaslik(),
                 ],
               ],
@@ -142,10 +136,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                   showMesafe: true,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          UstaDetayScreen(ustaId: _ustalar[i].id),
-                    ),
+                    MaterialPageRoute(builder: (_) => UstaDetayScreen(ustaId: _ustalar[i].id)),
                   ),
                 ),
                 childCount: _ustalar.length,
@@ -164,55 +155,27 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Arama Yarıçapı',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    '${_km.round()} km',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+              const Text(
+                'Arama Yarıçapı',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: AppColors.accent.withOpacity(0.4)),
+                  border: Border.all(color: AppColors.accent.withOpacity(0.4)),
                 ),
                 child: Text(
                   '${_km.round()} km',
-                  style: const TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ],
@@ -245,17 +208,12 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     decoration: BoxDecoration(
                       gradient: _loading
-                          ? const LinearGradient(
-                              colors: [Colors.grey, Colors.grey])
+                          ? const LinearGradient(colors: [Colors.grey, Colors.grey])
                           : AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         if (!_loading)
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
+                          BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3)),
                       ],
                     ),
                     child: Row(
@@ -263,24 +221,15 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                       children: [
                         if (_loading)
                           const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
+                            width: 18, height: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
                         else
-                          const Icon(Icons.near_me_rounded,
-                              color: Colors.white, size: 20),
+                          const Icon(Icons.near_me_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           _loading ? 'Aranıyor...' : 'Konumumu Kullan',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                       ],
                     ),
@@ -294,21 +243,15 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _haritaGoster
-                          ? AppColors.primary.withOpacity(0.1)
-                          : Colors.grey.shade100,
+                      color: _haritaGoster ? AppColors.primary.withOpacity(0.1) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _haritaGoster
-                            ? AppColors.primary.withOpacity(0.3)
-                            : Colors.grey.shade300,
+                        color: _haritaGoster ? AppColors.primary.withOpacity(0.3) : Colors.grey.shade300,
                       ),
                     ),
                     child: Icon(
                       _haritaGoster ? Icons.list_rounded : Icons.map_rounded,
-                      color: _haritaGoster
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
+                      color: _haritaGoster ? AppColors.primary : AppColors.textSecondary,
                       size: 22,
                     ),
                   ),
@@ -332,18 +275,9 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: AppColors.error, size: 20),
+          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _hata!,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontSize: 13,
-              ),
-            ),
-          ),
+          Expanded(child: Text(_hata!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
         ],
       ),
     );
@@ -361,29 +295,18 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
               color: AppColors.primary.withOpacity(0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.location_searching_rounded,
-              size: 50,
-              color: AppColors.primary.withOpacity(0.4),
-            ),
+            child: Icon(Icons.location_searching_rounded, size: 50, color: AppColors.primary.withOpacity(0.4)),
           ),
           const SizedBox(height: 20),
           const Text(
             'Yakındaki Ustaları Bul',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 10),
           const Text(
             'Konumunuzu kullanarak yakınızdaki ustaları bulun. Yarıçapı ayarlayarak arama alanını genişletebilirsiniz.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
           ),
         ],
       ),
@@ -398,66 +321,46 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       height: 280,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: 13,
-        ),
+        options: MapOptions(initialCenter: center, initialZoom: 13),
         children: [
           TileLayer(
-            urlTemplate:
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.adausta.app',
           ),
+          // Arama yarıçapı çemberi
+          CircleLayer(
+            circles: [
+              CircleMarker(
+                point: center,
+                radius: _km * 1000,
+                useRadiusInMeter: true,
+                color: AppColors.primary.withOpacity(0.07),
+                borderColor: AppColors.primary.withOpacity(0.35),
+                borderStrokeWidth: 2,
+              ),
+            ],
+          ),
+          // Kullanıcı konumu
           MarkerLayer(
             markers: [
               Marker(
                 point: center,
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border:
-                        Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.4),
-                        blurRadius: 8,
-                      ),
-                    ],
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 8)],
                   ),
-                  child: const Icon(Icons.my_location_rounded,
-                      color: Colors.white, size: 18),
+                  child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
                 ),
               ),
-              ..._ustalar
-                  .where((u) => u.mesafe != null)
-                  .map((u) => Marker(
-                        point: center,
-                        width: 36,
-                        height: 36,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(Icons.handyman_rounded,
-                              color: Colors.white, size: 16),
-                        ),
-                      )),
             ],
           ),
         ],
@@ -473,19 +376,12 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
           Container(
             width: 4,
             height: 20,
-            decoration: BoxDecoration(
-              gradient: AppColors.accentGradient,
-              borderRadius: BorderRadius.circular(2),
-            ),
+            decoration: BoxDecoration(gradient: AppColors.accentGradient, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(width: 8),
           Text(
             '${_ustalar.length} usta bulundu (${_km.round()} km içinde)',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
           ),
         ],
       ),

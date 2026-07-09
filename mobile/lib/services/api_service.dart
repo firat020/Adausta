@@ -117,6 +117,23 @@ class ApiService {
 
   // ── Auth ─────────────────────────────────────────────────
 
+  Future<Map<String, dynamic>?> musteriKayit(String email, String sifre, String ad) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.kayit),
+      headers: _headers,
+      body: jsonEncode({'email': email, 'sifre': sifre, 'ad': ad}),
+    );
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      _saveCookie(res);
+      final data = jsonDecode(res.body);
+      final prefs = await SharedPreferences.getInstance();
+      if (_sessionCookie != null) await prefs.setString('session_cookie', _sessionCookie!);
+      return data['kullanici'] as Map<String, dynamic>?;
+    }
+    final hata = jsonDecode(res.body)['hata'] ?? 'Kayıt başarısız';
+    throw Exception(hata);
+  }
+
   Future<Map<String, dynamic>?> giris(String email, String sifre) async {
     final res = await http.post(
       Uri.parse(ApiConfig.giris),
@@ -205,5 +222,14 @@ class ApiService {
       headers: _authHeaders,
       body: jsonEncode(body),
     );
+  }
+
+  Future<bool> musteriTalepOlustur(Map<String, dynamic> data) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.musteriTalepler),
+      headers: _authHeaders,
+      body: jsonEncode(data),
+    );
+    return res.statusCode == 201 || res.statusCode == 200;
   }
 }

@@ -8,6 +8,7 @@ import '../widgets/shimmer_loading.dart';
 import 'usta_listesi_screen.dart';
 import 'usta_detay_screen.dart';
 import 'usta_kayit_screen.dart';
+import 'kategoriler_screen.dart';
 
 class AnaSayfa extends StatefulWidget {
   const AnaSayfa({super.key});
@@ -244,7 +245,10 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const KategorilerScreen()),
+                  ),
                   child: const Text(
                     'Tümü →',
                     style: TextStyle(

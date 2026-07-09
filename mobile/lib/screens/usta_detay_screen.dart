@@ -8,6 +8,7 @@ import '../models/usta.dart';
 import '../models/yorum.dart';
 import '../services/api_service.dart';
 import '../config/api_config.dart';
+import 'talep_olustur_screen.dart';
 
 class UstaDetayScreen extends StatefulWidget {
   final int ustaId;
@@ -20,15 +21,23 @@ class UstaDetayScreen extends StatefulWidget {
 
 class _UstaDetayScreenState extends State<UstaDetayScreen> {
   final _api = ApiService();
+  final _pageCtrl = PageController();
   Usta? _usta;
   List<Yorum> _yorumlar = [];
   bool _loading = true;
   bool _favori = false;
+  int _currentPhoto = 0;
 
   @override
   void initState() {
     super.initState();
     _yukle();
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _yukle() async {
@@ -64,6 +73,17 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
     }
     await prefs.setStringList('favoriler', favoriler);
     setState(() => _favori = !_favori);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_favori ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: _favori ? AppColors.primary : Colors.grey.shade700,
+        ),
+      );
+    }
   }
 
   void _ara() async {
@@ -216,17 +236,14 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
   }
 
   Widget _buildAppBar(Usta u) {
-    final foto = u.fotograflar.isNotEmpty ? u.fotograflar.first : null;
+    final fotos = u.fotograflar;
     return SliverAppBar(
-      expandedHeight: 260,
+      expandedHeight: 280,
       pinned: true,
       backgroundColor: AppColors.primary,
       leading: Container(
         margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
         child: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -235,10 +252,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
       actions: [
         Container(
           margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.3),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
           child: IconButton(
             icon: Icon(
               _favori ? Icons.favorite_rounded : Icons.favorite_border_rounded,
@@ -252,25 +266,55 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            foto != null
-                ? CachedNetworkImage(
-                    imageUrl: '${ApiConfig.uploads}/$foto',
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => _defaultBg(),
-                  )
-                : _defaultBg(),
+            // Fotoğraf galerisi
+            if (fotos.isEmpty)
+              _defaultBg()
+            else
+              PageView.builder(
+                controller: _pageCtrl,
+                itemCount: fotos.length,
+                onPageChanged: (i) => setState(() => _currentPhoto = i),
+                itemBuilder: (_, i) => CachedNetworkImage(
+                  imageUrl: '${ApiConfig.uploads}/${fotos[i]}',
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => _defaultBg(),
+                  errorWidget: (_, __, ___) => _defaultBg(),
+                ),
+              ),
+            // Gradient overlay
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
+                  colors: [Colors.black.withOpacity(0.1), Colors.black.withOpacity(0.75)],
                 ),
               ),
             ),
+            // Fotoğraf dots göstergesi
+            if (fotos.length > 1)
+              Positioned(
+                bottom: 56,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    fotos.length,
+                    (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: i == _currentPhoto ? 20 : 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: i == _currentPhoto ? AppColors.accent : Colors.white.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            // Usta adı ve kategorisi
             Positioned(
               bottom: 16,
               left: 16,
@@ -278,56 +322,46 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    u.tamAd,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                  Text(u.tamAd, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.accent.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          u.kategoriAd,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: Text(u.kategoriAd, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                       if (u.puan != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.4),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded,
-                                  color: AppColors.accent, size: 14),
+                              const Icon(Icons.star_rounded, color: AppColors.accent, size: 14),
                               const SizedBox(width: 3),
-                              Text(
-                                u.puan!.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              Text(u.puan!.toStringAsFixed(1), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                             ],
+                          ),
+                        ),
+                      ],
+                      if (fotos.length > 1) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_currentPhoto + 1}/${fotos.length}',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
                           ),
                         ),
                       ],
@@ -542,91 +576,101 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
   Widget _buildAramaButonlari(Usta u) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: _ara,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+          // Ara + WhatsApp + Yorum
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: _ara,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.phone_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Ara',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text('Ara', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: _whatsapp,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF25D366), Color(0xFF128C7E)],
                   ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF25D366).withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.chat_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'WhatsApp',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _whatsapp,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF25D366), Color(0xFF128C7E)]),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [BoxShadow(color: const Color(0xFF25D366).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                  ],
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text('WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _yorumEkleDialog,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                  ),
+                  child: const Icon(Icons.rate_review_rounded, color: AppColors.accent, size: 22),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Talep Gönder — tam genişlik
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TalepOlusturScreen(
+                  ustaId: u.id,
+                  ustaAd: u.tamAd,
+                  kategori: u.kategoriAd,
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: _yorumEkleDialog,
             child: Container(
-              padding: const EdgeInsets.all(14),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.15),
+                color: AppColors.accent.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                border: Border.all(color: AppColors.accent.withOpacity(0.35), width: 1.5),
               ),
-              child: const Icon(Icons.rate_review_rounded,
-                  color: AppColors.accent, size: 22),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send_rounded, color: AppColors.accent, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Talep Gönder',
+                    style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
