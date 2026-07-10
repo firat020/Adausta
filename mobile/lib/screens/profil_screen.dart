@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
@@ -108,7 +108,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
+                    color: Colors.white.withValues(alpha: 0.04),
                   ),
                 ),
               ),
@@ -126,7 +126,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                           gradient: AppColors.accentGradient,
                           border: Border.all(color: Colors.white, width: 3),
                           boxShadow: [
-                            BoxShadow(color: AppColors.accent.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+                            BoxShadow(color: AppColors.accent.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 4)),
                           ],
                         ),
                         child: Center(
@@ -142,7 +142,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                         height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           border: Border.all(color: AppColors.accent, width: 2.5),
                         ),
                         child: const Icon(Icons.person_rounded, color: Colors.white, size: 40),
@@ -156,9 +156,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.2),
+                        color: AppColors.accent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         subtitle,
@@ -245,7 +245,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 5))],
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 5))],
             ),
             child: const Row(
               children: [
@@ -278,8 +278,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: const Row(
               children: [
@@ -310,14 +310,14 @@ class _ProfilScreenState extends State<ProfilScreen> {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: AppColors.accent.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Row(
           children: [
             Container(
               width: 52,
               height: 52,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(14)),
               child: const Icon(Icons.add_business_rounded, color: Colors.white, size: 26),
             ),
             const SizedBox(width: 16),
@@ -414,14 +414,14 @@ class _AksiyonKart extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(color: ikonRenk.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: ikonRenk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(ikon, color: ikonRenk, size: 22),
             ),
             const SizedBox(width: 14),
@@ -453,7 +453,7 @@ class _Kart extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
       ),
       child: Column(children: children),
     );
@@ -483,7 +483,7 @@ class _MenuItem extends StatelessWidget {
       leading: Container(
         width: 44,
         height: 44,
-        decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
         child: Icon(ikon, color: renk, size: 22),
       ),
       title: Text(baslik, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),

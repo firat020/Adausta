@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -61,7 +61,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       _konum = pos;
       final list = await _api.getEnYakin(pos.latitude, pos.longitude, km: _km);
@@ -104,7 +104,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                       bottom: -10,
                       child: Icon(
                         Icons.near_me_rounded,
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withValues(alpha: 0.08),
                         size: 130,
                       ),
                     ),
@@ -155,7 +155,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -169,9 +169,9 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.15),
+                  color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   '${_km.round()} km',
@@ -183,9 +183,9 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppColors.primary,
-              inactiveTrackColor: AppColors.primary.withOpacity(0.2),
+              inactiveTrackColor: AppColors.primary.withValues(alpha: 0.2),
               thumbColor: AppColors.accent,
-              overlayColor: AppColors.accent.withOpacity(0.2),
+              overlayColor: AppColors.accent.withValues(alpha: 0.2),
               trackHeight: 4,
             ),
             child: Slider(
@@ -213,7 +213,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         if (!_loading)
-                          BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3)),
+                          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3)),
                       ],
                     ),
                     child: Row(
@@ -243,10 +243,10 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _haritaGoster ? AppColors.primary.withOpacity(0.1) : Colors.grey.shade100,
+                      color: _haritaGoster ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _haritaGoster ? AppColors.primary.withOpacity(0.3) : Colors.grey.shade300,
+                        color: _haritaGoster ? AppColors.primary.withValues(alpha: 0.3) : Colors.grey.shade300,
                       ),
                     ),
                     child: Icon(
@@ -269,9 +269,9 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.08),
+        color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -292,10 +292,10 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.location_searching_rounded, size: 50, color: AppColors.primary.withOpacity(0.4)),
+            child: Icon(Icons.location_searching_rounded, size: 50, color: AppColors.primary.withValues(alpha: 0.4)),
           ),
           const SizedBox(height: 20),
           const Text(
@@ -321,7 +321,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
       height: 280,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
@@ -338,8 +338,8 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                 point: center,
                 radius: _km * 1000,
                 useRadiusInMeter: true,
-                color: AppColors.primary.withOpacity(0.07),
-                borderColor: AppColors.primary.withOpacity(0.35),
+                color: AppColors.primary.withValues(alpha: 0.07),
+                borderColor: AppColors.primary.withValues(alpha: 0.35),
                 borderStrokeWidth: 2,
               ),
             ],
@@ -356,7 +356,7 @@ class _EnYakinScreenState extends State<EnYakinScreen> {
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 8)],
+                    boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 8)],
                   ),
                   child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
                 ),

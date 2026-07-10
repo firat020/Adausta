@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/kategori.dart';
 import '../services/api_service.dart';
@@ -85,7 +85,7 @@ class _KategorilerScreenState extends State<KategorilerScreen> {
                           height: 160,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
+                            color: Colors.white.withValues(alpha: 0.05),
                           ),
                         ),
                       ),
@@ -97,7 +97,7 @@ class _KategorilerScreenState extends State<KategorilerScreen> {
                           height: 120,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.accent.withOpacity(0.08),
+                            color: AppColors.accent.withValues(alpha: 0.08),
                           ),
                         ),
                       ),
@@ -119,7 +119,7 @@ class _KategorilerScreenState extends State<KategorilerScreen> {
                               Text(
                                 '${_kategoriler.length} hizmet kategorisi',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 13,
                                 ),
                               ),
@@ -128,9 +128,9 @@ class _KategorilerScreenState extends State<KategorilerScreen> {
                               Container(
                                 height: 42,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white.withOpacity(0.25)),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                                 ),
                                 child: TextField(
                                   controller: _aramaCtrl,
@@ -138,8 +138,8 @@ class _KategorilerScreenState extends State<KategorilerScreen> {
                                   style: const TextStyle(color: Colors.white, fontSize: 14),
                                   decoration: InputDecoration(
                                     hintText: 'Kategori ara...',
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
-                                    prefixIcon: Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.6), size: 18),
+                                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                                    prefixIcon: Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.6), size: 18),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -281,7 +281,7 @@ class _KategoriKart extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: renk.withOpacity(0.15),
+              color: renk.withValues(alpha: 0.15),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -296,7 +296,7 @@ class _KategoriKart extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [renk, renk.withOpacity(0.75)],
+                    colors: [renk, renk.withValues(alpha: 0.75)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

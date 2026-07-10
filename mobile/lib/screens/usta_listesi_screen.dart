@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/usta.dart';
 import '../services/api_service.dart';
@@ -113,10 +113,10 @@ class _UstaListesiScreenState extends State<UstaListesiScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.2),
+                  color: AppColors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: AppColors.accent.withOpacity(0.4)),
+                      color: AppColors.accent.withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   '${_ustalar.length} usta',

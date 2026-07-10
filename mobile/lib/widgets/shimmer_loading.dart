@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../config/app_theme.dart';
 
@@ -135,10 +135,10 @@ class BosDurum extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(ikon, size: 48, color: AppColors.primary.withOpacity(0.4)),
+              child: Icon(ikon, size: 48, color: AppColors.primary.withValues(alpha: 0.4)),
             ),
             const SizedBox(height: 20),
             Text(

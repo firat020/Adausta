@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 
@@ -38,7 +38,9 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
 
   @override
   void dispose() {
-    for (final c in [_adCtrl, _soyadCtrl, _telCtrl, _wpCtrl, _emailCtrl, _aciklamaCtrl]) c.dispose();
+    for (final c in [_adCtrl, _soyadCtrl, _telCtrl, _wpCtrl, _emailCtrl, _aciklamaCtrl]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -103,9 +105,9 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
                 Container(
                   width: 56, height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.accent.withOpacity(0.5), width: 2),
+                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.5), width: 2),
                   ),
                   child: Center(
                     child: Text(
@@ -123,12 +125,12 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
                         '${_usta?['ad'] ?? ''} ${_usta?['soyad'] ?? ''}'.trim(),
                         style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
                       ),
-                      Text(_usta?['email'] ?? '', style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12)),
+                      Text(_usta?['email'] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 12)),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: (_usta?['musaitlik'] == true ? AppColors.success : Colors.grey).withOpacity(0.2),
+                          color: (_usta?['musaitlik'] == true ? AppColors.success : Colors.grey).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -153,7 +155,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +192,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: (_mesajOk ? AppColors.success : AppColors.error).withOpacity(0.08),
+                      color: (_mesajOk ? AppColors.success : AppColors.error).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/usta.dart';
 import '../models/kategori.dart';
@@ -109,7 +109,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
+                    color: Colors.white.withValues(alpha: 0.04),
                   ),
                 ),
               ),
@@ -121,7 +121,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                   height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.accent.withOpacity(0.1),
+                    color: AppColors.accent.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -141,7 +141,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                               Text(
                                 'Merhaba! 👋',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
+                                  color: Colors.white.withValues(alpha: 0.75),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -164,8 +164,8 @@ class _AnaSayfaState extends State<AnaSayfa> {
                             height: 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.12),
-                              border: Border.all(color: AppColors.accent.withOpacity(0.5), width: 1.5),
+                              color: Colors.white.withValues(alpha: 0.12),
+                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.5), width: 1.5),
                             ),
                             padding: const EdgeInsets.all(7),
                             child: Image.asset('assets/images/ada-usta-logo.png', fit: BoxFit.contain),
@@ -184,7 +184,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.12),
+                                color: Colors.black.withValues(alpha: 0.12),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -192,12 +192,12 @@ class _AnaSayfaState extends State<AnaSayfa> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.search_rounded, color: AppColors.primary.withOpacity(0.5), size: 20),
+                              Icon(Icons.search_rounded, color: AppColors.primary.withValues(alpha: 0.5), size: 20),
                               const SizedBox(width: 10),
                               Text(
                                 'Usta ara... (elektrikçi, tesisatçı...)',
                                 style: TextStyle(
-                                  color: AppColors.textSecondary.withOpacity(0.8),
+                                  color: AppColors.textSecondary.withValues(alpha: 0.8),
                                   fontSize: 14,
                                 ),
                               ),
@@ -205,7 +205,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent.withOpacity(0.15),
+                                  color: AppColors.accent.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(Icons.tune_rounded, size: 16, color: AppColors.accent),
@@ -394,13 +394,13 @@ class _KategoriChip extends StatelessWidget {
               height: 62,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [renk, renk.withOpacity(0.7)],
+                  colors: [renk, renk.withValues(alpha: 0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
-                  BoxShadow(color: renk.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(color: renk.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
               child: Icon(ikon, color: Colors.white, size: 27),

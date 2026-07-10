@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 
@@ -113,7 +113,7 @@ class _UstaPanelDashboardState extends State<UstaPanelDashboard> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +164,7 @@ class _StatKart extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: renk.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: renk.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +176,7 @@ class _StatKart extends StatelessWidget {
               Text(baslik, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
               Container(
                 width: 32, height: 32,
-                decoration: BoxDecoration(color: renk.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: renk.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
                 child: Icon(ikon, size: 16, color: renk),
               ),
             ],
@@ -203,7 +203,7 @@ class _MiniStat extends StatelessWidget {
       children: [
         Container(
           width: 44, height: 44,
-          decoration: BoxDecoration(color: renk.withOpacity(0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: Icon(ikon, color: renk, size: 20),
         ),
         const SizedBox(height: 6),
@@ -240,7 +240,7 @@ class _TalepSatir extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -256,7 +256,7 @@ class _TalepSatir extends StatelessWidget {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
             child: Text(_durumLabel[durum] ?? durum, style: TextStyle(fontSize: 11, color: renk, fontWeight: FontWeight.w700)),
           ),
         ],

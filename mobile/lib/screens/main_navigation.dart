@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -90,7 +90,7 @@ class _MainNavigationState extends State<MainNavigation> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 24,
               offset: const Offset(0, -4),
             ),
@@ -118,7 +118,7 @@ class _MainNavigationState extends State<MainNavigation> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                             decoration: BoxDecoration(
                               color: isActive
-                                  ? AppColors.primary.withOpacity(0.1)
+                                  ? AppColors.primary.withValues(alpha: 0.1)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(14),
                             ),

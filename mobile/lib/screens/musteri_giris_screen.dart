@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import 'main_navigation.dart';
@@ -138,7 +138,7 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
               const SizedBox(height: 4),
               Text(
                 'Usta bulmak için giriş yapın veya kayıt olun',
-                style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
               ),
               const SizedBox(height: 24),
 
@@ -151,7 +151,7 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 24,
                         offset: const Offset(0, -4),
                       ),
@@ -191,9 +191,9 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
                           margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.08),
+                            color: AppColors.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                            border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
                           ),
                           child: Row(
                             children: [

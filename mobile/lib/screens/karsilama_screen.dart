@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import 'musteri_giris_screen.dart';
 import 'usta_panel/usta_giris_screen.dart';
@@ -61,15 +61,15 @@ class _KarsilamaScreenState extends State<KarsilamaScreen>
                       height: 120,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.accent.withOpacity(0.5),
+                          color: AppColors.accent.withValues(alpha: 0.5),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accent.withOpacity(0.25),
+                            color: AppColors.accent.withValues(alpha: 0.25),
                             blurRadius: 36,
                             spreadRadius: 8,
                           ),
@@ -98,7 +98,7 @@ class _KarsilamaScreenState extends State<KarsilamaScreen>
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.65),
+                        color: Colors.white.withValues(alpha: 0.65),
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -113,7 +113,7 @@ class _KarsilamaScreenState extends State<KarsilamaScreen>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 36,
                             offset: const Offset(0, 10),
                           ),
@@ -200,7 +200,7 @@ class _SecimiButon extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
+              color: gradient.colors.first.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -225,7 +225,7 @@ class _SecimiButon extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.78),
+                      color: Colors.white.withValues(alpha: 0.78),
                     ),
                   ),
                 ],

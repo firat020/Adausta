@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color primary      = Color(0xFF1e3a5f);
@@ -57,7 +57,7 @@ class AppTheme {
     ),
     cardTheme: CardTheme(
       elevation: 0,
-      shadowColor: AppColors.primary.withOpacity(0.12),
+      shadowColor: AppColors.primary.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       color: AppColors.cardBg,
     ),

@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import 'karsilama_screen.dart';
@@ -110,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 260,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(_glowAnim.value * 0.05),
+                    color: Colors.white.withValues(alpha: _glowAnim.value * 0.05),
                   ),
                 ),
               ),
@@ -125,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 320,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.accent.withOpacity(_glowAnim.value * 0.07),
+                    color: AppColors.accent.withValues(alpha: _glowAnim.value * 0.07),
                   ),
                 ),
               ),
@@ -140,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(_glowAnim.value * 0.03),
+                    color: Colors.white.withValues(alpha: _glowAnim.value * 0.03),
                   ),
                 ),
               ),
@@ -168,13 +168,13 @@ class _SplashScreenState extends State<SplashScreen>
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.accent
-                                      .withOpacity(_glowAnim.value * 0.55),
+                                      .withValues(alpha: _glowAnim.value * 0.55),
                                   blurRadius: 50,
                                   spreadRadius: 12,
                                 ),
                                 BoxShadow(
                                   color: Colors.white
-                                      .withOpacity(_glowAnim.value * 0.12),
+                                      .withValues(alpha: _glowAnim.value * 0.12),
                                   blurRadius: 30,
                                   spreadRadius: 4,
                                 ),
@@ -186,10 +186,10 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 155,
                             height: 155,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.18),
+                                color: Colors.white.withValues(alpha: 0.18),
                                 width: 1.5,
                               ),
                             ),
@@ -288,11 +288,11 @@ class _BouncingDots extends AnimatedWidget {
               width: 9,
               height: 9,
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(opacity.clamp(0.45, 1.0)),
+                color: AppColors.accent.withValues(alpha: opacity.clamp(0.45, 1.0)),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.accent.withOpacity(opacity * 0.4),
+                    color: AppColors.accent.withValues(alpha: opacity * 0.4),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),

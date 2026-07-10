@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import '../models/kategori.dart';
@@ -223,10 +223,10 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.2),
+                  color: AppColors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: AppColors.accent.withOpacity(0.4)),
+                      color: AppColors.accent.withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   '${_adim + 1}/3',
@@ -284,7 +284,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
                                   ? [
                                       BoxShadow(
                                         color: AppColors.primary
-                                            .withOpacity(0.3),
+                                            .withValues(alpha: 0.3),
                                         blurRadius: 8,
                                       )
                                     ]
@@ -472,10 +472,10 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.08),
+              color: AppColors.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: AppColors.accent.withOpacity(0.3)),
+                  color: AppColors.accent.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -507,7 +507,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
@@ -555,7 +555,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
                     boxShadow: [
                       if (!_yukleniyor)
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -598,7 +598,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -612,7 +612,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(ikon, color: AppColors.primary, size: 20),
@@ -658,7 +658,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
   InputDecoration _inputDeco(String label, IconData ikon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(ikon, color: AppColors.primary.withOpacity(0.6)),
+      prefixIcon: Icon(ikon, color: AppColors.primary.withValues(alpha: 0.6)),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

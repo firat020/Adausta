@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 
@@ -175,7 +175,7 @@ class _TalepOlusturScreenState extends State<TalepOlusturScreen> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(Icons.handyman_rounded, color: Colors.white, size: 26),
@@ -384,7 +384,7 @@ class _IletisimSecenegi extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: secili ? renk.withOpacity(0.1) : Colors.white,
+            color: secili ? renk.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: secili ? renk : Colors.grey.shade200, width: secili ? 2 : 1),
           ),

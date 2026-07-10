@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 import 'usta_panel_screen.dart';
@@ -76,9 +76,9 @@ class _UstaGirisScreenState extends State<UstaGirisScreen> {
                         height: 90,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.accent.withOpacity(0.5), width: 2),
+                          border: Border.all(color: AppColors.accent.withValues(alpha: 0.5), width: 2),
                         ),
                         child: Image.asset('assets/images/ada-usta-logo.png', fit: BoxFit.contain),
                       ),
@@ -94,7 +94,7 @@ class _UstaGirisScreenState extends State<UstaGirisScreen> {
                       const SizedBox(height: 6),
                       Text(
                         'Paneline erişmek için giriş yap',
-                        style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 14),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 14),
                       ),
                       const SizedBox(height: 36),
                       // Form kartı
@@ -104,7 +104,7 @@ class _UstaGirisScreenState extends State<UstaGirisScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 24, offset: const Offset(0, 8)),
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 24, offset: const Offset(0, 8)),
                           ],
                         ),
                         child: Column(
@@ -150,9 +150,9 @@ class _UstaGirisScreenState extends State<UstaGirisScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.error.withOpacity(0.08),
+                                  color: AppColors.error.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                                  border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
                                 ),
                                 child: Row(
                                   children: [

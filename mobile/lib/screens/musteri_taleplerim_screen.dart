@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 
@@ -119,7 +119,7 @@ class _MusteriTaleplerimScreenState extends State<MusteriTaleplerimScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: Text(_durumLabel[durum] ?? durum, style: TextStyle(color: renk, fontWeight: FontWeight.w700, fontSize: 12)),
                 ),
               ],
@@ -151,9 +151,9 @@ class _MusteriTaleplerimScreenState extends State<MusteriTaleplerimScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3498db).withOpacity(0.06),
+                  color: const Color(0xFF3498db).withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3498db).withOpacity(0.2)),
+                  border: Border.all(color: const Color(0xFF3498db).withValues(alpha: 0.2)),
                 ),
                 child: Text(talep['usta_notu'], style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
               ),
@@ -243,7 +243,7 @@ class _MusteriTaleplerimScreenState extends State<MusteriTaleplerimScreen> {
                               width: 80,
                               height: 80,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.08),
+                                color: AppColors.primary.withValues(alpha: 0.08),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.assignment_outlined, size: 38, color: AppColors.primary),
@@ -327,14 +327,14 @@ class _TalepKart extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 3))],
         ),
         child: Row(
           children: [
             Container(
               width: 46,
               height: 46,
-              decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(13)),
+              decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(13)),
               child: Icon(Icons.handyman_rounded, color: renk, size: 22),
             ),
             const SizedBox(width: 12),
@@ -356,7 +356,7 @@ class _TalepKart extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                   child: Text(durumLabel[durum] ?? durum, style: TextStyle(fontSize: 11, color: renk, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 4),

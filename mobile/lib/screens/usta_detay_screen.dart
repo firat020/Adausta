@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -169,7 +169,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
               if (adCtrl.text.trim().isNotEmpty) {
                 final ok = await _api.yorumEkle(
                     widget.ustaId, adCtrl.text, puan, yorumCtrl.text);
-                if (ok && mounted) {
+                if (ok && mounted && ctx.mounted) {
                   Navigator.pop(ctx);
                   _yukle();
                 }
@@ -243,7 +243,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
       backgroundColor: AppColors.primary,
       leading: Container(
         margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
         child: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -252,7 +252,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
       actions: [
         Container(
           margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
           child: IconButton(
             icon: Icon(
               _favori ? Icons.favorite_rounded : Icons.favorite_border_rounded,
@@ -287,7 +287,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.1), Colors.black.withOpacity(0.75)],
+                  colors: [Colors.black.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.75)],
                 ),
               ),
             ),
@@ -307,7 +307,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                       width: i == _currentPhoto ? 20 : 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: i == _currentPhoto ? AppColors.accent : Colors.white.withOpacity(0.5),
+                        color: i == _currentPhoto ? AppColors.accent : Colors.white.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -329,7 +329,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.85),
+                          color: AppColors.accent.withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(u.kategoriAd, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -339,7 +339,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -356,7 +356,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -390,7 +390,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -457,7 +457,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -499,7 +499,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: renk.withOpacity(0.12),
+              color: renk.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(ikon, size: 18, color: renk),
@@ -542,7 +542,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -589,7 +589,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                     decoration: BoxDecoration(
                       gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -611,7 +611,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(colors: [Color(0xFF25D366), Color(0xFF128C7E)]),
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [BoxShadow(color: const Color(0xFF25D366).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: const Color(0xFF25D366).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -630,9 +630,9 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.accent.withOpacity(0.15),
+                    color: AppColors.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
                   ),
                   child: const Icon(Icons.rate_review_rounded, color: AppColors.accent, size: 22),
                 ),
@@ -656,9 +656,9 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.08),
+                color: AppColors.accent.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.accent.withOpacity(0.35), width: 1.5),
+                border: Border.all(color: AppColors.accent.withValues(alpha: 0.35), width: 1.5),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -686,7 +686,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -712,7 +712,7 @@ class _UstaDetayScreenState extends State<UstaDetayScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(

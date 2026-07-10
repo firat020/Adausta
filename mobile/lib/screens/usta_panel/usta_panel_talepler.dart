@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 
@@ -71,7 +71,7 @@ class _UstaPanelTaleplerState extends State<UstaPanelTalepler> {
                 Expanded(child: Text(talep['baslik'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: Text(_durumLabel[durum] ?? durum, style: TextStyle(color: renk, fontWeight: FontWeight.w700, fontSize: 12)),
                 ),
               ],
@@ -248,13 +248,13 @@ class _TalepKart extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 3))],
         ),
         child: Row(
           children: [
             Container(
               width: 42, height: 42,
-              decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(Icons.assignment_rounded, color: renk, size: 20),
             ),
             const SizedBox(width: 12),
@@ -273,7 +273,7 @@ class _TalepKart extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: renk.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                   child: Text(durumLabel[durum] ?? durum, style: TextStyle(fontSize: 11, color: renk, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 4),

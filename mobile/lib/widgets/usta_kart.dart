@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/app_theme.dart';
 import '../config/api_config.dart';
@@ -29,7 +29,7 @@ class UstaKart extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -63,7 +63,7 @@ class UstaKart extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.55),
+                            Colors.black.withValues(alpha: 0.55),
                           ],
                         ),
                       ),
@@ -96,7 +96,7 @@ class UstaKart extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.45),
+                        color: Colors.black.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -164,7 +164,7 @@ class UstaKart extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.12),
+                        color: AppColors.accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(

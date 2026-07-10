@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 import 'usta_panel_dashboard.dart';
@@ -96,10 +96,10 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
               margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: _musaitlik ? AppColors.success.withOpacity(0.2) : Colors.white.withOpacity(0.1),
+                color: _musaitlik ? AppColors.success.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _musaitlik ? AppColors.success.withOpacity(0.5) : Colors.white.withOpacity(0.2),
+                  color: _musaitlik ? AppColors.success.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -143,7 +143,7 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, -3))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, -3))],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -163,7 +163,7 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isActive ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+                            color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(item.icon, size: 22, color: isActive ? AppColors.primary : Colors.grey.shade400),

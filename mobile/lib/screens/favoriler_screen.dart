@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_theme.dart';
 import '../models/usta.dart';
@@ -49,10 +49,12 @@ class _FavorilerScreenState extends State<FavorilerScreen> with WidgetsBindingOb
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList('favoriler') ?? [];
       if (ids.isEmpty) {
-        if (mounted) setState(() {
-          _favoriler = [];
-          _loading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _favoriler = [];
+            _loading = false;
+          });
+        }
         return;
       }
       final ustalar = await Future.wait(
@@ -130,7 +132,7 @@ class _FavorilerScreenState extends State<FavorilerScreen> with WidgetsBindingOb
                       bottom: -10,
                       child: Icon(
                         Icons.favorite_rounded,
-                        color: Colors.white.withOpacity(0.06),
+                        color: Colors.white.withValues(alpha: 0.06),
                         size: 140,
                       ),
                     ),
