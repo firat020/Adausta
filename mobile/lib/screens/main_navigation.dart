@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../config/app_theme.dart';
 import 'ana_sayfa.dart';
 import 'kategoriler_screen.dart';
@@ -16,6 +18,8 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  bool _offline = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   final List<Widget> _screens = const [
     AnaSayfa(),
@@ -33,6 +37,21 @@ class _MainNavigationState extends State<MainNavigation> {
     _NavData(icon: Icons.person_outline_rounded,  activeIcon: Icons.person_rounded,   label: 'Profil'),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final isOffline = results.every((r) => r == ConnectivityResult.none);
+      if (mounted && isOffline != _offline) setState(() => _offline = isOffline);
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
+  }
+
   void _onTap(int i) {
     HapticFeedback.selectionClick();
     setState(() => _currentIndex = i);
@@ -41,9 +60,30 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _offline ? 36 : 0,
+            color: Colors.red.shade600,
+            child: _offline
+                ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+                      SizedBox(width: 8),
+                      Text('İnternet bağlantısı yok', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: _screens,
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

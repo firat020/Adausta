@@ -232,4 +232,22 @@ class ApiService {
     );
     return res.statusCode == 201 || res.statusCode == 200;
   }
+
+  Future<List<Map<String, dynamic>>> musteriTalepListesi() async {
+    final res = await http.get(Uri.parse(ApiConfig.musteriTalepler), headers: _authHeaders);
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      final list = data is List ? data : (data['talepler'] ?? []);
+      return (list as List).cast<Map<String, dynamic>>();
+    }
+    throw Exception('Talepler yüklenemedi');
+  }
+
+  Future<bool> musteriTalepIptal(int id) async {
+    final res = await http.delete(
+      Uri.parse(ApiConfig.musteriTalepDetay(id)),
+      headers: _authHeaders,
+    );
+    return res.statusCode == 200 || res.statusCode == 204;
+  }
 }

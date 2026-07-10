@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import 'usta_kayit_screen.dart';
 import 'usta_panel/usta_giris_screen.dart';
 import 'musteri_giris_screen.dart';
+import 'musteri_taleplerim_screen.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -179,6 +180,15 @@ class _ProfilScreenState extends State<ProfilScreen> {
   Widget _buildGirisliView() {
     return Column(
       children: [
+        // Taleplerim kartı
+        _AksiyonKart(
+          ikon: Icons.assignment_rounded,
+          ikonRenk: AppColors.primary,
+          baslik: 'Taleplerim',
+          altBaslik: 'Gönderdiğiniz talepleri görüntüleyin',
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MusteriTaleplerimScreen())),
+        ),
+        const SizedBox(height: 12),
         // Çıkış kartı
         _AksiyonKart(
           ikon: Icons.logout_rounded,
