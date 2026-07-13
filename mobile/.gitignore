@@ -55,3 +55,8 @@ app.*.map.json
 .env
 .env.*
 *.env
+
+# Firebase — GİZLİ, commit etme
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-adminsdk*.json

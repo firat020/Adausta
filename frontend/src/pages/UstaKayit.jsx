@@ -33,31 +33,48 @@ const PLANLAR = [
 const inputCls = "w-full border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
 const labelCls = "text-sm font-bold text-gray-800 mb-1.5 block"
 
-function KategoriSecici({ kategoriler, value, onChange }) {
+function CokluKategoriSecici({ kategoriler, secilenler, onChange }) {
   const [arama, setArama] = useState('')
   const [acik, setAcik] = useState(false)
-  const secili = kategoriler.find(k => String(k.id) === String(value))
+  const secilenSet = new Set(secilenler)
   const filtreli = kategoriler.filter(k =>
-    k.ad.toLowerCase().includes(arama.toLowerCase())
+    k.ad.toLowerCase().includes(arama.toLowerCase()) && !secilenSet.has(String(k.id))
   )
+  const secilenObjeler = secilenler
+    .map(id => kategoriler.find(k => String(k.id) === id))
+    .filter(Boolean)
+
+  const ekle = (id) => { onChange([...secilenler, String(id)]); setArama('') }
+  const kaldir = (id) => onChange(secilenler.filter(s => s !== String(id)))
+
   return (
     <div className="relative">
       <div
-        onClick={() => setAcik(a => !a)}
-        className={`${inputCls} cursor-pointer flex items-center justify-between`}
+        onClick={() => setAcik(true)}
+        className={`${inputCls} min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-pointer`}
         style={{ userSelect: 'none' }}
       >
-        <span className={secili ? 'text-gray-900' : 'text-gray-400'}>
-          {secili ? secili.ad : 'Kategori seçin'}
-        </span>
-        <span className="text-gray-400 text-xs">{acik ? '▲' : '▼'}</span>
+        {secilenObjeler.length === 0 && (
+          <span className="text-gray-400 text-sm">Kategori seçin (birden fazla seçebilirsiniz)</span>
+        )}
+        {secilenObjeler.map((k, idx) => (
+          <span key={k.id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${
+            idx === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'
+          }`}>
+            {idx === 0 && <span className="opacity-70 text-[10px]">Ana·</span>}
+            {k.ad}
+            <button type="button"
+              onClick={e => { e.stopPropagation(); kaldir(String(k.id)) }}
+              className="ml-0.5 hover:opacity-70 text-sm leading-none">×</button>
+          </span>
+        ))}
+        {secilenler.length > 0 && (
+          <span className="ml-auto text-gray-400 text-xs">▼</span>
+        )}
       </div>
       {acik && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-blue-200 rounded-lg shadow-lg overflow-hidden">
-          <input
-            autoFocus
-            type="text"
-            value={arama}
+          <input autoFocus type="text" value={arama}
             onChange={e => setArama(e.target.value)}
             placeholder="Kategori ara..."
             className="w-full px-3 py-2 text-sm border-b border-gray-100 outline-none focus:bg-blue-50"
@@ -67,16 +84,17 @@ function KategoriSecici({ kategoriler, value, onChange }) {
               <p className="text-xs text-gray-400 px-3 py-2">Sonuç bulunamadı</p>
             )}
             {filtreli.map(k => (
-              <div
-                key={k.id}
-                onClick={() => { onChange(String(k.id)); setAcik(false); setArama('') }}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors
-                  ${String(k.id) === String(value) ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-800'}`}
-              >
+              <div key={k.id} onClick={() => ekle(String(k.id))}
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors text-gray-800">
                 {k.ad}
               </div>
             ))}
           </div>
+          {secilenler.length > 0 && (
+            <div className="px-3 py-2 border-t border-gray-100 text-xs text-gray-400">
+              İlk seçilen = Ana kategori · Diğerleri ek kategori
+            </div>
+          )}
         </div>
       )}
       {acik && (
@@ -111,10 +129,11 @@ export default function UstaKayit() {
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
 
+  const [secilenKategoriler, setSecilenKategoriler] = useState([])
   const [form, setForm] = useState({
     ad: '', soyad: '', telefon: '', whatsapp: '',
     email: '', sehir_id: '', ilce_id: '',
-    kategori_id: '', aciklama: '', deneyim_yil: '',
+    aciklama: '', deneyim_yil: '',
     sifre: '', sifre_tekrar: '',
   })
   const [sifreGoster, setSifreGoster] = useState(false)
@@ -146,6 +165,7 @@ export default function UstaKayit() {
 
   const formGonder = (e) => {
     e.preventDefault()
+    if (secilenKategoriler.length === 0) { setSifreHata('En az bir kategori seçmelisiniz'); return }
     if (form.sifre.length < 6) { setSifreHata('Şifre en az 6 karakter olmalıdır'); return }
     if (form.sifre !== form.sifre_tekrar) { setSifreHata('Şifreler eşleşmiyor'); return }
     setSifreHata('')
@@ -161,7 +181,8 @@ export default function UstaKayit() {
         ...form,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
-        kategori_id: parseInt(form.kategori_id),
+        kategori_id: parseInt(secilenKategoriler[0]),
+        ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
         plan: secilenPlan,
       })
@@ -413,13 +434,13 @@ export default function UstaKayit() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className={labelCls}>Kategori *</label>
-              <KategoriSecici
+              <label className={labelCls}>Kategori * <span className="font-normal text-gray-400">(birden fazla seçebilirsiniz)</span></label>
+              <CokluKategoriSecici
                 kategoriler={kategoriler}
-                value={form.kategori_id}
-                onChange={v => setForm(f => ({ ...f, kategori_id: v }))}
+                secilenler={secilenKategoriler}
+                onChange={setSecilenKategoriler}
               />
-              {!form.kategori_id && (
+              {secilenKategoriler.length === 0 && (
                 <input type="text" required className="sr-only" tabIndex={-1} readOnly value="" aria-hidden />
               )}
             </div>

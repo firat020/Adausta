@@ -415,6 +415,14 @@ class Odeme(db.Model):
         }
 
 
+# Many-to-many: sirket ↔ ek kategoriler
+sirket_kategoriler = db.Table(
+    'sirket_kategoriler',
+    db.Column('sirket_id', db.Integer, db.ForeignKey('sirketler.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('kategori_id', db.Integer, db.ForeignKey('kategoriler.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
 class Sirket(db.Model):
     __tablename__ = 'sirketler'
     id = db.Column(db.Integer, primary_key=True)
@@ -441,6 +449,7 @@ class Sirket(db.Model):
     sehir = db.relationship('Sehir', foreign_keys=[sehir_id])
     ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
     kategori = db.relationship('Kategori', foreign_keys=[kategori_id])
+    ek_kategoriler = db.relationship('Kategori', secondary=sirket_kategoriler, lazy=True)
 
     def to_dict(self):
         return {
@@ -470,6 +479,10 @@ class Sirket(db.Model):
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
             'talep_sayisi': len(self.is_talepleri),
             'olusturma': self.olusturma.isoformat(),
+            'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler],
+            'tum_kategoriler': (
+                [{'id': self.kategori_id, 'ad': self.kategori.ad, 'ikon': self.kategori.ikon}] if self.kategori else []
+            ) + [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler if k.id != self.kategori_id]
         }
 
 
@@ -673,5 +686,57 @@ class UrunSiparis(db.Model):
             'misafir_email': self.misafir_email,
             'misafir_adres': self.misafir_adres,
             'odeme_yontemi': self.odeme_yontemi,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class FCMToken(db.Model):
+    __tablename__ = 'fcm_tokenlar'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id', ondelete='CASCADE'), nullable=False)
+    token = db.Column(db.String(500), nullable=False, unique=True)
+    platform = db.Column(db.String(20), default='android')
+    aktif = db.Column(db.Boolean, default=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    son_guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class BildirimGecmisi(db.Model):
+    __tablename__ = 'bildirim_gecmisi'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id', ondelete='SET NULL'), nullable=True)
+    baslik = db.Column(db.String(200), nullable=False)
+    icerik = db.Column(db.Text, default='')
+    tur = db.Column(db.String(50), default='genel')  # uyelik_uyari / sistem / talep
+    gonderildi = db.Column(db.Boolean, default=False)
+    hata = db.Column(db.String(500), default='')
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'kullanici_id': self.kullanici_id,
+            'baslik': self.baslik,
+            'icerik': self.icerik,
+            'tur': self.tur,
+            'gonderildi': self.gonderildi,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class AdminBildirim(db.Model):
+    __tablename__ = 'admin_bildirimler'
+    id = db.Column(db.Integer, primary_key=True)
+    tur = db.Column(db.String(50), nullable=False)   # yeni_usta / yeni_sirket
+    mesaj = db.Column(db.String(300), default='')
+    goruldu = db.Column(db.Boolean, default=False)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tur': self.tur,
+            'mesaj': self.mesaj,
+            'goruldu': self.goruldu,
             'olusturma': fmt(self.olusturma),
         }

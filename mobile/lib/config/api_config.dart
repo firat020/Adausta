@@ -26,4 +26,7 @@ class ApiConfig {
   // Müşteri Talep
   static const String musteriTalepler = '$baseUrl/api/musteri/talepler';
   static String musteriTalepDetay(int id) => '$baseUrl/api/musteri/talepler/$id';
+
+  // FCM
+  static const String fcmToken = '$baseUrl/api/fcm/token';
 }

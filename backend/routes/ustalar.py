@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim
 from werkzeug.utils import secure_filename
+from sms import sms_gonder
 import os, uuid
 
 ustalar_bp = Blueprint('ustalar', __name__)
@@ -119,13 +120,34 @@ def kayit():
         aktif=True
     )
     db.session.add(u)
+    db.session.flush()  # u.id'yi al
+
+    # Ek kategoriler
+    ek_ids = data.get('ek_kategori_ids', [])
+    for kid in ek_ids:
+        kat = Kategori.query.get(kid)
+        if kat and kat not in u.ek_kategoriler:
+            u.ek_kategoriler.append(kat)
+
+    # Admin bildirimi
+    bildirim = AdminBildirim(
+        tur='yeni_usta',
+        mesaj=f'Yeni usta kaydı: {data["ad"]} {data.get("soyad", "")} — {data["telefon"]}'
+    )
+    db.session.add(bildirim)
     db.session.commit()
 
     # Otomatik giriş yap
     session['kullanici_id'] = k.id
     session['rol'] = 'usta'
 
-    return jsonify({'mesaj': 'Kayıt başarılı', 'id': u.id, 'kullanici': k.to_dict()}), 201
+    # SMS bildirimi (başarısız olsa da kayıt tamamlanır)
+    sms_gonder(
+        data['telefon'],
+        f'Merhaba {data["ad"]}, Ada Usta\'ya kaydınız alındı! Profiliniz oluşturuldu. Herhangi bir sorun için 0548 851 07 00 numarasını arayabilirsiniz.'
+    )
+
+    return jsonify({'mesaj': 'Kayıt başarılı', 'id': u.id, 'usta_id': u.id, 'kullanici': k.to_dict()}), 201
 
 @ustalar_bp.route('/<int:id>/fotograf', methods=['POST'])
 def fotograf_yukle(id):

@@ -7,7 +7,6 @@ import '../widgets/usta_kart.dart';
 import '../widgets/shimmer_loading.dart';
 import 'usta_listesi_screen.dart';
 import 'usta_detay_screen.dart';
-import 'usta_kayit_screen.dart';
 import 'kategoriler_screen.dart';
 
 class AnaSayfa extends StatefulWidget {
@@ -77,13 +76,6 @@ class _AnaSayfaState extends State<AnaSayfa> {
             ],
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UstaKayitScreen())),
-        backgroundColor: AppColors.accent,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Usta Ekle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -326,7 +318,7 @@ class _AnaSayfaState extends State<AnaSayfa> {
       return const SliverToBoxAdapter(
         child: BosDurum(
           mesaj: 'Henüz usta yok',
-          altMesaj: 'İlk ustayı eklemek için "Usta Ekle" butonuna tıklayın',
+          altMesaj: 'Yakında ustalar listelenecek',
           ikon: Icons.person_off_rounded,
         ),
       );

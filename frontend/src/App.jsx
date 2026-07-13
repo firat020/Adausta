@@ -52,6 +52,7 @@ import TalepTakip from './pages/TalepTakip'
 import AdminUrunler from './pages/admin/AdminUrunler'
 import AdminUrunEkle from './pages/admin/AdminUrunEkle'
 import AdminSiparisler from './pages/admin/AdminSiparisler'
+import AdminBildirimler from './pages/admin/AdminBildirimler'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
 import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
@@ -166,6 +167,7 @@ export default function App() {
         <Route path="urunler" element={<AdminUrunler />} />
         <Route path="urun-ekle" element={<AdminUrunEkle />} />
         <Route path="siparisler" element={<AdminSiparisler />} />
+        <Route path="bildirimler" element={<AdminBildirimler />} />
       </Route>
 
       {/* Usta Paneli */}

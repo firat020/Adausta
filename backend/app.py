@@ -65,6 +65,7 @@ from routes.sirketler import sirketler_bp
 from routes.sirket_panel import sirket_panel_bp
 from routes.odeme import odeme_bp
 from routes.magaza import magaza_bp
+from routes.fcm_token import fcm_token_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
@@ -79,6 +80,7 @@ app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
 app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 app.register_blueprint(odeme_bp, url_prefix='/api/odeme')
 app.register_blueprint(magaza_bp, url_prefix='/api/magaza')
+app.register_blueprint(fcm_token_bp, url_prefix='/api/fcm')
 
 @app.after_request
 def guvenlik_basliklari(response):
@@ -146,7 +148,7 @@ def saglik():
     return {'durum': 'OK', 'platform': 'AdaUsta KKTC'}
 
 def abonelik_kontrol():
-    """Süresi dolmuş abonelikleri pasife al, 3 gün içinde dolacakları işaretle."""
+    """Süresi dolmuş abonelikleri pasife al."""
     from models import Abonelik, Usta
     simdi = datetime.utcnow()
     bitis_gecmis = Abonelik.query.filter(
@@ -163,12 +165,87 @@ def abonelik_kontrol():
         db.session.commit()
 
 
+def abonelik_uyari_bildirim():
+    """Üyeliği 7/3/1 gün içinde veya bugün biten ustalara FCM bildirimi gönder."""
+    from models import Usta, FCMToken, BildirimGecmisi
+    simdi = datetime.utcnow()
+    bugun = simdi.date()
+    bugun_baslangic = datetime(simdi.year, simdi.month, simdi.day)
+
+    ustalar = Usta.query.filter(
+        Usta.plan != 'ucretsiz',
+        Usta.plan_bitis != None,
+        Usta.aktif == True,
+        Usta.kullanici_id != None,
+    ).all()
+
+    for u in ustalar:
+        kalan = (u.plan_bitis.date() - bugun).days
+        if kalan not in (7, 3, 1, 0):
+            continue
+
+        # Bugün zaten bildirim gönderildi mi?
+        zaten = BildirimGecmisi.query.filter(
+            BildirimGecmisi.kullanici_id == u.kullanici_id,
+            BildirimGecmisi.tur == 'uyelik_uyari',
+            BildirimGecmisi.olusturma >= bugun_baslangic,
+        ).first()
+        if zaten:
+            continue
+
+        if kalan == 0:
+            baslik = 'Uyeliginiz Sona Erdi'
+            icerik = 'AdaUsta uyeliginiz sona erdi. Yenilemek icin giris yapiniz.'
+        else:
+            baslik = f'Uyeliginiz {kalan} Gun Sonra Bitiyor'
+            icerik = f'AdaUsta uyeliginiz {kalan} gun icinde sona erecek. Yenilemek icin giris yapiniz.'
+
+        tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=u.kullanici_id, aktif=True).all()]
+
+        gecmis = BildirimGecmisi(
+            kullanici_id=u.kullanici_id,
+            baslik=baslik,
+            icerik=icerik,
+            tur='uyelik_uyari',
+            gonderildi=False,
+        )
+        db.session.add(gecmis)
+
+        if tokenlar:
+            from fcm import toplu_bildirim_gonder
+            sonuc = toplu_bildirim_gonder(tokenlar, baslik, icerik, {'ekran': 'abonelik'})
+            gecmis.gonderildi = sonuc['basarili'] > 0
+            if sonuc['gecersiz']:
+                FCMToken.query.filter(FCMToken.token.in_(sonuc['gecersiz'])).delete(synchronize_session=False)
+
+    db.session.commit()
+
+
+def fcm_token_temizle():
+    """90 günden eski FCM tokenları temizle."""
+    from models import FCMToken
+    kesim = datetime.utcnow() - timedelta(days=90)
+    FCMToken.query.filter(FCMToken.son_guncelleme < kesim).delete(synchronize_session=False)
+    db.session.commit()
+
+
+def _run_with_context(fn):
+    def wrapper():
+        with app.app_context():
+            fn()
+    return wrapper
+
+
 def _baslat_scheduler():
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
         scheduler = BackgroundScheduler()
-        scheduler.add_job(func=lambda: app.app_context().__enter__() or abonelik_kontrol(),
+        scheduler.add_job(func=_run_with_context(abonelik_kontrol),
                           trigger='interval', hours=12, id='abonelik_kontrol')
+        scheduler.add_job(func=_run_with_context(abonelik_uyari_bildirim),
+                          trigger='interval', hours=24, id='abonelik_uyari')
+        scheduler.add_job(func=_run_with_context(fcm_token_temizle),
+                          trigger='interval', days=7, id='fcm_temizle')
         scheduler.start()
     except Exception:
         pass  # APScheduler yoksa sessizce atla

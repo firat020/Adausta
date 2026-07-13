@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler
+from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -971,3 +971,27 @@ def sifre_degistir():
     db.session.commit()
     log_kaydet('ŞİFRE_DEĞİŞTİR', 'Admin şifresi değiştirildi')
     return jsonify({'mesaj': 'Şifre güncellendi'})
+
+
+# ─── BİLDİRİMLER ──────────────────────────────────────────────
+
+@admin_bp.route('/bildirimsayisi', methods=['GET'])
+@admin_gerekli
+def bildirimsayisi():
+    sayi = AdminBildirim.query.filter_by(goruldu=False).count()
+    return jsonify({'sayi': sayi})
+
+
+@admin_bp.route('/bildirimler', methods=['GET'])
+@admin_gerekli
+def bildirimler():
+    bildirimler = AdminBildirim.query.order_by(AdminBildirim.olusturma.desc()).limit(50).all()
+    return jsonify({'bildirimler': [b.to_dict() for b in bildirimler]})
+
+
+@admin_bp.route('/bildirimler/goruldu', methods=['POST'])
+@admin_gerekli
+def bildirimler_goruldu():
+    AdminBildirim.query.filter_by(goruldu=False).update({'goruldu': True})
+    db.session.commit()
+    return jsonify({'mesaj': 'Bildirimler okundu olarak işaretlendi'})

@@ -7,6 +7,74 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { kategorileriGetir, sehirleriGetir, sirketKayit } from '../api'
 
+const inputCls2 = "w-full border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-colors"
+const labelCls2 = "text-sm font-bold text-gray-800 mb-1.5 block"
+
+function CokluKategoriSecici({ kategoriler, secilenler, onChange }) {
+  const [arama, setArama] = useState('')
+  const [acik, setAcik] = useState(false)
+  const secilenSet = new Set(secilenler)
+  const filtreli = kategoriler.filter(k =>
+    k.ad.toLowerCase().includes(arama.toLowerCase()) && !secilenSet.has(String(k.id))
+  )
+  const secilenObjeler = secilenler
+    .map(id => kategoriler.find(k => String(k.id) === id))
+    .filter(Boolean)
+
+  const ekle = (id) => { onChange([...secilenler, String(id)]); setArama('') }
+  const kaldir = (id) => onChange(secilenler.filter(s => s !== String(id)))
+
+  return (
+    <div className="relative">
+      <div
+        onClick={() => setAcik(true)}
+        className={`${inputCls2} min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-pointer`}
+        style={{ userSelect: 'none' }}
+      >
+        {secilenObjeler.length === 0 && (
+          <span className="text-gray-400 text-sm">Kategori seçin (birden fazla seçebilirsiniz)</span>
+        )}
+        {secilenObjeler.map((k, idx) => (
+          <span key={k.id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${
+            idx === 0 ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700'
+          }`}>
+            {idx === 0 && <span className="opacity-70 text-[10px]">Ana·</span>}
+            {k.ad}
+            <button type="button"
+              onClick={e => { e.stopPropagation(); kaldir(String(k.id)) }}
+              className="ml-0.5 hover:opacity-70 text-sm leading-none">×</button>
+          </span>
+        ))}
+        {secilenler.length > 0 && <span className="ml-auto text-gray-400 text-xs">▼</span>}
+      </div>
+      {acik && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-indigo-200 rounded-lg shadow-lg overflow-hidden">
+          <input autoFocus type="text" value={arama}
+            onChange={e => setArama(e.target.value)}
+            placeholder="Kategori ara..."
+            className="w-full px-3 py-2 text-sm border-b border-gray-100 outline-none focus:bg-indigo-50"
+          />
+          <div className="max-h-48 overflow-y-auto">
+            {filtreli.length === 0 && <p className="text-xs text-gray-400 px-3 py-2">Sonuç bulunamadı</p>}
+            {filtreli.map(k => (
+              <div key={k.id} onClick={() => ekle(String(k.id))}
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 transition-colors text-gray-800">
+                {k.ikon} {k.ad}
+              </div>
+            ))}
+          </div>
+          {secilenler.length > 0 && (
+            <div className="px-3 py-2 border-t border-gray-100 text-xs text-gray-400">
+              İlk seçilen = Ana kategori · Diğerleri ek kategori
+            </div>
+          )}
+        </div>
+      )}
+      {acik && <div className="fixed inset-0 z-40" onClick={() => { setAcik(false); setArama('') }} />}
+    </div>
+  )
+}
+
 const PLANLAR = [
   {
     id: 'aylik',
@@ -44,12 +112,13 @@ export default function SirketKayit() {
   const [basarili, setBasarili] = useState(false)
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
+  const [secilenKategoriler, setSecilenKategoriler] = useState([])
 
   const [form, setForm] = useState({
     sirket_adi: '', vergi_no: '', yetkili_ad: '',
     telefon: '', email: '', whatsapp: '',
     sehir_id: '', ilce_id: '',
-    kategori_id: '', adres: '', aciklama: '', website: '',
+    adres: '', aciklama: '', website: '',
     sifre: '', sifre_tekrar: '',
   })
   const [sifreGoster, setSifreGoster] = useState(false)
@@ -95,6 +164,7 @@ export default function SirketKayit() {
 
   const formGonder = (e) => {
     e.preventDefault()
+    if (secilenKategoriler.length === 0) { setSifreHata('En az bir kategori seçmelisiniz'); return }
     if (form.sifre.length < 6) { setSifreHata('Şifre en az 6 karakter olmalıdır'); return }
     if (form.sifre !== form.sifre_tekrar) { setSifreHata('Şifreler eşleşmiyor'); return }
     setSifreHata('')
@@ -110,7 +180,8 @@ export default function SirketKayit() {
         ...form,
         sehir_id: parseInt(form.sehir_id),
         ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
-        kategori_id: parseInt(form.kategori_id),
+        kategori_id: parseInt(secilenKategoriler[0]),
+        ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
         plan: secilenPlan,
       })
       // Google Ads dönüşüm — Kaydolma işlemi
@@ -393,13 +464,15 @@ export default function SirketKayit() {
             <h3 className="font-semibold text-gray-900 text-sm">Hizmet Kategorisi</h3>
           </div>
           <div>
-            <label className={labelCls}>Kategori *</label>
-            <select required value={form.kategori_id}
-              onChange={e => setForm(f => ({ ...f, kategori_id: e.target.value }))}
-              className={inputCls}>
-              <option value="">Kategori seçin</option>
-              {kategoriler.map(k => <option key={k.id} value={k.id}>{k.ikon} {k.ad}</option>)}
-            </select>
+            <label className={labelCls2}>Kategori * <span className="font-normal text-gray-400">(birden fazla seçebilirsiniz)</span></label>
+            <CokluKategoriSecici
+              kategoriler={kategoriler}
+              secilenler={secilenKategoriler}
+              onChange={setSecilenKategoriler}
+            />
+            {secilenKategoriler.length === 0 && (
+              <input type="text" required className="sr-only" tabIndex={-1} readOnly value="" aria-hidden />
+            )}
           </div>
         </div>
 

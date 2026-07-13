@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Sirket, Kullanici, Kategori, Sehir, SirketIsTalebi
+from models import db, Sirket, Kullanici, Kategori, Sehir, SirketIsTalebi, AdminBildirim
 from werkzeug.utils import secure_filename
+from sms import sms_gonder
 import os, uuid
 
 sirketler_bp = Blueprint('sirketler', __name__)
@@ -95,10 +96,31 @@ def kayit():
         aktif=True,
     )
     db.session.add(s)
+    db.session.flush()
+
+    # Ek kategoriler
+    ek_ids = data.get('ek_kategori_ids', [])
+    for kid in ek_ids:
+        kat = Kategori.query.get(kid)
+        if kat and kat not in s.ek_kategoriler:
+            s.ek_kategoriler.append(kat)
+
+    # Admin bildirimi
+    bildirim = AdminBildirim(
+        tur='yeni_sirket',
+        mesaj=f'Yeni şirket kaydı: {data["sirket_adi"]} — {data["telefon"]}'
+    )
+    db.session.add(bildirim)
     db.session.commit()
 
     session['kullanici_id'] = k.id
     session['rol'] = 'sirket'
+
+    # SMS bildirimi
+    sms_gonder(
+        data['telefon'],
+        f'Merhaba {data["yetkili_ad"]}, Ada Usta\'ya şirket kaydınız alındı! Profiliniz oluşturuldu. Herhangi bir sorun için 0548 851 07 00 numarasını arayabilirsiniz.'
+    )
 
     return jsonify({'mesaj': 'Kayıt başarılı', 'id': s.id, 'kullanici': k.to_dict()}), 201
 

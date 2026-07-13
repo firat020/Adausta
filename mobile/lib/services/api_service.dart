@@ -6,6 +6,7 @@ import '../models/usta.dart';
 import '../models/kategori.dart';
 import '../models/yorum.dart';
 import '../models/sehir.dart';
+import 'fcm_service.dart';
 
 class ApiService {
   static final Map<String, String> _headers = {
@@ -143,9 +144,12 @@ class ApiService {
     if (res.statusCode == 200) {
       _saveCookie(res);
       final data = jsonDecode(res.body);
-      // Persist session
       final prefs = await SharedPreferences.getInstance();
-      if (_sessionCookie != null) await prefs.setString('session_cookie', _sessionCookie!);
+      if (_sessionCookie != null) {
+        await prefs.setString('session_cookie', _sessionCookie!);
+        // Non-blocking FCM token registration
+        FCMService.instance.tokenKaydet(_sessionCookie!);
+      }
       return data['kullanici'] as Map<String, dynamic>?;
     }
     final hata = jsonDecode(res.body)['hata'] ?? 'Giriş başarısız';
@@ -153,6 +157,9 @@ class ApiService {
   }
 
   Future<void> cikisYap() async {
+    if (_sessionCookie != null) {
+      await FCMService.instance.tokenSil(_sessionCookie!);
+    }
     await http.post(Uri.parse(ApiConfig.cikis), headers: _authHeaders);
     _sessionCookie = null;
     final prefs = await SharedPreferences.getInstance();
