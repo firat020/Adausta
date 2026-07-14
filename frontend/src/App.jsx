@@ -28,6 +28,11 @@ import KullanimSartlari from './pages/yasal/KullanimSartlari'
 import IadePolitikasi from './pages/yasal/IadePolitikasi'
 import MesafeliSatis from './pages/yasal/MesafeliSatis'
 import CerezPolitikasi from './pages/yasal/CerezPolitikasi'
+import TeslimatHizmetSureci from './pages/yasal/TeslimatHizmetSureci'
+import OnBilgilendirmeFormu from './pages/yasal/OnBilgilendirmeFormu'
+import KisiselVeriler from './pages/yasal/KisiselVeriler'
+import SSS from './pages/yasal/SSS'
+import IptalIadePolitikasi from './pages/yasal/IptalIadePolitikasi'
 import Hakkimizda from './pages/Hakkimizda'
 import Iletisim from './pages/Iletisim'
 import OdemeFormu from './pages/OdemeFormu'
@@ -35,6 +40,9 @@ import OdemeSonuc from './pages/OdemeSonuc'
 import Magaza from './pages/Magaza'
 import MagazaOdeme from './pages/MagazaOdeme'
 import MagazaUrunDetay from './pages/MagazaUrunDetay'
+import MagazaSiparisBasarili from './pages/MagazaSiparisBasarili'
+import MagazaSiparisBasarisiz from './pages/MagazaSiparisBasarisiz'
+import MagazaSiparislerim from './pages/MagazaSiparislerim'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -52,6 +60,7 @@ import TalepTakip from './pages/TalepTakip'
 import AdminUrunler from './pages/admin/AdminUrunler'
 import AdminUrunEkle from './pages/admin/AdminUrunEkle'
 import AdminSiparisler from './pages/admin/AdminSiparisler'
+import AdminMagazaSiparisler from './pages/admin/AdminMagazaSiparisler'
 import AdminBildirimler from './pages/admin/AdminBildirimler'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
@@ -74,6 +83,25 @@ import MusteriPanelLayout from './pages/musteri-panel/MusteriPanelLayout'
 import MusteriPanelDashboard from './pages/musteri-panel/MusteriPanelDashboard'
 import MusteriPanelTalepler from './pages/musteri-panel/MusteriPanelTalepler'
 import MusteriPanelProfil from './pages/musteri-panel/MusteriPanelProfil'
+// Satıcı Başvuru & Paneli
+import SaticiBasvuruGiris from './pages/satici/SaticiBasvuruGiris'
+import SaticiBasvuruForm from './pages/satici/SaticiBasvuruForm'
+import SaticiBasvuruDurum from './pages/satici/SaticiBasvuruDurum'
+import SaticiGiris from './pages/satici/SaticiGiris'
+import SaticiPanelLayout from './pages/satici-panel/SaticiPanelLayout'
+import SaticiPanelDashboard from './pages/satici-panel/SaticiPanelDashboard'
+import SaticiPanelUrunler from './pages/satici-panel/SaticiPanelUrunler'
+import SaticiPanelSiparisler from './pages/satici-panel/SaticiPanelSiparisler'
+import SaticiPanelMagaza from './pages/satici-panel/SaticiPanelMagaza'
+import SaticiPanelPersonel from './pages/satici-panel/SaticiPanelPersonel'
+import SaticiPanelBakiye from './pages/satici-panel/SaticiPanelBakiye'
+import SaticiPanelIadeler from './pages/satici-panel/SaticiPanelIadeler'
+import SaticiPanelHakedis from './pages/satici-panel/SaticiPanelHakedis'
+import AdminSaticilar from './pages/admin/AdminSaticilar'
+import AdminSaticilarFinans from './pages/admin/AdminSaticilarFinans'
+import AdminFinans from './pages/admin/AdminFinans'
+import MagazaSatici from './pages/MagazaSatici'
+import MagazaSaticilar from './pages/MagazaSaticilar'
 
 function PublicSite() {
   return (
@@ -101,6 +129,11 @@ function PublicSite() {
           <Route path="/iade-politikasi" element={<IadePolitikasi />} />
           <Route path="/mesafeli-satis" element={<MesafeliSatis />} />
           <Route path="/cerez-politikasi" element={<CerezPolitikasi />} />
+          <Route path="/teslimat-ve-hizmet-sureci" element={<TeslimatHizmetSureci />} />
+          <Route path="/on-bilgilendirme-formu" element={<OnBilgilendirmeFormu />} />
+          <Route path="/kisisel-veriler" element={<KisiselVeriler />} />
+          <Route path="/sss" element={<SSS />} />
+          <Route path="/iptal-iade-politikasi" element={<IptalIadePolitikasi />} />
           <Route path="/hakkimizda" element={<Hakkimizda />} />
           <Route path="/iletisim" element={<Iletisim />} />
           <Route path="/odeme" element={<OdemeFormu />} />
@@ -108,7 +141,16 @@ function PublicSite() {
           <Route path="/magaza" element={<Magaza />} />
           <Route path="/magaza/urun/:id" element={<MagazaUrunDetay />} />
           <Route path="/magaza/odeme" element={<MagazaOdeme />} />
+          <Route path="/magaza/siparis-basarili" element={<MagazaSiparisBasarili />} />
+          <Route path="/magaza/siparis-basarisiz" element={<MagazaSiparisBasarisiz />} />
+          <Route path="/magaza/siparislerim" element={<MagazaSiparislerim />} />
+          <Route path="/magaza/satici/:slug" element={<MagazaSatici />} />
+          <Route path="/magaza/saticilar" element={<MagazaSaticilar />} />
           <Route path="/talep-takip" element={<TalepTakip />} />
+          <Route path="/satici-basvuru" element={<SaticiBasvuruGiris />} />
+          <Route path="/satici-basvuru/basvur" element={<SaticiBasvuruForm />} />
+          <Route path="/satici-basvuru/durum" element={<SaticiBasvuruDurum />} />
+          <Route path="/satici/giris" element={<SaticiGiris />} />
         </Routes>
       </main>
       <Footer />
@@ -167,7 +209,11 @@ export default function App() {
         <Route path="urunler" element={<AdminUrunler />} />
         <Route path="urun-ekle" element={<AdminUrunEkle />} />
         <Route path="siparisler" element={<AdminSiparisler />} />
+        <Route path="magaza-siparisler" element={<AdminMagazaSiparisler />} />
         <Route path="bildirimler" element={<AdminBildirimler />} />
+        <Route path="saticilar" element={<AdminSaticilar />} />
+        <Route path="saticilar-finans" element={<AdminSaticilarFinans />} />
+        <Route path="finans" element={<AdminFinans />} />
       </Route>
 
       {/* Usta Paneli */}
@@ -188,6 +234,18 @@ export default function App() {
         <Route path="panel" element={<SirketPanelDashboard />} />
         <Route path="panel/talepler" element={<SirketPanelTalepler />} />
         <Route path="panel/profil" element={<SirketPanelProfil />} />
+      </Route>
+
+      {/* Satıcı Paneli */}
+      <Route path="/satici" element={<SaticiPanelLayout />}>
+        <Route path="panel" element={<SaticiPanelDashboard />} />
+        <Route path="urunler" element={<SaticiPanelUrunler />} />
+        <Route path="siparisler" element={<SaticiPanelSiparisler />} />
+        <Route path="magazam" element={<SaticiPanelMagaza />} />
+        <Route path="personel" element={<SaticiPanelPersonel />} />
+        <Route path="bakiye" element={<SaticiPanelBakiye />} />
+        <Route path="iadeler" element={<SaticiPanelIadeler />} />
+        <Route path="hakedisler" element={<SaticiPanelHakedis />} />
       </Route>
 
       {/* Müşteri Paneli */}

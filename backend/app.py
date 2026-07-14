@@ -65,7 +65,13 @@ from routes.sirketler import sirketler_bp
 from routes.sirket_panel import sirket_panel_bp
 from routes.odeme import odeme_bp
 from routes.magaza import magaza_bp
+from routes.satici_basvuru import satici_basvuru_bp
+from routes.admin_saticilar import admin_saticilar_bp
 from routes.fcm_token import fcm_token_bp
+from routes.satici_panel import satici_panel_bp
+from routes.iade import iade_bp
+from routes.admin_finans import admin_finans_bp
+from routes.satici_yorum import satici_yorum_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
@@ -80,7 +86,13 @@ app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
 app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 app.register_blueprint(odeme_bp, url_prefix='/api/odeme')
 app.register_blueprint(magaza_bp, url_prefix='/api/magaza')
+app.register_blueprint(satici_basvuru_bp, url_prefix='/api/satici')
+app.register_blueprint(admin_saticilar_bp, url_prefix='/api/admin')
 app.register_blueprint(fcm_token_bp, url_prefix='/api/fcm')
+app.register_blueprint(satici_panel_bp, url_prefix='/api/satici-panel')
+app.register_blueprint(iade_bp, url_prefix='/api/iade')
+app.register_blueprint(admin_finans_bp, url_prefix='/api/admin/finans')
+app.register_blueprint(satici_yorum_bp, url_prefix='/api/satici-yorum')
 
 @app.after_request
 def guvenlik_basliklari(response):

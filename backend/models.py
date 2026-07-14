@@ -387,7 +387,7 @@ class Abonelik(db.Model):
 class Odeme(db.Model):
     __tablename__ = 'odemeler'
     id = db.Column(db.Integer, primary_key=True)
-    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=True)
     abonelik_id = db.Column(db.Integer, db.ForeignKey('abonelikler.id'), nullable=True)
     tutar = db.Column(db.Float, nullable=False)
     para_birimi = db.Column(db.String(10), default='TRY')
@@ -397,6 +397,15 @@ class Odeme(db.Model):
     durum = db.Column(db.String(20), default='bekliyor')  # basarili / basarisiz / bekliyor
     aciklama = db.Column(db.Text, default='')
     tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    payment_source          = db.Column(db.String(30), default='subscription')  # subscription / store_order
+    reference_type          = db.Column(db.String(30), default='')  # abonelik / magaza_siparis
+    reference_id            = db.Column(db.Integer, nullable=True)
+    provider_transaction_id = db.Column(db.String(200), nullable=True)
+    error_code              = db.Column(db.String(50), default='')
+    error_message           = db.Column(db.Text, default='')
+    paid_at                 = db.Column(db.DateTime, nullable=True)
+    refunded_at             = db.Column(db.DateTime, nullable=True)
+    idempotency_key         = db.Column(db.String(100), unique=True, nullable=True)
     usta = db.relationship('Usta', foreign_keys=[usta_id])
 
     def to_dict(self):
@@ -412,6 +421,15 @@ class Odeme(db.Model):
             'durum': self.durum,
             'aciklama': self.aciklama,
             'tarih': fmt(self.tarih),
+            'payment_source': self.payment_source,
+            'reference_type': self.reference_type,
+            'reference_id': self.reference_id,
+            'provider_transaction_id': self.provider_transaction_id,
+            'error_code': self.error_code,
+            'error_message': self.error_message,
+            'paid_at': fmt(self.paid_at),
+            'refunded_at': fmt(self.refunded_at),
+            'idempotency_key': self.idempotency_key,
         }
 
 
@@ -618,12 +636,15 @@ class Urun(db.Model):
     kategori     = db.Column(db.String(100), default='')
     olusturma    = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme   = db.Column(db.DateTime, default=datetime.utcnow)
+    store_id     = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=True)
+    urun_durum   = db.Column(db.String(20), default='active')  # draft/pending_review/active/passive/out_of_stock/suspended
     gorseller    = db.relationship('UrunGorsel', backref='urun', lazy=True, order_by='UrunGorsel.sira')
     siparisler   = db.relationship('UrunSiparis', backref='urun', lazy=True)
 
     def to_dict(self, include_gorseller=False):
         marka = Marka.query.get(self.marka_id) if self.marka_id else None
         model = UrunModeli.query.get(self.model_id) if self.model_id else None
+        store = MarketplaceStore.query.get(self.store_id) if self.store_id else None
         d = {
             'id': self.id, 'ad': self.ad, 'aciklama': self.aciklama,
             'usd_fiyat': self.usd_fiyat, 'kur': self.kur,
@@ -634,6 +655,10 @@ class Urun(db.Model):
             'marka_id': self.marka_id, 'marka_ad': marka.ad if marka else None,
             'model_id': self.model_id, 'model_ad': model.ad if model else None,
             'olusturma': fmt(self.olusturma),
+            'store_id': self.store_id,
+            'magaza_adi': store.magaza_adi if store else 'AdaUsta Resmî Mağaza',
+            'magaza_slug': store.slug if store else 'adausta-resmi-magaza',
+            'urun_durum': self.urun_durum,
             'kapak_gorsel': self.gorseller[0].dosya_yolu if self.gorseller else None,
         }
         if include_gorseller:
@@ -690,6 +715,147 @@ class UrunSiparis(db.Model):
         }
 
 
+class MagazaSiparis(db.Model):
+    __tablename__ = 'magaza_siparisler'
+    id               = db.Column(db.Integer, primary_key=True)
+    siparis_no       = db.Column(db.String(20), unique=True, nullable=False)
+    # Müşteri
+    kullanici_id     = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    misafir_ad       = db.Column(db.String(100), nullable=False)
+    misafir_soyad    = db.Column(db.String(100), default='')
+    misafir_telefon  = db.Column(db.String(30), nullable=False)
+    misafir_email    = db.Column(db.String(150), default='')
+    # Fatura
+    fatura_tipi      = db.Column(db.String(20), default='bireysel')  # bireysel / kurumsal
+    fatura_ad        = db.Column(db.String(200), default='')
+    vergi_no         = db.Column(db.String(50), default='')
+    vergi_dairesi    = db.Column(db.String(100), default='')
+    # Teslimat / adres
+    teslimat_adres   = db.Column(db.Text, default='')
+    teslimat_ilce    = db.Column(db.String(100), default='')
+    teslimat_not     = db.Column(db.Text, default='')
+    # Fiyatlar
+    ara_toplam_tl    = db.Column(db.Float, default=0.0)
+    ara_toplam_usd   = db.Column(db.Float, default=0.0)
+    kdv_tl           = db.Column(db.Float, default=0.0)
+    kargo_tl         = db.Column(db.Float, default=0.0)
+    indirim_tl       = db.Column(db.Float, default=0.0)
+    genel_toplam_tl  = db.Column(db.Float, default=0.0)
+    genel_toplam_usd = db.Column(db.Float, default=0.0)
+    # Ödeme
+    odeme_yontemi    = db.Column(db.String(50), default='')
+    odeme_durumu     = db.Column(db.String(20), default='bekliyor')  # bekliyor / odendi / basarisiz / iptal
+    # Sipariş durumu
+    durum            = db.Column(db.String(30), default='yeni')  # yeni / hazirlaniyor / kargoda / teslim_edildi / iptal / iade
+    admin_notu       = db.Column(db.Text, default='')
+    musteri_notu     = db.Column(db.Text, default='')
+    # Yasal onaylar
+    on_bilgilendirme_onaylandi = db.Column(db.Boolean, default=False)
+    mesafeli_satis_onaylandi   = db.Column(db.Boolean, default=False)
+    iptal_iade_onaylandi       = db.Column(db.Boolean, default=False)
+    gizlilik_onaylandi         = db.Column(db.Boolean, default=False)
+    # Sözleşme versiyonu (ne zaman onaylandı)
+    sozlesme_tarih   = db.Column(db.DateTime, nullable=True)
+    # Zaman
+    olusturma        = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme       = db.Column(db.DateTime, default=datetime.utcnow)
+    # İlişkiler
+    kalemler         = db.relationship('MagazaSiparisKalemi', backref='siparis', lazy=True, cascade='all, delete-orphan')
+    durum_gecmisi    = db.relationship('MagazaSiparisDurumLog', backref='siparis', lazy=True)
+
+    def to_dict(self, include_kalemler=False):
+        d = {
+            'id': self.id,
+            'siparis_no': self.siparis_no,
+            'kullanici_id': self.kullanici_id,
+            'misafir_ad': self.misafir_ad,
+            'misafir_soyad': self.misafir_soyad,
+            'misafir_telefon': self.misafir_telefon,
+            'misafir_email': self.misafir_email,
+            'fatura_tipi': self.fatura_tipi,
+            'fatura_ad': self.fatura_ad,
+            'vergi_no': self.vergi_no,
+            'vergi_dairesi': self.vergi_dairesi,
+            'teslimat_adres': self.teslimat_adres,
+            'teslimat_ilce': self.teslimat_ilce,
+            'teslimat_not': self.teslimat_not,
+            'ara_toplam_tl': self.ara_toplam_tl,
+            'ara_toplam_usd': self.ara_toplam_usd,
+            'kdv_tl': self.kdv_tl,
+            'kargo_tl': self.kargo_tl,
+            'indirim_tl': self.indirim_tl,
+            'genel_toplam_tl': self.genel_toplam_tl,
+            'genel_toplam_usd': self.genel_toplam_usd,
+            'odeme_yontemi': self.odeme_yontemi,
+            'odeme_durumu': self.odeme_durumu,
+            'durum': self.durum,
+            'admin_notu': self.admin_notu,
+            'musteri_notu': self.musteri_notu,
+            'sozlesme_tarih': fmt(self.sozlesme_tarih),
+            'olusturma': fmt(self.olusturma),
+            'guncelleme': fmt(self.guncelleme),
+        }
+        if include_kalemler:
+            d['kalemler'] = [k.to_dict() for k in self.kalemler]
+            d['durum_gecmisi'] = [g.to_dict() for g in sorted(self.durum_gecmisi, key=lambda x: x.tarih)]
+        return d
+
+
+class MagazaSiparisKalemi(db.Model):
+    __tablename__ = 'magaza_siparis_kalemleri'
+    id              = db.Column(db.Integer, primary_key=True)
+    siparis_id      = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id', ondelete='CASCADE'), nullable=False)
+    urun_id         = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=False)
+    urun_ad         = db.Column(db.String(200), nullable=False)  # snapshot
+    urun_sku        = db.Column(db.String(100), default='')
+    miktar          = db.Column(db.Integer, default=1)
+    birim_fiyat_tl  = db.Column(db.Float, nullable=False)
+    birim_fiyat_usd = db.Column(db.Float, default=0.0)
+    toplam_tl       = db.Column(db.Float, nullable=False)
+    toplam_usd      = db.Column(db.Float, default=0.0)
+    kapak_gorsel    = db.Column(db.String(300), default='')
+    seller_order_id = db.Column(db.Integer, db.ForeignKey('satici_siparisler.id'), nullable=True)
+
+    urun = db.relationship('Urun', foreign_keys=[urun_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'siparis_id': self.siparis_id,
+            'urun_id': self.urun_id,
+            'urun_ad': self.urun_ad,
+            'urun_sku': self.urun_sku,
+            'miktar': self.miktar,
+            'birim_fiyat_tl': self.birim_fiyat_tl,
+            'birim_fiyat_usd': self.birim_fiyat_usd,
+            'toplam_tl': self.toplam_tl,
+            'toplam_usd': self.toplam_usd,
+            'kapak_gorsel': self.kapak_gorsel,
+            'seller_order_id': self.seller_order_id,
+        }
+
+
+class MagazaSiparisDurumLog(db.Model):
+    __tablename__ = 'magaza_siparis_durum_log'
+    id          = db.Column(db.Integer, primary_key=True)
+    siparis_id  = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id', ondelete='CASCADE'), nullable=False)
+    eski_durum  = db.Column(db.String(30), default='')
+    yeni_durum  = db.Column(db.String(30), nullable=False)
+    aciklama    = db.Column(db.Text, default='')
+    admin_id    = db.Column(db.Integer, nullable=True)
+    tarih       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'eski_durum': self.eski_durum,
+            'yeni_durum': self.yeni_durum,
+            'aciklama': self.aciklama,
+            'admin_id': self.admin_id,
+            'tarih': fmt(self.tarih),
+        }
+
+
 class FCMToken(db.Model):
     __tablename__ = 'fcm_tokenlar'
     id = db.Column(db.Integer, primary_key=True)
@@ -738,5 +904,423 @@ class AdminBildirim(db.Model):
             'tur': self.tur,
             'mesaj': self.mesaj,
             'goruldu': self.goruldu,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+# ──────────────────────────────────────────────────────────
+# Multi-seller marketplace models
+# ──────────────────────────────────────────────────────────
+
+class SellerApplication(db.Model):
+    __tablename__ = 'satici_basvurular'
+    id                = db.Column(db.Integer, primary_key=True)
+    kullanici_id      = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    ticari_unvan      = db.Column(db.String(200), nullable=False)
+    magaza_adi        = db.Column(db.String(200), nullable=False)
+    magaza_slug       = db.Column(db.String(200), unique=True, nullable=True)
+    sirket_turu       = db.Column(db.String(50), default='limited')
+    vergi_no          = db.Column(db.String(50), default='')
+    vergi_dairesi     = db.Column(db.String(100), default='')
+    sirket_kayit_no   = db.Column(db.String(100), default='')
+    yetkili_ad        = db.Column(db.String(100), nullable=False)
+    yetkili_telefon   = db.Column(db.String(30), nullable=False)
+    yetkili_email     = db.Column(db.String(150), nullable=False)
+    adres             = db.Column(db.Text, default='')
+    banka_hesap_sahibi = db.Column(db.String(200), default='')
+    iban              = db.Column(db.String(50), default='')
+    magaza_aciklama   = db.Column(db.Text, default='')
+    logo              = db.Column(db.String(300), default='')
+    kapak_gorsel      = db.Column(db.String(300), default='')
+    durum             = db.Column(db.String(30), default='draft')  # draft/pending/inceleniyor/onaylandi/reddedildi
+    red_nedeni        = db.Column(db.Text, default='')
+    inceleme_notu     = db.Column(db.Text, default='')
+    reviewer_id       = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    gonderme_tarihi   = db.Column(db.DateTime, nullable=True)
+    inceleme_tarihi   = db.Column(db.DateTime, nullable=True)
+    olusturma         = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    belgeler = db.relationship('SellerDocument', backref='basvuru', lazy=True,
+                               cascade='all, delete-orphan')
+
+    def to_dict(self, public=True, include_belgeler=False):
+        d = {
+            'id': self.id,
+            'kullanici_id': self.kullanici_id,
+            'magaza_adi': self.magaza_adi,
+            'magaza_slug': self.magaza_slug,
+            'sirket_turu': self.sirket_turu,
+            'vergi_dairesi': self.vergi_dairesi,
+            'sirket_kayit_no': self.sirket_kayit_no,
+            'yetkili_ad': self.yetkili_ad,
+            'yetkili_telefon': self.yetkili_telefon,
+            'yetkili_email': self.yetkili_email,
+            'adres': self.adres,
+            'magaza_aciklama': self.magaza_aciklama,
+            'logo': self.logo,
+            'kapak_gorsel': self.kapak_gorsel,
+            'durum': self.durum,
+            'red_nedeni': self.red_nedeni,
+            'inceleme_notu': self.inceleme_notu,
+            'reviewer_id': self.reviewer_id,
+            'gonderme_tarihi': fmt(self.gonderme_tarihi),
+            'inceleme_tarihi': fmt(self.inceleme_tarihi),
+            'olusturma': fmt(self.olusturma),
+            'guncelleme': fmt(self.guncelleme),
+        }
+        if not public:
+            d['ticari_unvan'] = self.ticari_unvan
+            d['vergi_no'] = self.vergi_no
+            d['banka_hesap_sahibi'] = self.banka_hesap_sahibi
+            d['iban'] = self.iban
+        if include_belgeler:
+            d['belgeler'] = [b.to_dict() for b in self.belgeler]
+        return d
+
+
+class SellerDocument(db.Model):
+    __tablename__ = 'satici_belgeler'
+    id               = db.Column(db.Integer, primary_key=True)
+    basvuru_id       = db.Column(db.Integer, db.ForeignKey('satici_basvurular.id', ondelete='CASCADE'), nullable=False)
+    tur              = db.Column(db.String(50), nullable=False)
+    dosya_yolu       = db.Column(db.String(300), nullable=False)
+    belge_no         = db.Column(db.String(100), default='')
+    verilis_tarihi   = db.Column(db.Date, nullable=True)
+    son_gecerlilik   = db.Column(db.Date, nullable=True)
+    durum            = db.Column(db.String(20), default='pending')  # pending/onaylandi/reddedildi
+    red_nedeni       = db.Column(db.Text, default='')
+    inceleyen_id     = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    inceleme_tarihi  = db.Column(db.DateTime, nullable=True)
+    olusturma        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'basvuru_id': self.basvuru_id,
+            'tur': self.tur,
+            'has_dosya': bool(self.dosya_yolu),
+            'belge_no': self.belge_no,
+            'verilis_tarihi': self.verilis_tarihi.strftime('%d.%m.%Y') if self.verilis_tarihi else None,
+            'son_gecerlilik': self.son_gecerlilik.strftime('%d.%m.%Y') if self.son_gecerlilik else None,
+            'durum': self.durum,
+            'red_nedeni': self.red_nedeni,
+            'inceleyen_id': self.inceleyen_id,
+            'inceleme_tarihi': fmt(self.inceleme_tarihi),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class MarketplaceStore(db.Model):
+    __tablename__ = 'magazalar'
+    id                 = db.Column(db.Integer, primary_key=True)
+    basvuru_id         = db.Column(db.Integer, db.ForeignKey('satici_basvurular.id'), nullable=True)
+    kullanici_id       = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    ticari_unvan       = db.Column(db.String(200), nullable=False)
+    magaza_adi         = db.Column(db.String(200), nullable=False)
+    slug               = db.Column(db.String(200), unique=True, nullable=False)
+    vergi_no           = db.Column(db.String(50), default='')
+    iban               = db.Column(db.String(50), default='')
+    banka_hesap_sahibi = db.Column(db.String(200), default='')
+    logo               = db.Column(db.String(300), default='')
+    kapak_gorsel       = db.Column(db.String(300), default='')
+    aciklama           = db.Column(db.Text, default='')
+    aktif              = db.Column(db.Boolean, default=True)
+    askida             = db.Column(db.Boolean, default=False)
+    komisyon_orani     = db.Column(db.Float, default=15.0)
+    toplam_satis       = db.Column(db.Float, default=0.0)
+    puan               = db.Column(db.Float, default=0.0)
+    yorum_sayisi       = db.Column(db.Integer, default=0)
+    olusturma          = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uyeler  = db.relationship('StoreMember', backref='magaza', lazy=True)
+    bakiye  = db.relationship('SellerBalance', backref='magaza', uselist=False, lazy=True)
+
+    def to_dict(self, public=True):
+        d = {
+            'id': self.id,
+            'basvuru_id': self.basvuru_id,
+            'kullanici_id': self.kullanici_id,
+            'magaza_adi': self.magaza_adi,
+            'slug': self.slug,
+            'logo': self.logo,
+            'kapak_gorsel': self.kapak_gorsel,
+            'aciklama': self.aciklama,
+            'aktif': self.aktif,
+            'askida': self.askida,
+            'toplam_satis': self.toplam_satis,
+            'puan': self.puan,
+            'yorum_sayisi': self.yorum_sayisi,
+            'olusturma': fmt(self.olusturma),
+        }
+        if not public:
+            d['ticari_unvan'] = self.ticari_unvan
+            d['vergi_no'] = self.vergi_no
+            d['iban'] = self.iban
+            d['banka_hesap_sahibi'] = self.banka_hesap_sahibi
+            d['komisyon_orani'] = self.komisyon_orani
+        return d
+
+
+class StoreMember(db.Model):
+    __tablename__ = 'magaza_uyeler'
+    id           = db.Column(db.Integer, primary_key=True)
+    store_id     = db.Column(db.Integer, db.ForeignKey('magazalar.id', ondelete='CASCADE'), nullable=False)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=False)
+    rol          = db.Column(db.String(30), default='urun_yetkilisi')  # sahip/yonetici/urun_yetkilisi/muhasebe
+    aktif        = db.Column(db.Boolean, default=True)
+    olusturma    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    kullanici = db.relationship('Kullanici', foreign_keys=[kullanici_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'store_id': self.store_id,
+            'kullanici_id': self.kullanici_id,
+            'kullanici_email': self.kullanici.email if self.kullanici else None,
+            'rol': self.rol,
+            'aktif': self.aktif,
+        }
+
+
+class SellerBalance(db.Model):
+    __tablename__ = 'satici_bakiyeleri'
+    id                = db.Column(db.Integer, primary_key=True)
+    store_id          = db.Column(db.Integer, db.ForeignKey('magazalar.id'), unique=True, nullable=False)
+    bekleyen_tl       = db.Column(db.Float, default=0.0)
+    kullanilabilir_tl = db.Column(db.Float, default=0.0)
+    odenmis_tl        = db.Column(db.Float, default=0.0)
+    guncelleme        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    magaza = db.relationship('MarketplaceStore', foreign_keys=[store_id])
+
+    def to_dict(self):
+        return {
+            'store_id': self.store_id,
+            'bekleyen_tl': self.bekleyen_tl,
+            'kullanilabilir_tl': self.kullanilabilir_tl,
+            'odenmis_tl': self.odenmis_tl,
+            'guncelleme': fmt(self.guncelleme),
+        }
+
+
+class SellerAuditLog(db.Model):
+    __tablename__ = 'satici_audit_log'
+    id          = db.Column(db.Integer, primary_key=True)
+    store_id    = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=True)
+    basvuru_id  = db.Column(db.Integer, db.ForeignKey('satici_basvurular.id'), nullable=True)
+    yapan_id    = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    islem       = db.Column(db.String(100), nullable=False)
+    detay       = db.Column(db.Text, default='')
+    ip          = db.Column(db.String(60), default='')
+    tarih       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'store_id': self.store_id,
+            'basvuru_id': self.basvuru_id,
+            'islem': self.islem,
+            'detay': self.detay,
+            'tarih': fmt(self.tarih),
+        }
+
+
+class SellerOrder(db.Model):
+    __tablename__ = 'satici_siparisler'
+    id              = db.Column(db.Integer, primary_key=True)
+    siparis_id      = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id', ondelete='CASCADE'), nullable=False)
+    store_id        = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=False)
+    siparis_no      = db.Column(db.String(20), nullable=False)
+    durum           = db.Column(db.String(30), default='yeni')
+    ara_toplam_tl   = db.Column(db.Float, default=0.0)
+    komisyon_orani  = db.Column(db.Float, default=0.0)
+    komisyon_tl     = db.Column(db.Float, default=0.0)
+    satici_net_tl   = db.Column(db.Float, default=0.0)
+    hakediş_durumu  = db.Column(db.String(30), default='pending')  # pending/on_hold/available/paid/cancelled
+    olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    magaza = db.relationship('MarketplaceStore', foreign_keys=[store_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'siparis_id': self.siparis_id,
+            'store_id': self.store_id,
+            'siparis_no': self.siparis_no,
+            'durum': self.durum,
+            'ara_toplam_tl': self.ara_toplam_tl,
+            'komisyon_orani': self.komisyon_orani,
+            'komisyon_tl': self.komisyon_tl,
+            'satici_net_tl': self.satici_net_tl,
+            'hakediş_durumu': self.hakediş_durumu,
+            'magaza_adi': self.magaza.magaza_adi if self.magaza else '',
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class ReturnRequest(db.Model):
+    __tablename__ = 'iade_talepleri'
+    id              = db.Column(db.Integer, primary_key=True)
+    siparis_id      = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id', ondelete='CASCADE'), nullable=False)
+    seller_order_id = db.Column(db.Integer, db.ForeignKey('satici_siparisler.id'), nullable=True)
+    store_id        = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=True)
+    urun_id         = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=True)
+    siparis_no      = db.Column(db.String(20), nullable=False)
+    musteri_ad      = db.Column(db.String(200), default='')
+    musteri_telefon = db.Column(db.String(30), default='')
+    musteri_email   = db.Column(db.String(150), default='')
+    neden           = db.Column(db.Text, nullable=False)
+    aciklama        = db.Column(db.Text, default='')
+    durum           = db.Column(db.String(30), default='opened')
+    # opened / seller_review / approved / rejected / closed
+    satici_cevabi   = db.Column(db.Text, default='')
+    oneri_durum     = db.Column(db.String(30), default='')   # approve / reject / replacement
+    admin_notu      = db.Column(db.Text, default='')
+    iade_tutari_tl  = db.Column(db.Float, nullable=True)
+    olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
+    guncelleme      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    siparis      = db.relationship('MagazaSiparis', foreign_keys=[siparis_id])
+    magaza       = db.relationship('MarketplaceStore', foreign_keys=[store_id])
+
+    def to_dict(self):
+        return {
+            'id':              self.id,
+            'siparis_id':      self.siparis_id,
+            'seller_order_id': self.seller_order_id,
+            'store_id':        self.store_id,
+            'urun_id':         self.urun_id,
+            'siparis_no':      self.siparis_no,
+            'musteri_ad':      self.musteri_ad,
+            'musteri_telefon': self.musteri_telefon,
+            'musteri_email':   self.musteri_email,
+            'neden':           self.neden,
+            'aciklama':        self.aciklama,
+            'durum':           self.durum,
+            'satici_cevabi':   self.satici_cevabi,
+            'oneri_durum':     self.oneri_durum,
+            'admin_notu':      self.admin_notu,
+            'iade_tutari_tl':  self.iade_tutari_tl,
+            'magaza_adi':      self.magaza.magaza_adi if self.magaza else '',
+            'olusturma':       fmt(self.olusturma),
+            'guncelleme':      fmt(self.guncelleme),
+        }
+
+
+class SellerReview(db.Model):
+    __tablename__ = 'satici_yorumlar'
+    id            = db.Column(db.Integer, primary_key=True)
+    siparis_id    = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id'), nullable=False)
+    store_id      = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=False)
+    urun_id       = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=True)
+    musteri_ad    = db.Column(db.String(100), default='')
+    puan          = db.Column(db.Integer, nullable=False)  # 1-5
+    yorum         = db.Column(db.Text, default='')
+    satici_cevabi = db.Column(db.Text, default='')
+    dogrulandi    = db.Column(db.Boolean, default=True)  # always True (verified purchase)
+    moderasyon    = db.Column(db.String(20), default='approved')  # pending/approved/rejected
+    olusturma     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'store_id': self.store_id,
+            'urun_id': self.urun_id,
+            'musteri_ad': self.musteri_ad,
+            'puan': self.puan,
+            'yorum': self.yorum,
+            'satici_cevabi': self.satici_cevabi,
+            'dogrulandi': self.dogrulandi,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class SellerSubscriptionPlan(db.Model):
+    __tablename__ = 'satici_abonelik_planlari'
+    id              = db.Column(db.Integer, primary_key=True)
+    ad              = db.Column(db.String(100), nullable=False)  # 'Başlangıç'/'Profesyonel'/'Kurumsal'
+    slug            = db.Column(db.String(50), unique=True, nullable=False)
+    fiyat_tl        = db.Column(db.Float, default=0.0)
+    urun_limiti     = db.Column(db.Integer, default=50)
+    personel_limiti = db.Column(db.Integer, default=3)
+    komisyon_orani  = db.Column(db.Float, default=15.0)
+    one_cikarma     = db.Column(db.Integer, default=0)  # featured product slots
+    rapor_seviyesi  = db.Column(db.String(20), default='temel')   # temel/gelismis/tam
+    destek_seviyesi = db.Column(db.String(20), default='email')   # email/oncelikli/ozel
+    aktif           = db.Column(db.Boolean, default=True)
+    aciklama        = db.Column(db.Text, default='')
+    olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'ad': self.ad,
+            'slug': self.slug,
+            'fiyat_tl': self.fiyat_tl,
+            'urun_limiti': self.urun_limiti,
+            'personel_limiti': self.personel_limiti,
+            'komisyon_orani': self.komisyon_orani,
+            'one_cikarma': self.one_cikarma,
+            'rapor_seviyesi': self.rapor_seviyesi,
+            'destek_seviyesi': self.destek_seviyesi,
+            'aktif': self.aktif,
+            'aciklama': self.aciklama,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class SellerSubscription(db.Model):
+    __tablename__ = 'satici_abonelikleri'
+    id         = db.Column(db.Integer, primary_key=True)
+    store_id   = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=False)
+    plan_id    = db.Column(db.Integer, db.ForeignKey('satici_abonelik_planlari.id'), nullable=False)
+    baslangic  = db.Column(db.DateTime, nullable=False)
+    bitis      = db.Column(db.DateTime, nullable=True)
+    durum      = db.Column(db.String(20), default='active')  # active/expired/cancelled/suspended
+    odeme_id   = db.Column(db.Integer, db.ForeignKey('odemeler.id'), nullable=True)
+    olusturma  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    plan = db.relationship('SellerSubscriptionPlan', foreign_keys=[plan_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'store_id': self.store_id,
+            'plan_id': self.plan_id,
+            'plan_ad': self.plan.ad if self.plan else None,
+            'baslangic': fmt(self.baslangic),
+            'bitis': fmt(self.bitis),
+            'durum': self.durum,
+        }
+
+
+class Commission(db.Model):
+    __tablename__ = 'komisyonlar'
+    id              = db.Column(db.Integer, primary_key=True)
+    seller_order_id = db.Column(db.Integer, db.ForeignKey('satici_siparisler.id', ondelete='CASCADE'), nullable=False)
+    store_id        = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=False)
+    siparis_id      = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id'), nullable=False)
+    urun_id         = db.Column(db.Integer, db.ForeignKey('urunler.id'), nullable=True)
+    komisyon_orani  = db.Column(db.Float, nullable=False)
+    brut_tutar_tl   = db.Column(db.Float, nullable=False)
+    komisyon_tl     = db.Column(db.Float, nullable=False)
+    net_tutar_tl    = db.Column(db.Float, nullable=False)
+    durum           = db.Column(db.String(20), default='pending')
+    olusturma       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'seller_order_id': self.seller_order_id,
+            'store_id': self.store_id,
+            'siparis_id': self.siparis_id,
+            'urun_id': self.urun_id,
+            'komisyon_orani': self.komisyon_orani,
+            'brut_tutar_tl': self.brut_tutar_tl,
+            'komisyon_tl': self.komisyon_tl,
+            'net_tutar_tl': self.net_tutar_tl,
+            'durum': self.durum,
             'olusturma': fmt(self.olusturma),
         }

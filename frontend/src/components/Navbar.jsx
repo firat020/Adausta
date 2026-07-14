@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard, Building2 } from 'lucide-react'
+import { Menu, X, MapPin, User, LogOut, ChevronDown, Wrench, LayoutDashboard, Building2, Store } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import DilSecici from './DilSecici'
 import { benimBilgilerim, cikis } from '../api'
@@ -64,8 +64,12 @@ export default function Navbar() {
               Şirketler
             </Link>
             <Link to="/magaza"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/magaza') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/magaza') && !location.pathname.startsWith('/magaza/saticilar') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
               Mağaza
+            </Link>
+            <Link to="/magaza/saticilar"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith('/magaza/saticilar') ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              Satıcılar
             </Link>
           </div>
 
@@ -152,6 +156,10 @@ export default function Navbar() {
                 <Link to="/usta/giris"
                   className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 border border-blue-200 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-blue-50 transition-colors">
                   <Wrench size={14} /> Usta Girişi
+                </Link>
+                <Link to="/satici/giris"
+                  className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 border border-indigo-200 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-indigo-50 transition-colors">
+                  <Store size={14} /> Satıcı
                 </Link>
                 <Link to="/usta-kayit"
                   className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">

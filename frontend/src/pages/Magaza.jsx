@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-import { ShoppingCart, Search, Package, Plus, Minus, X, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { ShoppingCart, Search, Package, Plus, Minus, X, Trash2, ChevronDown, ChevronRight, Store } from 'lucide-react'
 import API from '../config.js'
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0)
@@ -279,6 +279,16 @@ export default function Magaza() {
                         className="text-xs sm:text-sm font-bold text-gray-900 leading-snug mb-1.5 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors flex-1"
                         onClick={() => navigate(`/magaza/urun/${u.id}`)}
                       >{u.ad}</h3>
+                      {u.magaza_slug && u.magaza_slug !== 'adausta-resmi-magaza' && (
+                        <Link
+                          to={`/magaza/satici/${u.magaza_slug}`}
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <Store size={10} />
+                          {u.magaza_adi}
+                        </Link>
+                      )}
 
                       <div className="mb-1.5">
                         <span className="text-base sm:text-lg font-black text-gray-900">${u.usd_fiyat}</span>

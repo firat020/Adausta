@@ -31,10 +31,10 @@ export default function Footer() {
   return (
     <footer className="bg-blue-950 text-blue-200">
       <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-6 mb-10">
 
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-1 md:max-w-[180px]">
             <div className="flex justify-center items-center mb-4">
               <img src="/footer-logo.webp" alt="Ada Usta" className="h-28 sm:h-36 md:h-44 w-auto object-contain" loading="lazy" />
             </div>
@@ -88,8 +88,8 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* İletişim + Yasal */}
-          <div className="col-span-2 md:col-span-1">
+          {/* İletişim + Mağaza */}
+          <div>
             <h4 className="text-white font-semibold text-sm mb-4">{t('footer.iletisim')}</h4>
             <ul className="space-y-3 text-sm mb-5">
               <li>
@@ -112,13 +112,30 @@ export default function Footer() {
               <Link to="/hakkimizda" className="block hover:text-white transition-colors">Hakkımızda</Link>
               <Link to="/iletisim" className="block hover:text-white transition-colors">İletişim</Link>
             </div>
+
+            <h4 className="text-white font-semibold text-sm mb-3">Mağaza & Satıcılar</h4>
+            <div className="space-y-2 text-sm mb-4">
+              <Link to="/magaza" className="block hover:text-white transition-colors">Ürünler</Link>
+              <Link to="/magaza/saticilar" className="block hover:text-white transition-colors">Tüm Satıcılar</Link>
+              <Link to="/magaza/siparislerim" className="block hover:text-white transition-colors">Siparişlerim</Link>
+              <Link to="/satici-basvuru" className="block hover:text-white transition-colors">Satıcı Ol</Link>
+            </div>
+          </div>
+
+          {/* Yasal */}
+          <div>
             <h4 className="text-white font-semibold text-sm mb-3">{t('footer.yasal')}</h4>
             <div className="space-y-2 text-sm">
               <Link to="/gizlilik" className="block hover:text-white transition-colors">{t('footer.gizlilik')}</Link>
               <Link to="/kullanim-sartlari" className="block hover:text-white transition-colors">{t('footer.kullanim')}</Link>
               <Link to="/iade-politikasi" className="block hover:text-white transition-colors">{t('footer.iade')}</Link>
+              <Link to="/iptal-iade-politikasi" className="block hover:text-white transition-colors">İptal ve İade Politikası</Link>
               <Link to="/mesafeli-satis" className="block hover:text-white transition-colors">{t('footer.mesafeli')}</Link>
+              <Link to="/on-bilgilendirme-formu" className="block hover:text-white transition-colors">Ön Bilgilendirme Formu</Link>
+              <Link to="/teslimat-ve-hizmet-sureci" className="block hover:text-white transition-colors">Teslimat ve Hizmet Süreci</Link>
+              <Link to="/kisisel-veriler" className="block hover:text-white transition-colors">Kişisel Veriler</Link>
               <Link to="/cerez-politikasi" className="block hover:text-white transition-colors">{t('footer.cerez')}</Link>
+              <Link to="/sss" className="block hover:text-white transition-colors">Sıkça Sorulan Sorular</Link>
             </div>
           </div>
         </div>

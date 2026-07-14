@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
-  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone
+  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone, Store, TrendingUp
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -19,8 +19,12 @@ const menuItems = [
   { to: '/admin/yorumlar',     icon: Star,            label: 'Yorumlar' },
   { to: '/admin/kategoriler',  icon: Tag,             label: 'Kategoriler' },
   { to: '/admin/reklamlar',    icon: Megaphone,       label: 'Reklam Yönetimi' },
-  { to: '/admin/urunler',      icon: ShoppingBag,     label: 'Ürün Yönetimi' },
-  { to: '/admin/siparisler',   icon: ShoppingCart,    label: 'Siparişler', siparisBadge: true },
+  { to: '/admin/urunler',           icon: ShoppingBag,  label: 'Ürün Yönetimi' },
+  { to: '/admin/magaza-siparisler', icon: ShoppingCart, label: 'Mağaza Siparişleri', siparisBadge: true },
+  { to: '/admin/siparisler',        icon: ShoppingCart, label: 'Eski Siparişler' },
+  { to: '/admin/saticilar',         icon: Store,        label: 'Satıcı Yönetimi', saticiBasvuruBadge: true },
+  { to: '/admin/saticilar-finans',  icon: Wallet,       label: 'Satıcı Finans' },
+  { to: '/admin/finans',            icon: TrendingUp,   label: 'Finans Yönetimi' },
   { to: '/admin/bildirimler',  icon: Smartphone,      label: 'Mobil Bildirim' },
   { to: '/admin/loglar',       icon: FileText,        label: 'İşlem Logu' },
 ]
@@ -32,6 +36,7 @@ export default function AdminLayout() {
   const [bakimYukleniyor, setBakimYukleniyor] = useState(false)
   const [bekleyenSiparis, setBekleyenSiparis] = useState(0)
   const [yeniKayit, setYeniKayit] = useState(0)
+  const [bekleyenBasvuru, setBekleyenBasvuru] = useState(0)
   const navigate = useNavigate()
 
   const bildirimSayisiniGetir = useCallback(() => {
@@ -46,8 +51,10 @@ export default function AdminLayout() {
           navigate('/admin/login', { replace: true })
         } else {
           setKontrol(false)
-          axios.get(`${API}/api/magaza/admin/siparisler/ozet`, { withCredentials: true })
-            .then(r => setBekleyenSiparis(r.data.bekliyor || 0)).catch(() => {})
+          axios.get(`${API}/api/magaza/admin/magaza-dashboard`, { withCredentials: true })
+            .then(r => setBekleyenSiparis(r.data.bekleyen || 0)).catch(() => {})
+          axios.get(`${API}/api/admin/saticilar/ozet`, { withCredentials: true })
+            .then(r => setBekleyenBasvuru(r.data.bekleyen_basvuru || 0)).catch(() => {})
           bildirimSayisiniGetir()
         }
       })
@@ -114,7 +121,7 @@ export default function AdminLayout() {
 
         {/* Navigasyon */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {menuItems.map(({ to, icon: Icon, label, siparisBadge, kayitBadge }) => (
+          {menuItems.map(({ to, icon: Icon, label, siparisBadge, kayitBadge, saticiBasvuruBadge }) => (
             <NavLink
               key={to}
               to={to}
@@ -139,6 +146,11 @@ export default function AdminLayout() {
                   {kayitBadge && yeniKayit > 0 && (
                     <span className="bg-green-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
                       {yeniKayit}
+                    </span>
+                  )}
+                  {saticiBasvuruBadge && bekleyenBasvuru > 0 && (
+                    <span className="bg-blue-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
+                      {bekleyenBasvuru}
                     </span>
                   )}
                 </>

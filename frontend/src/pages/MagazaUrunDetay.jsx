@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-import { ShoppingCart, Package, ChevronLeft, Plus, Minus, Check } from 'lucide-react'
+import { ShoppingCart, Package, ChevronLeft, Plus, Minus, Check, Store, ShieldCheck, Star, CheckCircle } from 'lucide-react'
 import API from '../config.js'
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0)
@@ -18,11 +18,31 @@ export default function MagazaUrunDetay() {
   const [sepet, setSepetState] = useState(getSepet)
   const [eklendi, setEklendi] = useState(false)
 
+  const [yorumlar, setYorumlar] = useState([])
+  const [yorumYukleniyor, setYorumYukleniyor] = useState(false)
+  const [ortalamaPuan, setOrtalamaPuan] = useState(0)
+  const [yorumToplam, setYorumToplam] = useState(0)
+  const [yorumForm, setYorumForm] = useState({ puan: 5, yorum: '', siparis_no: '' })
+  const [yorumGonderiyor, setYorumGonderiyor] = useState(false)
+  const [yorumMsg, setYorumMsg] = useState('')
+
   const setSepet = (fn) => {
     setSepetState(prev => {
       const yeni = typeof fn === 'function' ? fn(prev) : fn
       saveSepet(yeni); return yeni
     })
+  }
+
+  const fetchYorumlar = () => {
+    setYorumYukleniyor(true)
+    axios.get(`${API}/api/satici-yorum/urun/${id}/yorumlar`)
+      .then(r => {
+        setYorumlar(r.data.yorumlar || [])
+        setOrtalamaPuan(r.data.ortalama_puan || 0)
+        setYorumToplam(r.data.toplam || 0)
+      })
+      .catch(() => {})
+      .finally(() => setYorumYukleniyor(false))
   }
 
   useEffect(() => {
@@ -31,6 +51,10 @@ export default function MagazaUrunDetay() {
       .then(r => { setUrun(r.data); setAktifGorsel(0) })
       .catch(() => navigate('/magaza'))
       .finally(() => setYukleniyor(false))
+  }, [id])
+
+  useEffect(() => {
+    if (id) fetchYorumlar()
   }, [id])
 
   const sepeteEkle = () => {
@@ -139,6 +163,27 @@ export default function MagazaUrunDetay() {
             <p className="text-lg text-gray-500 mt-1">{fmt(urun.tl_fiyat)}</p>
           </div>
 
+          {urun.magaza_slug && urun.magaza_slug !== 'adausta-resmi-magaza' && (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100 mb-4">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Store size={14} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-gray-500">Satıcı</div>
+                <Link
+                  to={`/magaza/satici/${urun.magaza_slug}`}
+                  className="text-sm font-semibold text-blue-700 hover:underline"
+                >
+                  {urun.magaza_adi}
+                </Link>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                <ShieldCheck size={12} />
+                Doğrulanmış Satıcı
+              </div>
+            </div>
+          )}
+
           {/* Stok */}
           <p className={`text-sm font-bold ${
             urun.stok === null || urun.stok > 5 ? 'text-green-600'
@@ -208,6 +253,98 @@ export default function MagazaUrunDetay() {
               {urun.barkod && <p className="text-xs text-gray-400">Barkod: {urun.barkod}</p>}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Yorumlar */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold mb-4">Ürün Değerlendirmeleri ({yorumToplam})</h3>
+
+        {/* Ortalama puan */}
+        {yorumToplam > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-3xl font-bold">{ortalamaPuan.toFixed(1)}</span>
+            <div className="flex">
+              {[1,2,3,4,5].map(s => (
+                <Star key={s} size={16} fill={s <= ortalamaPuan ? '#f59e0b' : 'none'} className={s <= ortalamaPuan ? 'text-amber-400' : 'text-gray-300'} />
+              ))}
+            </div>
+            <span className="text-sm text-gray-500">{yorumToplam} değerlendirme</span>
+          </div>
+        )}
+
+        {/* Yorum listesi */}
+        <div className="space-y-4 mb-6">
+          {yorumlar.map(y => (
+            <div key={y.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                {[1,2,3,4,5].map(s => (
+                  <Star key={s} size={12} fill={s <= y.puan ? '#f59e0b' : 'none'} className={s <= y.puan ? 'text-amber-400' : 'text-gray-300'} />
+                ))}
+                <span className="text-xs font-medium text-gray-700">{y.musteri_ad}</span>
+                {y.dogrulandi && (
+                  <span className="text-xs text-green-600 flex items-center gap-0.5">
+                    <CheckCircle size={10} /> Doğrulanmış
+                  </span>
+                )}
+              </div>
+              {y.yorum && <p className="text-sm text-gray-700">{y.yorum}</p>}
+              {y.satici_cevabi && (
+                <div className="mt-2 pl-3 border-l-2 border-blue-300 text-xs text-gray-600">
+                  <span className="font-semibold text-blue-700">Satıcı yanıtı:</span> {y.satici_cevabi}
+                </div>
+              )}
+            </div>
+          ))}
+          {yorumlar.length === 0 && !yorumYukleniyor && (
+            <p className="text-sm text-gray-400">Henüz değerlendirme yok.</p>
+          )}
+        </div>
+
+        {/* Değerlendirme formu */}
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+          <h4 className="font-semibold text-sm mb-3">Değerlendirme Yaz</h4>
+          <p className="text-xs text-gray-500 mb-3">Sipariş numaranızı girerek satın alma doğrulaması yapılır.</p>
+          <input
+            placeholder="Sipariş No (ör: AB12CD34)"
+            value={yorumForm.siparis_no}
+            onChange={e => setYorumForm(p => ({ ...p, siparis_no: e.target.value }))}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-blue-400"
+          />
+          <div className="flex gap-1 mb-2">
+            {[1,2,3,4,5].map(s => (
+              <button key={s} onClick={() => setYorumForm(p => ({ ...p, puan: s }))}>
+                <Star size={20} fill={s <= yorumForm.puan ? '#f59e0b' : 'none'} className={s <= yorumForm.puan ? 'text-amber-400' : 'text-gray-300'} />
+              </button>
+            ))}
+          </div>
+          <textarea
+            placeholder="Ürün hakkında düşünceleriniz (isteğe bağlı)"
+            value={yorumForm.yorum}
+            onChange={e => setYorumForm(p => ({ ...p, yorum: e.target.value }))}
+            rows={3}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 resize-none focus:outline-none focus:border-blue-400"
+          />
+          {yorumMsg && <p className="text-xs text-green-600 mb-2">{yorumMsg}</p>}
+          <button
+            disabled={yorumGonderiyor || !yorumForm.siparis_no}
+            onClick={async () => {
+              setYorumGonderiyor(true)
+              setYorumMsg('')
+              try {
+                await axios.post(`${API}/api/satici-yorum/urun/${id}`, yorumForm, { withCredentials: true })
+                setYorumMsg('Değerlendirmeniz alındı, teşekkürler!')
+                setYorumForm({ puan: 5, yorum: '', siparis_no: '' })
+                fetchYorumlar()
+              } catch (e) {
+                setYorumMsg(e.response?.data?.hata || 'Hata oluştu')
+              }
+              setYorumGonderiyor(false)
+            }}
+            className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+          >
+            {yorumGonderiyor ? 'Gönderiliyor...' : 'Değerlendirmeyi Gönder'}
+          </button>
         </div>
       </div>
     </div>
