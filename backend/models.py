@@ -1093,8 +1093,6 @@ class SellerBalance(db.Model):
     odenmis_tl        = db.Column(db.Float, default=0.0)
     guncelleme        = db.Column(db.DateTime, default=datetime.utcnow)
 
-    magaza = db.relationship('MarketplaceStore', foreign_keys=[store_id])
-
     def to_dict(self):
         return {
             'store_id': self.store_id,
