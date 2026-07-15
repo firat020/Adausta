@@ -259,14 +259,32 @@ def gorsel_yukle(uid):
 
 # ─── PUBLIC MAĞAZA ─────────────────────────────────────────
 
+@magaza_bp.route('/public/filtreler', methods=['GET'])
+def public_filtreler():
+    from models import MarketplaceStore
+    kategoriler = [r[0] for r in db.session.query(Urun.kategori).filter(
+        Urun.aktif == True, Urun.kategori != None, Urun.kategori != ''
+    ).distinct().order_by(Urun.kategori).all()]
+    markalar = [m.to_dict() for m in Marka.query.filter_by(aktif=True).order_by(Marka.ad).all()
+                if db.session.query(Urun.id).filter_by(marka_id=m.id, aktif=True).first()]
+    magazalar = [{'id': s.id, 'ad': s.magaza_adi, 'slug': s.slug}
+                 for s in MarketplaceStore.query.filter_by(aktif=True, askida=False).order_by(MarketplaceStore.magaza_adi).all()]
+    return jsonify({'kategoriler': kategoriler, 'markalar': markalar, 'magazalar': magazalar})
+
+
 @magaza_bp.route('/public/urunler', methods=['GET'])
 def public_urunler():
+    from models import MarketplaceStore
     arama = request.args.get('arama', '')
     kategori = request.args.get('kategori', '')
     marka_id = request.args.get('marka_id', type=int)
+    store_id = request.args.get('store_id', type=int)
+    store_slug = request.args.get('store_slug', '')
+    fiyat_min = request.args.get('fiyat_min', type=float)
+    fiyat_max = request.args.get('fiyat_max', type=float)
+    siralama = request.args.get('siralama', 'yeni')  # yeni / fiyat_asc / fiyat_desc / cok_satan
     sayfa = request.args.get('sayfa', 1, type=int)
     limit = 20
-    store_slug = request.args.get('store_slug', '')
     q = Urun.query.filter(Urun.aktif == True, db.or_(Urun.urun_durum == 'active', Urun.urun_durum == None))
     if arama:
         q = q.filter(Urun.ad.ilike(f'%{arama}%'))
@@ -274,14 +292,25 @@ def public_urunler():
         q = q.filter_by(kategori=kategori)
     if marka_id:
         q = q.filter_by(marka_id=marka_id)
-    if store_slug:
-        from models import MarketplaceStore
+    if store_id:
+        q = q.filter(Urun.store_id == store_id)
+    elif store_slug:
         store = MarketplaceStore.query.filter_by(slug=store_slug, aktif=True, askida=False).first()
         if store:
             q = q.filter(Urun.store_id == store.id)
+    if fiyat_min is not None:
+        q = q.filter(Urun.usd_fiyat >= fiyat_min)
+    if fiyat_max is not None:
+        q = q.filter(Urun.usd_fiyat <= fiyat_max)
+    if siralama == 'fiyat_asc':
+        q = q.order_by(Urun.usd_fiyat.asc())
+    elif siralama == 'fiyat_desc':
+        q = q.order_by(Urun.usd_fiyat.desc())
+    else:
+        q = q.order_by(Urun.olusturma.desc())
     total = q.count()
-    urunler = q.order_by(Urun.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
-    return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total})
+    urunler = q.offset((sayfa - 1) * limit).limit(limit).all()
+    return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total, 'sayfa': sayfa})
 
 @magaza_bp.route('/public/urunler/<int:uid>', methods=['GET'])
 def public_urun_detay(uid):

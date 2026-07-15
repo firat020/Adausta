@@ -13,7 +13,6 @@ const menuItems = [
   { to: '/satici/siparisler',icon: Package,         label: 'Siparişler',  siparisBadge: true },
   { to: '/satici/magazam',   icon: Store,           label: 'Mağazam' },
   { to: '/satici/personel',  icon: Users,           label: 'Personel' },
-  { to: '/satici/belgeler',  icon: FileText,        label: 'Belgelerim' },
   { to: '/satici/bakiye',    icon: Wallet,          label: 'Bakiyem' },
   { to: '/satici/iadeler',   icon: RotateCcw,       label: 'İadeler' },
   { to: '/satici/hakedisler',icon: BadgeDollarSign, label: 'Hakedişler' },

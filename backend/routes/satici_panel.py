@@ -194,7 +194,7 @@ def urun_olustur():
         model_id=data.get('model_id'),
         kategori=data.get('kategori', ''),
         store_id=store.id,
-        urun_durum='pending_review',  # admin must approve
+        urun_durum='active',
     )
     db.session.add(u)
     db.session.commit()
@@ -247,9 +247,6 @@ def urun_guncelle(uid):
         u.model_id = data['model_id']
 
     u.tl_fiyat = _hesapla_tl(u.usd_fiyat, u.kur, u.kar_marji, u.kargo_ucreti, u.kdv_dahil)
-
-    if significant_change:
-        u.urun_durum = 'pending_review'
 
     u.guncelleme = datetime.utcnow()
     db.session.commit()

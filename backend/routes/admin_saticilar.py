@@ -344,7 +344,96 @@ def magaza_aktif_et(sid):
     return jsonify({'ok': True})
 
 
-# ─── 11. BELGE İNDİR ──────────────────────────────────────────
+# ─── 11. MAĞAZA GÜNCELLE (Admin) ───────────────────────────────
+
+@admin_saticilar_bp.route('/magaza/<int:sid>', methods=['PUT'])
+def magaza_guncelle(sid):
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
+    store = MarketplaceStore.query.get_or_404(sid)
+    data = request.get_json() or {}
+
+    guncellenebilir = [
+        'magaza_adi', 'ticari_unvan', 'aciklama', 'slug',
+        'vergi_no', 'iban', 'banka_hesap_sahibi',
+        'komisyon_orani', 'aktif', 'askida',
+    ]
+
+    if 'slug' in data and data['slug'] != store.slug:
+        existing = MarketplaceStore.query.filter(
+            MarketplaceStore.slug == data['slug'],
+            MarketplaceStore.id != sid
+        ).first()
+        if existing:
+            return jsonify({'hata': 'Bu slug başka mağazada kullanılıyor'}), 400
+
+    for alan in guncellenebilir:
+        if alan in data:
+            setattr(store, alan, data[alan])
+
+    audit_log(
+        islem='magaza_guncellendi',
+        detay=f'Admin tarafından güncellendi: {store.magaza_adi}',
+        store_id=sid,
+    )
+    db.session.commit()
+    return jsonify({'ok': True, 'magaza': store.to_dict(public=False)})
+
+
+# ─── 12. MAĞAZA OLUŞTUR (Admin) ────────────────────────────────
+
+@admin_saticilar_bp.route('/magaza', methods=['POST'])
+def magaza_olustur():
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
+    data = request.get_json() or {}
+    magaza_adi = (data.get('magaza_adi') or '').strip()
+    slug = (data.get('slug') or '').strip().lower().replace(' ', '-')
+
+    if not magaza_adi or not slug:
+        return jsonify({'hata': 'Mağaza adı ve slug zorunludur'}), 400
+
+    if MarketplaceStore.query.filter_by(slug=slug).first():
+        return jsonify({'hata': 'Bu slug kullanımda'}), 400
+
+    store = MarketplaceStore(
+        slug=slug,
+        magaza_adi=magaza_adi,
+        ticari_unvan=data.get('ticari_unvan') or magaza_adi,
+        aciklama=data.get('aciklama', ''),
+        vergi_no=data.get('vergi_no', ''),
+        iban=data.get('iban', ''),
+        banka_hesap_sahibi=data.get('banka_hesap_sahibi', ''),
+        komisyon_orani=float(data.get('komisyon_orani', 15.0)),
+        aktif=True,
+        askida=False,
+        toplam_satis=0,
+        puan=0.0,
+        yorum_sayisi=0,
+    )
+    db.session.add(store)
+    db.session.flush()
+
+    bakiye = SellerBalance(
+        store_id=store.id,
+        bekleyen_tl=0.0,
+        kullanilabilir_tl=0.0,
+        odenmis_tl=0.0,
+    )
+    db.session.add(bakiye)
+
+    audit_log(
+        islem='magaza_olusturuldu',
+        detay=f'Admin tarafından oluşturuldu: {magaza_adi}',
+        store_id=store.id,
+    )
+    db.session.commit()
+    return jsonify({'ok': True, 'magaza': store.to_dict(public=False)}), 201
+
+
+# ─── 13. BELGE İNDİR ──────────────────────────────────────────
 
 @admin_saticilar_bp.route('/belge/<int:did>/indir', methods=['GET'])
 def belge_indir(did):

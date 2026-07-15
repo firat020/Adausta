@@ -34,9 +34,9 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-6 mb-10">
 
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1 md:max-w-[180px]">
+          <div className="col-span-2 md:col-span-1">
             <div className="flex justify-center items-center mb-4">
-              <img src="/footer-logo.webp" alt="Ada Usta" className="h-28 sm:h-36 md:h-44 w-auto object-contain" loading="lazy" />
+              <img src="/footer-logo.webp" alt="Ada Usta" className="h-36 sm:h-44 md:h-52 w-auto object-contain" loading="lazy" />
             </div>
             <p className="text-sm leading-relaxed text-blue-300 mb-5">
               {t('footer.aciklama')}

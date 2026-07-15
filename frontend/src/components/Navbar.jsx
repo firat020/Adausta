@@ -9,6 +9,7 @@ export default function Navbar() {
   const [menuAcik, setMenuAcik] = useState(false)
   const [kullanici, setKullanici] = useState(null)
   const [profilAcik, setProfilAcik] = useState(false)
+  const [girisAcik, setGirisAcik] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -25,6 +26,13 @@ export default function Navbar() {
     document.addEventListener('click', kapat)
     return () => document.removeEventListener('click', kapat)
   }, [profilAcik])
+
+  useEffect(() => {
+    if (!girisAcik) return
+    const kapat = () => setGirisAcik(false)
+    document.addEventListener('click', kapat)
+    return () => document.removeEventListener('click', kapat)
+  }, [girisAcik])
 
   const handleCikis = async () => {
     await cikis()
@@ -75,7 +83,6 @@ export default function Navbar() {
 
           {/* CTA + Dil */}
           <div className="hidden md:flex items-center gap-2">
-            <DilSecici />
             {kullanici && kullanici.rol === 'usta' ? (
               // Usta giriş yapmış
               <div className="relative">
@@ -149,22 +156,62 @@ export default function Navbar() {
             ) : (
               // Giriş yapılmamış
               <>
-                <Link to="/giris"
-                  className="text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-                  {t('nav.girisYap')}
-                </Link>
-                <Link to="/usta/giris"
-                  className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 border border-blue-200 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-blue-50 transition-colors">
-                  <Wrench size={14} /> Usta Girişi
-                </Link>
-                <Link to="/satici/giris"
-                  className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 border border-indigo-200 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-indigo-50 transition-colors">
-                  <Store size={14} /> Satıcı
-                </Link>
+                <div className="relative" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => setGirisAcik(!girisAcik)}
+                    className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+                    <User size={14} /> {t('nav.girisYap')} <ChevronDown size={13} />
+                  </button>
+                  {girisAcik && (
+                    <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 w-52 z-50">
+                      <Link to="/usta/giris" onClick={() => setGirisAcik(false)}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Wrench size={13} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-xs">Usta Girişi</div>
+                          <div className="text-xs text-gray-400">Bireysel ustalar</div>
+                        </div>
+                      </Link>
+                      <Link to="/sirket/giris" onClick={() => setGirisAcik(false)}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+                        <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Building2 size={13} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-xs">Şirket Girişi</div>
+                          <div className="text-xs text-gray-400">Kurumsal hesap</div>
+                        </div>
+                      </Link>
+                      <Link to="/giris" onClick={() => setGirisAcik(false)}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
+                        <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <User size={13} className="text-green-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-xs">Üye Girişi</div>
+                          <div className="text-xs text-gray-400">Hizmet arayanlar</div>
+                        </div>
+                      </Link>
+                      <Link to="/satici/giris" onClick={() => setGirisAcik(false)}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
+                        <div className="w-7 h-7 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Store size={13} className="text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-xs">Mağza Girişi</div>
+                          <div className="text-xs text-gray-400">Mağaza sahipleri</div>
+                        </div>
+                      </Link>
+                    </div>
+                  )}
+                </div>
                 <Link to="/usta-kayit"
                   className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
                   Kayıt Ol
                 </Link>
+                <DilSecici />
               </>
             )}
           </div>
@@ -224,14 +271,19 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/giris" onClick={() => setMenuAcik(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">{t('nav.girisYap')}</Link>
                 <Link to="/usta/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
                   <Wrench size={14} /> Usta Girişi
                 </Link>
-                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center">Kayıt Ol</Link>
-                <Link to="/sirket-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-indigo-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center flex items-center gap-2 justify-center">
-                  <Building2 size={14} /> Şirket Kaydı
+                <Link to="/sirket/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+                  <Building2 size={14} /> Şirket Girişi
                 </Link>
+                <Link to="/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-green-600 hover:bg-green-50">
+                  <User size={14} /> Üye Girişi
+                </Link>
+                <Link to="/satici/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50">
+                  <Store size={14} /> Mağza Girişi
+                </Link>
+                <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center">Kayıt Ol</Link>
               </>
             )}
           </div>

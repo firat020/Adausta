@@ -658,6 +658,13 @@ class Urun(db.Model):
             'store_id': self.store_id,
             'magaza_adi': store.magaza_adi if store else 'AdaUsta Resmî Mağaza',
             'magaza_slug': store.slug if store else 'adausta-resmi-magaza',
+            'magaza_logo': store.logo if store else '',
+            'magaza_puan': store.puan if store else 0,
+            'magaza_yorum_sayisi': store.yorum_sayisi if store else 0,
+            'magaza_toplam_satis': store.toplam_satis if store else 0,
+            'magaza_ucretsiz_kargo_limiti': store.ucretsiz_kargo_limiti if store else 199.0,
+            'magaza_teslimat_gun': store.tahmini_teslimat_gun if store else '7-14 iş günü',
+            'magaza_iade_gun': store.iade_gun_suresi if store else 14,
             'urun_durum': self.urun_durum,
             'kapak_gorsel': self.gorseller[0].dosya_yolu if self.gorseller else None,
         }
@@ -1031,6 +1038,9 @@ class MarketplaceStore(db.Model):
     toplam_satis       = db.Column(db.Float, default=0.0)
     puan               = db.Column(db.Float, default=0.0)
     yorum_sayisi       = db.Column(db.Integer, default=0)
+    ucretsiz_kargo_limiti = db.Column(db.Float, default=199.0)
+    tahmini_teslimat_gun  = db.Column(db.String(50), default='7-14 iş günü')
+    iade_gun_suresi       = db.Column(db.Integer, default=14)
     olusturma          = db.Column(db.DateTime, default=datetime.utcnow)
 
     uyeler  = db.relationship('StoreMember', backref='magaza', lazy=True)
@@ -1051,6 +1061,9 @@ class MarketplaceStore(db.Model):
             'toplam_satis': self.toplam_satis,
             'puan': self.puan,
             'yorum_sayisi': self.yorum_sayisi,
+            'ucretsiz_kargo_limiti': self.ucretsiz_kargo_limiti,
+            'tahmini_teslimat_gun': self.tahmini_teslimat_gun,
+            'iade_gun_suresi': self.iade_gun_suresi,
             'olusturma': fmt(self.olusturma),
         }
         if not public:

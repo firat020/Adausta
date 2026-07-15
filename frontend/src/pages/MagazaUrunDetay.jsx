@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-import { ShoppingCart, Package, ChevronLeft, Plus, Minus, Check, Store, ShieldCheck, Star, CheckCircle } from 'lucide-react'
+import { ShoppingCart, Package, ChevronLeft, Plus, Minus, Check, Store, ShieldCheck, Star, CheckCircle, Truck, RotateCcw, Clock } from 'lucide-react'
 import API from '../config.js'
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0)
@@ -163,23 +163,72 @@ export default function MagazaUrunDetay() {
             <p className="text-lg text-gray-500 mt-1">{fmt(urun.tl_fiyat)}</p>
           </div>
 
-          {urun.magaza_slug && urun.magaza_slug !== 'adausta-resmi-magaza' && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100 mb-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <Store size={14} className="text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-500">Satıcı</div>
-                <Link
-                  to={`/magaza/satici/${urun.magaza_slug}`}
-                  className="text-sm font-semibold text-blue-700 hover:underline"
-                >
-                  {urun.magaza_adi}
+          {/* Satıcı paneli */}
+          {urun.magaza_slug && (
+            <div className="border border-blue-100 rounded-2xl overflow-hidden">
+              <div className="bg-blue-50 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-white rounded-xl border border-blue-200 flex items-center justify-center flex-shrink-0">
+                    {urun.magaza_logo
+                      ? <img src={`${API}/uploads/${urun.magaza_logo}`} className="w-full h-full object-contain rounded-xl" alt="" />
+                      : <Store size={16} className="text-blue-600" />
+                    }
+                  </div>
+                  <div>
+                    <Link to={`/magaza/satici/${urun.magaza_slug}`} className="text-sm font-bold text-blue-800 hover:underline leading-tight block">
+                      {urun.magaza_adi}
+                    </Link>
+                    <div className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                      <ShieldCheck size={10} /> Doğrulanmış Satıcı
+                    </div>
+                  </div>
+                </div>
+                <Link to={`/magaza/satici/${urun.magaza_slug}`} className="text-xs text-blue-600 font-semibold hover:underline">
+                  Mağazaya Git →
                 </Link>
               </div>
-              <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                <ShieldCheck size={12} />
-                Doğrulanmış Satıcı
+
+              {(urun.magaza_puan > 0 || urun.magaza_toplam_satis > 0) && (
+                <div className="px-4 py-2.5 grid grid-cols-3 gap-2 border-b border-blue-100">
+                  <div className="text-center">
+                    <div className="text-sm font-black text-gray-900 flex items-center justify-center gap-0.5">
+                      <Star size={12} fill="#f59e0b" className="text-amber-400" />
+                      {urun.magaza_puan > 0 ? urun.magaza_puan.toFixed(1) : '–'}
+                    </div>
+                    <div className="text-[10px] text-gray-400">Puan</div>
+                  </div>
+                  <div className="text-center border-x border-blue-100">
+                    <div className="text-sm font-black text-gray-900">{urun.magaza_yorum_sayisi || 0}</div>
+                    <div className="text-[10px] text-gray-400">Yorum</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-black text-gray-900">{urun.magaza_toplam_satis > 0 ? Math.round(urun.magaza_toplam_satis) : '–'}</div>
+                    <div className="text-[10px] text-gray-400">Satış</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="px-4 py-3 space-y-2">
+                {/* Kargo */}
+                <div className="flex items-start gap-2">
+                  <Truck size={14} className="text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-gray-700">
+                    {urun.usd_fiyat >= (urun.magaza_ucretsiz_kargo_limiti || 199)
+                      ? <span className="text-green-700 font-bold">Ücretsiz kargo</span>
+                      : <span>Kargo: <strong>${urun.kargo_ucreti}</strong> <span className="text-gray-400">(${urun.magaza_ucretsiz_kargo_limiti}+ ücretsiz)</span></span>
+                    }
+                  </div>
+                </div>
+                {/* Teslimat */}
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-blue-500 flex-shrink-0" />
+                  <span className="text-xs text-gray-700">Tahmini teslimat: <strong>{urun.magaza_teslimat_gun || '7-14 iş günü'}</strong></span>
+                </div>
+                {/* İade */}
+                <div className="flex items-center gap-2">
+                  <RotateCcw size={14} className="text-orange-500 flex-shrink-0" />
+                  <span className="text-xs text-gray-700">İade süresi: <strong>{urun.magaza_iade_gun || 14} gün</strong></span>
+                </div>
               </div>
             </div>
           )}

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import {
   Search, CheckCircle, XCircle, FileText, Download,
-  AlertTriangle, Store, RefreshCw, X, Package
+  AlertTriangle, Store, RefreshCw, X, Package, Edit2, Plus
 } from 'lucide-react'
 import API from '../../config.js'
 
@@ -400,6 +400,169 @@ function BasvuruDetayModal({ basvuruId, onKapat, onYenile, showToast }) {
   )
 }
 
+function MagazaDuzenleModal({ magaza, onKapat, onYenile, showToast }) {
+  const [form, setForm] = useState({
+    magaza_adi: magaza?.magaza_adi || '',
+    ticari_unvan: magaza?.ticari_unvan || '',
+    slug: magaza?.slug || '',
+    aciklama: magaza?.aciklama || '',
+    vergi_no: magaza?.vergi_no || '',
+    iban: magaza?.iban || '',
+    banka_hesap_sahibi: magaza?.banka_hesap_sahibi || '',
+    komisyon_orani: magaza?.komisyon_orani ?? 15,
+    aktif: magaza?.aktif ?? true,
+    askida: magaza?.askida ?? false,
+  })
+  const [yukleniyor, setYukleniyor] = useState(false)
+
+  const kaydet = async () => {
+    if (!form.magaza_adi.trim() || !form.slug.trim()) {
+      showToast('Mağaza adı ve slug zorunludur', 'hata'); return
+    }
+    setYukleniyor(true)
+    try {
+      await axios.put(`${API}/api/admin/saticilar/magaza/${magaza.id}`, form, { withCredentials: true })
+      showToast('Mağaza güncellendi')
+      onYenile()
+      onKapat()
+    } catch (e) { showToast(e.response?.data?.hata || 'Hata', 'hata') }
+    setYukleniyor(false)
+  }
+
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const inp = 'w-full border border-[#C8CDD4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] bg-white'
+  const lbl = 'text-xs font-semibold text-gray-500 block mb-1'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto" onClick={onKapat}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4]">
+          <h3 className="font-bold text-[#1e293b]">Mağaza Düzenle — {magaza.magaza_adi}</h3>
+          <button onClick={onKapat} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={lbl}>Mağaza Adı *</label>
+              <input className={inp} value={form.magaza_adi} onChange={e => f('magaza_adi', e.target.value)} />
+            </div>
+            <div>
+              <label className={lbl}>Slug * (URL)</label>
+              <input className={inp} value={form.slug} onChange={e => f('slug', e.target.value.toLowerCase().replace(/\s/g, '-'))} />
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>Ticari Ünvan</label>
+            <input className={inp} value={form.ticari_unvan} onChange={e => f('ticari_unvan', e.target.value)} />
+          </div>
+          <div>
+            <label className={lbl}>Açıklama</label>
+            <textarea className={`${inp} resize-none`} rows={3} value={form.aciklama} onChange={e => f('aciklama', e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={lbl}>Vergi No</label>
+              <input className={inp} value={form.vergi_no} onChange={e => f('vergi_no', e.target.value)} />
+            </div>
+            <div>
+              <label className={lbl}>Komisyon % </label>
+              <input className={inp} type="number" min="0" max="100" step="0.1" value={form.komisyon_orani} onChange={e => f('komisyon_orani', parseFloat(e.target.value))} />
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>IBAN</label>
+            <input className={inp} value={form.iban} onChange={e => f('iban', e.target.value)} />
+          </div>
+          <div>
+            <label className={lbl}>Banka Hesap Sahibi</label>
+            <input className={inp} value={form.banka_hesap_sahibi} onChange={e => f('banka_hesap_sahibi', e.target.value)} />
+          </div>
+          <div className="flex items-center gap-6 pt-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.aktif} onChange={e => f('aktif', e.target.checked)} className="w-4 h-4 accent-[#0052CC]" />
+              <span className="text-sm font-semibold text-gray-700">Aktif</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.askida} onChange={e => f('askida', e.target.checked)} className="w-4 h-4 accent-orange-500" />
+              <span className="text-sm font-semibold text-gray-700">Askıda</span>
+            </label>
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-[#C8CDD4] flex justify-end gap-2">
+          <button onClick={onKapat} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">İptal</button>
+          <button onClick={kaydet} disabled={yukleniyor}
+            className="px-5 py-2 bg-[#0052CC] text-white text-sm font-semibold rounded-lg hover:bg-[#003d99] disabled:opacity-50 transition">
+            {yukleniyor ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function YeniMagazaModal({ onKapat, onYenile, showToast }) {
+  const [form, setForm] = useState({ magaza_adi: '', slug: '', ticari_unvan: '', aciklama: '', komisyon_orani: 15 })
+  const [yukleniyor, setYukleniyor] = useState(false)
+
+  const olustur = async () => {
+    if (!form.magaza_adi.trim() || !form.slug.trim()) {
+      showToast('Mağaza adı ve slug zorunludur', 'hata'); return
+    }
+    setYukleniyor(true)
+    try {
+      await axios.post(`${API}/api/admin/saticilar/magaza`, form, { withCredentials: true })
+      showToast('Mağaza oluşturuldu')
+      onYenile()
+      onKapat()
+    } catch (e) { showToast(e.response?.data?.hata || 'Hata', 'hata') }
+    setYukleniyor(false)
+  }
+
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const inp = 'w-full border border-[#C8CDD4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] bg-white'
+  const lbl = 'text-xs font-semibold text-gray-500 block mb-1'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onKapat}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#C8CDD4]">
+          <h3 className="font-bold text-[#1e293b]">Yeni Mağaza Oluştur</h3>
+          <button onClick={onKapat} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className={lbl}>Mağaza Adı *</label>
+            <input className={inp} value={form.magaza_adi} onChange={e => { f('magaza_adi', e.target.value); f('slug', e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')) }} placeholder="MİR İLETİŞİM" />
+          </div>
+          <div>
+            <label className={lbl}>Slug * (adausta.com/magaza/satici/slug)</label>
+            <input className={inp} value={form.slug} onChange={e => f('slug', e.target.value.toLowerCase().replace(/\s/g, '-'))} placeholder="mir-iletisim" />
+          </div>
+          <div>
+            <label className={lbl}>Ticari Ünvan</label>
+            <input className={inp} value={form.ticari_unvan} onChange={e => f('ticari_unvan', e.target.value)} />
+          </div>
+          <div>
+            <label className={lbl}>Açıklama</label>
+            <textarea className={`${inp} resize-none`} rows={2} value={form.aciklama} onChange={e => f('aciklama', e.target.value)} />
+          </div>
+          <div>
+            <label className={lbl}>Komisyon %</label>
+            <input className={inp} type="number" min="0" max="100" step="0.1" value={form.komisyon_orani} onChange={e => f('komisyon_orani', parseFloat(e.target.value))} />
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-[#C8CDD4] flex justify-end gap-2">
+          <button onClick={onKapat} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">İptal</button>
+          <button onClick={olustur} disabled={yukleniyor}
+            className="px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
+            {yukleniyor ? 'Oluşturuluyor...' : 'Oluştur'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const DURUM_OPTS = [
   { value: '', label: 'Tümü' },
   { value: 'submitted', label: 'Gönderildi' },
@@ -431,6 +594,8 @@ export default function AdminSaticilar() {
   const [askiyaModal, setAskiyaModal] = useState(null)
   const [askiyaNeden, setAskiyaNeden] = useState('')
   const [islem, setIslem] = useState({})
+  const [duzenleModal, setDuzenleModal] = useState(null)
+  const [yeniMagazaModal, setYeniMagazaModal] = useState(false)
 
   const [bekleyenUrunler, setBekleyenUrunler] = useState([])
   const [urunYukleniyor, setUrunYukleniyor] = useState(false)
@@ -639,6 +804,14 @@ export default function AdminSaticilar() {
 
         {tab === 'aktif' && (
           <div>
+            <div className="px-4 py-3 border-b border-[#C8CDD4] bg-[#FAFBFC] flex justify-end">
+              <button
+                onClick={() => setYeniMagazaModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition"
+              >
+                <Plus size={14} /> Yeni Mağaza Oluştur
+              </button>
+            </div>
             {magazaYuk ? (
               <div className="flex items-center justify-center h-48">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
@@ -667,12 +840,20 @@ export default function AdminSaticilar() {
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Aktif</span>
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => setAskiyaModal({ id: m.id, ad: m.magaza_adi || m.ad })}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-xs font-semibold hover:bg-orange-100 transition whitespace-nowrap"
-                          >
-                            <AlertTriangle size={12} /> Askıya Al
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setDuzenleModal(m)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EFF6FF] text-[#0052CC] border border-[#BFDBFE] rounded-lg text-xs font-semibold hover:bg-[#DBEAFE] transition whitespace-nowrap"
+                            >
+                              <Edit2 size={12} /> Düzenle
+                            </button>
+                            <button
+                              onClick={() => setAskiyaModal({ id: m.id, ad: m.magaza_adi || m.ad })}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-xs font-semibold hover:bg-orange-100 transition whitespace-nowrap"
+                            >
+                              <AlertTriangle size={12} /> Askıya Al
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -713,13 +894,21 @@ export default function AdminSaticilar() {
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Askıda</span>
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => aktifEt(m.id)}
-                            disabled={islem[`ae_${m.id}`]}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded-lg text-xs font-semibold hover:bg-green-100 transition disabled:opacity-50 whitespace-nowrap"
-                          >
-                            <CheckCircle size={12} /> {islem[`ae_${m.id}`] ? '...' : 'Aktif Et'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setDuzenleModal(m)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EFF6FF] text-[#0052CC] border border-[#BFDBFE] rounded-lg text-xs font-semibold hover:bg-[#DBEAFE] transition whitespace-nowrap"
+                            >
+                              <Edit2 size={12} /> Düzenle
+                            </button>
+                            <button
+                              onClick={() => aktifEt(m.id)}
+                              disabled={islem[`ae_${m.id}`]}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded-lg text-xs font-semibold hover:bg-green-100 transition disabled:opacity-50 whitespace-nowrap"
+                            >
+                              <CheckCircle size={12} /> {islem[`ae_${m.id}`] ? '...' : 'Aktif Et'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -861,6 +1050,23 @@ export default function AdminSaticilar() {
             </div>
           </div>
         </div>
+      )}
+
+      {duzenleModal && (
+        <MagazaDuzenleModal
+          magaza={duzenleModal}
+          onKapat={() => setDuzenleModal(null)}
+          onYenile={() => magazalariYukle(duzenleModal?.askida)}
+          showToast={showToast}
+        />
+      )}
+
+      {yeniMagazaModal && (
+        <YeniMagazaModal
+          onKapat={() => setYeniMagazaModal(false)}
+          onYenile={() => magazalariYukle(false)}
+          showToast={showToast}
+        />
       )}
 
       {toastData && (
