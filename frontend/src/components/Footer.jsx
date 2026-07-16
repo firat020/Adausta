@@ -43,14 +43,8 @@ export default function Footer() {
             </p>
             {/* Sosyal medya */}
             <div className="flex items-center gap-3">
-              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
+              <a href="https://www.instagram.com/adaustakktc?igsh=MXE2MmwzMTI1ZXJpNA==" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
                 <AtSign size={15} className="text-blue-200" />
-              </a>
-              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
-                <Globe size={15} className="text-blue-200" />
-              </a>
-              <a href="#" className="w-8 h-8 bg-blue-900 hover:bg-blue-500 rounded-lg flex items-center justify-center transition-colors">
-                <Send size={15} className="text-blue-200" />
               </a>
             </div>
           </div>

@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
   CreditCard, Shield, Star, Check, Eye, EyeOff, Lock,
-  Wrench, Building2, Gift
+  Wrench, Building2, Gift, Store
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { kategorileriGetir, sehirleriGetir, ustaKayit } from '../api'
+import API from '../config.js'
 
 const PLANLAR = [
   {
@@ -148,7 +149,7 @@ export default function UstaKayit() {
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
-    fetch('/api/odeme/kur').then(r => r.json()).then(d => setKur(d.USD_TRY)).catch(() => {})
+    fetch(`${API}/api/odeme/kur`).then(r => r.json()).then(d => setKur(d.USD_TRY)).catch(() => {})
   }, [])
 
   const tlGoster = (usd) => {

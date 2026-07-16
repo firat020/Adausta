@@ -152,7 +152,7 @@ export default function AdminDashboard() {
       {sipOzet && (
         <div
           className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm p-5 cursor-pointer hover:border-[#0052CC] transition-colors"
-          onClick={() => navigate('/admin/siparisler')}
+          onClick={() => navigate('/admin/magaza-siparisler')}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

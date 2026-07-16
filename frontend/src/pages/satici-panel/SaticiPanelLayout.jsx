@@ -32,13 +32,8 @@ export default function SaticiPanelLayout() {
         setBekleyenSiparis(r.data.bekleyen_siparis || 0)
         setKontrol(false)
       })
-      .catch(err => {
-        const status = err.response?.status
-        if (status === 401 || status === 403) {
-          navigate('/satici/giris', { replace: true })
-        } else {
-          navigate('/satici/giris', { replace: true })
-        }
+      .catch(() => {
+        navigate('/satici/giris', { replace: true })
       })
   }, [navigate])
 

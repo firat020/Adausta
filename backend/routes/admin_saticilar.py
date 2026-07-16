@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, session, send_file, current_app
 from models import (db, Kullanici, SellerApplication, SellerDocument,
-                    MarketplaceStore, StoreMember, SellerBalance, SellerAuditLog)
-from datetime import datetime
+                    MarketplaceStore, StoreMember, SellerBalance, SellerAuditLog,
+                    SellerHakedis)
+from datetime import datetime, timedelta
 import os
 
 admin_saticilar_bp = Blueprint('admin_saticilar', __name__)
@@ -547,3 +548,78 @@ def ozet():
         'inceleniyor': inceleniyor,
         'bekleyen_urun': bekleyen_urun,
     })
+
+
+# ─── 14. HAKEDİŞ LİSTESİ (Admin) ──────────────────────────────
+
+@admin_saticilar_bp.route('/saticilar/hakedisler', methods=['GET'])
+def hakedisler_listele():
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
+    store_id = request.args.get('store_id', type=int)
+    durum    = request.args.get('durum', '')
+    sayfa    = request.args.get('sayfa', 1, type=int)
+    limit    = 50
+    offset   = (sayfa - 1) * limit
+
+    now = datetime.utcnow()
+
+    # Lazily promote bekliyor → kullanilabilir
+    q_vade = SellerHakedis.query.filter_by(durum='bekliyor').filter(
+        SellerHakedis.kullanilabilir_tarih <= now
+    )
+    for h in q_vade.all():
+        h.durum = 'kullanilabilir'
+        bakiye = SellerBalance.query.filter_by(store_id=h.store_id).first()
+        if bakiye:
+            bakiye.bekleyen_tl = max(0.0, round(bakiye.bekleyen_tl - h.net_tl, 2))
+            bakiye.kullanilabilir_tl = round(bakiye.kullanilabilir_tl + h.net_tl, 2)
+            bakiye.guncelleme = now
+    db.session.commit()
+
+    q = SellerHakedis.query
+    if store_id:
+        q = q.filter_by(store_id=store_id)
+    if durum:
+        q = q.filter_by(durum=durum)
+
+    total = q.count()
+    hakedisler = q.order_by(SellerHakedis.olusturma.desc()).offset(offset).limit(limit).all()
+
+    return jsonify({
+        'hakedisler': [h.to_dict() for h in hakedisler],
+        'total': total,
+        'sayfa': sayfa,
+    })
+
+
+# ─── 15. HAKEDİŞ ÖDEN (Admin) ──────────────────────────────────
+
+@admin_saticilar_bp.route('/saticilar/hakedis/<int:hid>/ode', methods=['POST'])
+def hakedis_ode(hid):
+    if not admin_mi():
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
+    h = SellerHakedis.query.get_or_404(hid)
+    if h.durum != 'kullanilabilir':
+        return jsonify({'hata': f"Hakedis '{h.durum}' durumunda, ödenemez"}), 400
+
+    now = datetime.utcnow()
+    h.durum = 'odendi'
+    h.odeme_tarihi = now
+
+    bakiye = SellerBalance.query.filter_by(store_id=h.store_id).first()
+    if bakiye:
+        bakiye.kullanilabilir_tl = max(0.0, round(bakiye.kullanilabilir_tl - h.net_tl, 2))
+        bakiye.odenmis_tl = round(bakiye.odenmis_tl + h.net_tl, 2)
+        bakiye.guncelleme = now
+
+    audit_log(
+        islem='hakedis_odendi',
+        detay=f'Hakedis #{hid} ödendi — {h.net_tl} ₺ ({h.magaza_adi if h.store else h.store_id})',
+        store_id=h.store_id,
+    )
+    db.session.commit()
+
+    return jsonify({'ok': True, 'hakedis': h.to_dict()})

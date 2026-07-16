@@ -432,6 +432,13 @@ export default function MagazaOdeme() {
             </p>
           </div>
 
+          {odemeYontemi === 'kapida' && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-sm text-amber-800">
+              <AlertCircle size={15} className="flex-shrink-0" />
+              Kapıda ödeme türünü seçin: <strong>Nakit</strong> veya <strong>Kredi Kartı</strong>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={yukleniyor || !odemeYontemi || odemeYontemi === 'kapida'}

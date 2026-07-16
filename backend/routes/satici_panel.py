@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify, session
 from models import (
     db, Kullanici, MarketplaceStore, StoreMember, SellerBalance,
-    SellerAuditLog, Urun, UrunGorsel, MagazaSiparis, MagazaSiparisKalemi,
-    MagazaSiparisDurumLog, SellerApplication,
+    SellerAuditLog, SellerHakedis, Urun, UrunGorsel, MagazaSiparis,
+    MagazaSiparisKalemi, MagazaSiparisDurumLog, SellerApplication,
 )
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -434,6 +434,33 @@ def siparis_durum_guncelle(sid):
         siparis.durum = yeni_durum
         siparis.guncelleme = datetime.utcnow()
 
+        if yeni_durum == 'teslim_edildi':
+            existing = SellerHakedis.query.filter_by(
+                siparis_id=siparis.id, store_id=store.id
+            ).first()
+            if not existing:
+                brut = round(sum(k.toplam_tl for k in seller_kalemler), 2)
+                komisyon_oran = getattr(store, 'komisyon_orani', None) or 15.0
+                komisyon = round(brut * komisyon_oran / 100, 2)
+                net = round(brut - komisyon, 2)
+                now = datetime.utcnow()
+                hakedis = SellerHakedis(
+                    store_id=store.id,
+                    siparis_id=siparis.id,
+                    siparis_no=siparis.siparis_no,
+                    brut_tl=brut,
+                    komisyon_tl=komisyon,
+                    net_tl=net,
+                    durum='bekliyor',
+                    teslim_tarihi=now,
+                    kullanilabilir_tarih=now + timedelta(days=14),
+                )
+                db.session.add(hakedis)
+                bakiye = SellerBalance.query.filter_by(store_id=store.id).first()
+                if bakiye:
+                    bakiye.bekleyen_tl = round(bakiye.bekleyen_tl + net, 2)
+                    bakiye.guncelleme = now
+
     db.session.commit()
 
     d = siparis.to_dict()
@@ -598,3 +625,39 @@ def magaza_guncelle():
 
     db.session.commit()
     return jsonify(store.to_dict(public=False))
+
+
+# ──────────────────────────────────────────────────────────────
+# 17. GET /hakedisler — seller earning history
+# ──────────────────────────────────────────────────────────────
+
+@satici_panel_bp.route('/hakedisler', methods=['GET'])
+def hakedisler_listele():
+    kid, member, store = satici_bilgi_al()
+    if not store:
+        code, msg = _auth_error()
+        return jsonify({'hata': msg}), code
+
+    now = datetime.utcnow()
+
+    # Lazily promote bekliyor → kullanilabilir when 14 days passed
+    vadesi_gelenler = SellerHakedis.query.filter_by(
+        store_id=store.id, durum='bekliyor'
+    ).filter(SellerHakedis.kullanilabilir_tarih <= now).all()
+
+    if vadesi_gelenler:
+        bakiye = SellerBalance.query.filter_by(store_id=store.id).first()
+        for h in vadesi_gelenler:
+            h.durum = 'kullanilabilir'
+            if bakiye:
+                bakiye.bekleyen_tl = max(0.0, round(bakiye.bekleyen_tl - h.net_tl, 2))
+                bakiye.kullanilabilir_tl = round(bakiye.kullanilabilir_tl + h.net_tl, 2)
+        if bakiye:
+            bakiye.guncelleme = now
+        db.session.commit()
+
+    hakedisler = SellerHakedis.query.filter_by(store_id=store.id).order_by(
+        SellerHakedis.olusturma.desc()
+    ).all()
+
+    return jsonify({'hakedisler': [h.to_dict() for h in hakedisler]})

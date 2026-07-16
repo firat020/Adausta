@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import {
   Store, RefreshCw, Info, CheckCircle, XCircle, X,
-  Wallet, Clock, BarChart2, Eye, AlertCircle
+  Wallet, Clock, BarChart2, Eye, AlertCircle, BadgeDollarSign
 } from 'lucide-react'
 import API from '../../config.js'
 
@@ -389,10 +389,145 @@ function KomisyonOzeti() {
   )
 }
 
+// ─── Tab 4: Hakedişler ───────────────────────────────────────────────────────
+const HAKEDIS_DURUM_MAP = {
+  bekliyor:       { label: 'Bekliyor',       bg: 'bg-orange-100', text: 'text-orange-700' },
+  kullanilabilir: { label: 'Kullanılabilir', bg: 'bg-green-100',  text: 'text-green-700' },
+  odendi:         { label: 'Ödendi',         bg: 'bg-blue-100',   text: 'text-blue-700' },
+}
+
+function HakedisRozet({ durum }) {
+  const d = HAKEDIS_DURUM_MAP[durum] || HAKEDIS_DURUM_MAP.bekliyor
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${d.bg} ${d.text}`}>
+      {d.label}
+    </span>
+  )
+}
+
+function Hakedisler({ showToast }) {
+  const [hakedisler, setHakedisler] = useState([])
+  const [yukleniyor, setYukleniyor] = useState(true)
+  const [durumFiltre, setDurumFiltre] = useState('')
+  const [odeniyor, setOdeniyor] = useState(null)
+
+  const yukle = useCallback(async () => {
+    setYukleniyor(true)
+    try {
+      const params = {}
+      if (durumFiltre) params.durum = durumFiltre
+      const r = await axios.get(`${API}/api/admin/saticilar/hakedisler`, { params, withCredentials: true })
+      setHakedisler(r.data.hakedisler || [])
+    } catch { setHakedisler([]) }
+    setYukleniyor(false)
+  }, [durumFiltre])
+
+  useEffect(() => { yukle() }, [yukle])
+
+  const ode = async (hid) => {
+    setOdeniyor(hid)
+    try {
+      await axios.post(`${API}/api/admin/saticilar/hakedis/${hid}/ode`, {}, { withCredentials: true })
+      showToast('Ödeme işlendi.', 'basari')
+      yukle()
+    } catch (err) {
+      showToast(err.response?.data?.hata || 'İşlem başarısız.', 'hata')
+    }
+    setOdeniyor(null)
+  }
+
+  const fmt = (v) => (v ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺'
+  const fmtT = (d) => d ? new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-gray-500">Satıcı hakediş geçmişi ve ödeme işlemleri</p>
+        <div className="flex items-center gap-2">
+          <select
+            value={durumFiltre}
+            onChange={e => setDurumFiltre(e.target.value)}
+            className="border border-[#C8CDD4] rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-[#0052CC]"
+          >
+            <option value="">Tüm Durumlar</option>
+            <option value="bekliyor">Bekliyor</option>
+            <option value="kullanilabilir">Kullanılabilir</option>
+            <option value="odendi">Ödendi</option>
+          </select>
+          <button onClick={yukle} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#0052CC] transition">
+            <RefreshCw size={14} /> Yenile
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#C8CDD4] flex items-center gap-2">
+          <BadgeDollarSign size={16} className="text-[#0052CC]" />
+          <h3 className="font-semibold text-[#1e293b] text-sm">Hakedişler</h3>
+          {!yukleniyor && (
+            <span className="ml-auto text-xs text-gray-400">{hakedisler.length} kayıt</span>
+          )}
+        </div>
+
+        {yukleniyor ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
+          </div>
+        ) : hakedisler.length === 0 ? (
+          <div className="text-center py-16">
+            <BadgeDollarSign size={36} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm font-semibold">Hakediş kaydı yok</p>
+            <p className="text-gray-300 text-xs mt-1">Satıcılar sipariş teslim edince burada görünecek</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8F9FA] border-b border-[#C8CDD4]">
+                <tr>
+                  {['Mağaza', 'Sipariş', 'Brüt', 'Komisyon', 'Net', 'Durum', 'Kullanılabilir', 'İşlem'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F0F4F8]">
+                {hakedisler.map(h => (
+                  <tr key={h.id} className="hover:bg-[#F8FAFC] transition">
+                    <td className="px-4 py-3 font-semibold text-[#1e293b] text-xs">{h.magaza_adi}</td>
+                    <td className="px-4 py-3 font-mono text-[#0052CC] font-bold text-xs">#{h.siparis_no || h.siparis_id}</td>
+                    <td className="px-4 py-3 font-mono text-gray-700">{fmt(h.brut_tl)}</td>
+                    <td className="px-4 py-3 font-mono text-red-500">-{fmt(h.komisyon_tl)}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-gray-900">{fmt(h.net_tl)}</td>
+                    <td className="px-4 py-3"><HakedisRozet durum={h.durum} /></td>
+                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{fmtT(h.kullanilabilir_tarih)}</td>
+                    <td className="px-4 py-3">
+                      {h.durum === 'kullanilabilir' ? (
+                        <button
+                          onClick={() => ode(h.id)}
+                          disabled={odeniyor === h.id}
+                          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                        >
+                          {odeniyor === h.id ? '...' : <><CheckCircle size={12} /> Öde</>}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-300">{fmtT(h.odeme_tarihi)}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'bakiyeler',  label: 'Satıcı Bakiyeleri', icon: Store },
   { id: 'iadeler',    label: 'Bekleyen İadeler',  icon: Clock },
+  { id: 'hakedisler', label: 'Hakedişler',        icon: BadgeDollarSign },
   { id: 'komisyon',   label: 'Komisyon Özeti',    icon: BarChart2 },
 ]
 
@@ -437,9 +572,10 @@ export default function AdminSaticilarFinans() {
       </div>
 
       {/* Tab İçerikleri */}
-      {aktifTab === 'bakiyeler' && <SaticiBakiyeleri showToast={showToast} />}
-      {aktifTab === 'iadeler'   && <BekleyenIadeler showToast={showToast} />}
-      {aktifTab === 'komisyon'  && <KomisyonOzeti />}
+      {aktifTab === 'bakiyeler'  && <SaticiBakiyeleri showToast={showToast} />}
+      {aktifTab === 'iadeler'    && <BekleyenIadeler showToast={showToast} />}
+      {aktifTab === 'hakedisler' && <Hakedisler showToast={showToast} />}
+      {aktifTab === 'komisyon'   && <KomisyonOzeti />}
 
       {/* Toast */}
       {toast && (

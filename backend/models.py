@@ -1116,6 +1116,42 @@ class SellerBalance(db.Model):
         }
 
 
+class SellerHakedis(db.Model):
+    __tablename__ = 'satici_hakedisler'
+    id                   = db.Column(db.Integer, primary_key=True)
+    store_id             = db.Column(db.Integer, db.ForeignKey('magazalar.id'), nullable=False)
+    siparis_id           = db.Column(db.Integer, db.ForeignKey('magaza_siparisler.id'), nullable=True)
+    siparis_no           = db.Column(db.String(30), default='')
+    brut_tl              = db.Column(db.Float, default=0.0)
+    komisyon_tl          = db.Column(db.Float, default=0.0)
+    net_tl               = db.Column(db.Float, default=0.0)
+    durum                = db.Column(db.String(20), default='bekliyor')  # bekliyor / kullanilabilir / odendi
+    teslim_tarihi        = db.Column(db.DateTime, nullable=True)
+    kullanilabilir_tarih = db.Column(db.DateTime, nullable=True)
+    odeme_tarihi         = db.Column(db.DateTime, nullable=True)
+    olusturma            = db.Column(db.DateTime, default=datetime.utcnow)
+
+    store   = db.relationship('MarketplaceStore', foreign_keys=[store_id])
+    siparis = db.relationship('MagazaSiparis', foreign_keys=[siparis_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'store_id': self.store_id,
+            'magaza_adi': self.store.magaza_adi if self.store else '',
+            'siparis_id': self.siparis_id,
+            'siparis_no': self.siparis_no,
+            'brut_tl': self.brut_tl,
+            'komisyon_tl': self.komisyon_tl,
+            'net_tl': self.net_tl,
+            'durum': self.durum,
+            'teslim_tarihi': fmt(self.teslim_tarihi),
+            'kullanilabilir_tarih': fmt(self.kullanilabilir_tarih),
+            'odeme_tarihi': fmt(self.odeme_tarihi),
+            'olusturma': fmt(self.olusturma),
+        }
+
+
 class SellerAuditLog(db.Model):
     __tablename__ = 'satici_audit_log'
     id          = db.Column(db.Integer, primary_key=True)

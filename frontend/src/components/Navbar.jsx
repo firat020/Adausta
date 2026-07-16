@@ -200,7 +200,7 @@ export default function Navbar() {
                           <Store size={13} className="text-purple-600" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs">Mağza Girişi</div>
+                          <div className="font-semibold text-xs">Mağaza Girişi</div>
                           <div className="text-xs text-gray-400">Mağaza sahipleri</div>
                         </div>
                       </Link>
@@ -281,7 +281,7 @@ export default function Navbar() {
                   <User size={14} /> Üye Girişi
                 </Link>
                 <Link to="/satici/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50">
-                  <Store size={14} /> Mağza Girişi
+                  <Store size={14} /> Mağaza Girişi
                 </Link>
                 <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center">Kayıt Ol</Link>
               </>
