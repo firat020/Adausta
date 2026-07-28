@@ -487,8 +487,14 @@ def public_siparis_detay(siparis_no):
     return jsonify(s.to_dict(include_kalemler=True))
 
 
+INTERNAL_CALLBACK_SECRET = os.environ.get('MAGAZA_ODEME_CALLBACK_SECRET', '')
+
+
 @magaza_bp.route('/cardplus/callback', methods=['POST'])
 def cardplus_callback():
+    if not INTERNAL_CALLBACK_SECRET or request.headers.get('X-Internal-Secret') != INTERNAL_CALLBACK_SECRET:
+        return jsonify({'hata': 'Yetkisiz'}), 403
+
     data = request.get_json() or {}
     siparis_no = data.get('siparis_no', '')
     payment_source = data.get('payment_source', '')

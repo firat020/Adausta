@@ -1,0 +1,269 @@
+import base64
+import hashlib
+import html as _html
+import os
+import uuid
+from datetime import datetime, timedelta
+
+from flask import Blueprint, request, jsonify, session
+from models import db, Odeme, Usta, Abonelik, Plan
+
+odeme_cardplus_bp = Blueprint('odeme_cardplus', __name__)
+
+# --- CardPlus (Aktifbank / Payten) Sanal POS Config ---
+CLIENT_ID   = os.environ.get('CARDPLUS_CLIENTID', '')
+STORE_KEY   = os.environ.get('CARDPLUS_STOREKEY', '')
+CARDPLUS_MODE = os.environ.get('CARDPLUS_MODE', 'TEST')   # TEST veya PROD
+
+# TODO: Payten destek yanıtı gelince gerçek gateway adresleri buraya (env olarak) girilecek
+GATEWAY_URL = (
+    os.environ.get('CARDPLUS_GATEWAY_URL_TEST', '')
+    if CARDPLUS_MODE == 'TEST'
+    else os.environ.get('CARDPLUS_GATEWAY_URL_PROD', '')
+)
+
+BASE_URL = os.environ.get('SITE_URL', 'https://adausta.com')
+
+CURRENCY_CODES = {
+    'TRY': '949',
+    'USD': '840',
+    'EUR': '978',
+}
+
+
+def _hash_ver3(params: dict, store_key: str) -> str:
+    """CardPlus 'Hash ver3' algoritması: parametreleri isim bazlı (case-insensitive)
+    sıralayıp | ile birleştirir, storeKey'i sona ekler, SHA-512 + Base64 alır."""
+    keys = sorted(
+        (k for k in params if k.lower() not in ('hash', 'encoding')),
+        key=lambda k: k.lower(),
+    )
+
+    def _escape(v: str) -> str:
+        return str(v).replace('\\', '\\\\').replace('|', '\\|')
+
+    hashval = ''.join(_escape(params[k]) + '|' for k in keys) + _escape(store_key)
+    return base64.b64encode(hashlib.sha512(hashval.encode('utf-8')).digest()).decode()
+
+
+def _client_redirect_html(url: str) -> str:
+    """Payten entegrasyon güvenlik rehberine göre okurl/failUrl sayfalarında
+    sunucu taraflı (3xx) redirect kullanılamıyor (CSP form-action kısıtlaması).
+    Bunun yerine tarayıcı taraflı JS ile yönlendirme yapılır."""
+    e_url = _html.escape(url)
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Yönlendiriliyor...</title></head>
+<body>
+<p>Yönlendiriliyorsunuz, lütfen bekleyin... Otomatik geçiş olmazsa <a href="{e_url}">buraya tıklayın</a>.</p>
+<script>window.location.replace("{e_url}");</script>
+</body>
+</html>"""
+
+
+# ---------------------------------------------------------------------------
+# POST /api/odeme/cardplus/baslat
+# Body: { usta_id, plan_id }
+# Kart bilgisi burada TOPLANMAZ (3D_PAY_HOSTING) — kullanıcı bankanın kendi
+# kart giriş sayfasına yönlendirilir.
+# Returns: { form_html } — frontend render edip auto-submit eder
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/baslat', methods=['POST'])
+def cardplus_baslat():
+    if not session.get('kullanici_id'):
+        return jsonify({'hata': 'Giriş gerekli'}), 401
+
+    if not CLIENT_ID or not STORE_KEY:
+        return jsonify({'hata': 'CardPlus yapılandırması eksik (CLIENTID/STOREKEY)'}), 500
+    if not GATEWAY_URL:
+        return jsonify({'hata': 'CardPlus gateway adresi henüz tanımlanmadı'}), 500
+
+    data    = request.get_json()
+    usta_id = data.get('usta_id')
+    plan_id = data.get('plan_id')
+
+    usta = Usta.query.get(usta_id) if usta_id else None
+    if not usta:
+        return jsonify({'hata': 'Geçersiz usta'}), 400
+
+    plan = Plan.query.get(plan_id) if plan_id else None
+    if not plan:
+        return jsonify({'hata': 'Geçersiz plan'}), 400
+    tutar = plan.fiyat
+
+    order_id = 'CPH' + uuid.uuid4().hex[:16].upper()
+
+    odeme = Odeme(
+        usta_id=usta_id,
+        abonelik_id=None,
+        tutar=float(tutar),
+        para_birimi='TRY',
+        siparis_no=order_id,
+        durum='bekliyor',
+        aciklama='CardPlus (Aktifbank)',
+    )
+    db.session.add(odeme)
+    db.session.commit()
+
+    donus_url    = f'{BASE_URL}/api/odeme/cardplus/donus'
+    callback_url = f'{BASE_URL}/api/odeme/cardplus/callback'
+    bill_to_name = f'{usta.ad} {usta.soyad}'.strip()
+
+    params = {
+        'clientid':      CLIENT_ID,
+        'amount':        f'{float(tutar):.2f}',
+        'okurl':         donus_url,
+        'failUrl':       donus_url,
+        'TranType':      'Auth',
+        'Instalment':    '',
+        'callbackUrl':   callback_url,
+        'currency':      CURRENCY_CODES['TRY'],
+        'rnd':           order_id,   # bağlantı: gateway bu değeri callback/donus'ta aynen geri yollar
+        'storetype':     '3D_PAY_HOSTING',
+        'hashAlgorithm': 'ver3',
+        'lang':          'tr',
+        'BillToName':    bill_to_name,
+        'BillToCompany': '',
+        'refreshtime':   '5',
+    }
+    params['HASH'] = _hash_ver3(params, STORE_KEY)
+
+    inputs = ''.join(
+        f'<input type="hidden" name="{_html.escape(k)}" value="{_html.escape(str(v))}">\n'
+        for k, v in params.items()
+    )
+
+    form_html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Ödeme Yönlendiriliyor...</title></head>
+<body onload="document.getElementById('cpform').submit()">
+<p>Güvenli ödeme sayfasına yönlendiriliyorsunuz, lütfen bekleyin...</p>
+<form id="cpform" method="POST" action="{GATEWAY_URL}">
+{inputs}
+</form>
+</body>
+</html>"""
+
+    return jsonify({'form_html': form_html, 'siparis_no': order_id})
+
+
+def _bul_ve_dogrula(params: dict):
+    """Callback/donus ortak: HASH doğrula + siparis_no ile Odeme kaydını bul."""
+    order_id = params.get('rnd', '') or params.get('oid', '')
+    odeme = Odeme.query.filter_by(siparis_no=order_id).first()
+    if not odeme:
+        return None, False
+
+    received_hash = params.get('HASH', '') or params.get('hash', '')
+    hash_ok = bool(received_hash) and _hash_ver3(params, STORE_KEY) == received_hash
+    return odeme, hash_ok
+
+
+def _aktiflestir_abonelik(odeme: Odeme):
+    usta = Usta.query.get(odeme.usta_id)
+    if not usta:
+        return
+    mevcut = Abonelik.query.filter_by(usta_id=usta.id, durum='askida').first()
+    if mevcut:
+        mevcut.durum = 'aktif'
+        mevcut.baslangic = datetime.utcnow()
+        if mevcut.plan and mevcut.plan.sure_tip == 'yillik':
+            mevcut.bitis = datetime.utcnow() + timedelta(days=365)
+        else:
+            mevcut.bitis = datetime.utcnow() + timedelta(days=30)
+        mevcut.yenileme_tarihi = mevcut.bitis
+        usta.plan = mevcut.plan.ad if mevcut.plan else 'aylik'
+        usta.plan_bitis = mevcut.bitis
+        odeme.abonelik_id = mevcut.id
+    else:
+        plan = Plan.query.filter_by(aktif=True).first()
+        bitis = datetime.utcnow() + timedelta(days=30)
+        ab = Abonelik(
+            usta_id=usta.id,
+            plan_id=plan.id if plan else None,
+            durum='aktif',
+            bitis=bitis,
+            yenileme_tarihi=bitis,
+        )
+        db.session.add(ab)
+        db.session.flush()
+        odeme.abonelik_id = ab.id
+        usta.plan = plan.ad if plan else 'aylik'
+        usta.plan_bitis = bitis
+
+
+# ---------------------------------------------------------------------------
+# POST /api/odeme/cardplus/donus  — okurl + failUrl (kullanıcı tarayıcısı döner)
+# NOT: Payten güvenlik rehberine göre burada sunucu taraflı redirect (3xx)
+# kullanılamıyor, JS ile client-side yönlendirme yapılıyor.
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/donus', methods=['POST'])
+def cardplus_donus():
+    params = request.form.to_dict()
+    odeme, hash_ok = _bul_ve_dogrula(params)
+
+    if not odeme:
+        return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=hata&sebep=siparis-bulunamadi')
+
+    # TODO: Payten'den gerçek entegrasyon dokümanı gelince mdStatus başarı
+    # kodları teyit edilecek. Garanti entegrasyonuyla tutarlı, tedbirli
+    # davranış: sadece tam 3D doğrulama (mdStatus=1) başarılı sayılıyor.
+    mdstatus = params.get('mdStatus', params.get('mdstatus', ''))
+    basarili = hash_ok and mdstatus == '1'
+
+    if basarili and odeme.durum != 'basarili':
+        odeme.durum = 'basarili'
+        odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
+        odeme.paid_at = datetime.utcnow()
+        _aktiflestir_abonelik(odeme)
+        db.session.commit()
+        return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=basarili&siparis={odeme.siparis_no}')
+
+    if not basarili and odeme.durum == 'bekliyor':
+        odeme.durum = 'basarisiz'
+        odeme.error_message = params.get('ErrMsg', params.get('errmsg', 'Hash doğrulanamadı' if not hash_ok else 'İşlem reddedildi'))
+        db.session.commit()
+
+    return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=hata&siparis={odeme.siparis_no}')
+
+
+# ---------------------------------------------------------------------------
+# POST /api/odeme/cardplus/callback  — sunucu-sunucu bildirim (browser'dan bağımsız)
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/callback', methods=['POST'])
+def cardplus_callback():
+    params = request.form.to_dict()
+    odeme, hash_ok = _bul_ve_dogrula(params)
+
+    if not odeme or not hash_ok:
+        return 'FAIL', 400
+
+    mdstatus = params.get('mdStatus', params.get('mdstatus', ''))
+    if mdstatus == '1' and odeme.durum != 'basarili':
+        odeme.durum = 'basarili'
+        odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
+        odeme.paid_at = datetime.utcnow()
+        _aktiflestir_abonelik(odeme)
+        db.session.commit()
+    elif mdstatus != '1' and odeme.durum == 'bekliyor':
+        odeme.durum = 'basarisiz'
+        odeme.error_message = params.get('ErrMsg', params.get('errmsg', ''))
+        db.session.commit()
+
+    return 'OK', 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/odeme/cardplus/durum/<siparis_no>
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/durum/<siparis_no>', methods=['GET'])
+def cardplus_durum(siparis_no):
+    odeme = Odeme.query.filter_by(siparis_no=siparis_no).first()
+    if not odeme:
+        return jsonify({'hata': 'Bulunamadı'}), 404
+    return jsonify({
+        'siparis_no': odeme.siparis_no,
+        'durum': odeme.durum,
+        'tutar': odeme.tutar,
+        'para_birimi': odeme.para_birimi,
+    })
