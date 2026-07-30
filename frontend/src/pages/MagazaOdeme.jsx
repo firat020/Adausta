@@ -138,6 +138,20 @@ export default function MagazaOdeme() {
         gizlilik_onaylandi: true,
       }
       const r = await axios.post(`${API}/api/magaza/public/siparis`, payload)
+
+      if (odemeYontemi === 'online_kredi') {
+        const { data } = await axios.post(`${API}/api/odeme/cardplus/magaza/baslat`, {
+          siparis_no: r.data.siparis_no,
+        })
+        localStorage.removeItem(CART_KEY)
+        // Kullanıcıyı bankanın 3D Secure sayfasına yönlendiren otomatik-submit
+        // form HTML'i, sayfanın tamamının yerine geçecek şekilde yazdırılır.
+        document.open()
+        document.write(data.form_html)
+        document.close()
+        return
+      }
+
       localStorage.removeItem(CART_KEY)
       navigate('/magaza/siparis-basarili', {
         state: {
@@ -151,6 +165,8 @@ export default function MagazaOdeme() {
       })
     } catch (err) {
       alert(err.response?.data?.hata || 'Sipariş gönderilemedi, tekrar deneyin.')
+      setYukleniyor(false)
+      return
     }
     setYukleniyor(false)
   }
@@ -379,18 +395,26 @@ export default function MagazaOdeme() {
                 )}
               </div>
 
-              {/* Online Kredi Kartı — CardPlus entegrasyona hazır */}
-              <div className="border-2 border-gray-100 rounded-2xl overflow-hidden opacity-50 cursor-not-allowed">
-                <div className="flex items-center gap-4 p-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CreditCard size={18} className="text-gray-400" />
+              {/* Online Kredi Kartı — CardPlus 3D Secure */}
+              <div className={`border-2 rounded-2xl overflow-hidden transition-colors ${odemeYontemi === 'online_kredi' ? 'border-blue-500' : 'border-gray-200'}`}>
+                <button type="button"
+                  onClick={() => setOdemeYontemi('online_kredi')}
+                  className="w-full flex items-center gap-4 p-4 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${odemeYontemi === 'online_kredi' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                    <CreditCard size={18} className={odemeYontemi === 'online_kredi' ? 'text-blue-600' : 'text-gray-500'} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-500 text-sm">Online Kredi Kartı</p>
-                    <p className="text-xs text-gray-400">CardPlus güvenli ödeme</p>
+                    <p className="font-bold text-gray-900 text-sm">Online Kredi Kartı</p>
+                    <p className="text-xs text-gray-500">CardPlus güvenli 3D Secure ödeme</p>
                   </div>
-                  <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">Yakında</span>
-                </div>
+                  {odemeYontemi === 'online_kredi' ? <Check size={16} className="text-blue-600" /> : <ChevronRight size={16} className="text-gray-400" />}
+                </button>
+                {odemeYontemi === 'online_kredi' && (
+                  <div className="border-t border-gray-100 px-4 pb-4 pt-3 bg-blue-50 text-xs text-blue-700">
+                    Kart bilgileriniz bizim sunucularımıza değil, doğrudan bankanın güvenli 3D Secure sayfasına girilir.
+                  </div>
+                )}
               </div>
 
             </div>

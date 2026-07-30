@@ -5,7 +5,7 @@ import {
   Wrench, Building2, Gift, Store
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { kategorileriGetir, sehirleriGetir, ustaKayit } from '../api'
+import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat } from '../api'
 import API from '../config.js'
 
 const PLANLAR = [
@@ -140,16 +140,17 @@ export default function UstaKayit() {
   const [sifreGoster, setSifreGoster] = useState(false)
   const [sifreHata, setSifreHata] = useState('')
 
-  const [odeme, setOdeme] = useState({ kart_ad: '', kart_no: '', son_tarih: '', cvv: '' })
   const [odemeYontemi, setOdemeYontemi] = useState('havale')
   const [havale, setHavale] = useState({ ad: '', email: '', referans: '' })
   const [havaleGonderildi, setHavaleGonderildi] = useState(false)
   const [kur, setKur] = useState(null) // USD→TRY
+  const [planlarDB, setPlanlarDB] = useState([]) // gerçek plan id'leri (backend)
 
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
     sehirleriGetir().then(r => setSehirler(r.data.sehirler || []))
     fetch(`${API}/api/odeme/kur`).then(r => r.json()).then(d => setKur(d.USD_TRY)).catch(() => {})
+    planlariGetir().then(r => setPlanlarDB(r.data.planlar || [])).catch(() => {})
   }, [])
 
   const tlGoster = (usd) => {
@@ -187,29 +188,20 @@ export default function UstaKayit() {
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
         plan: secilenPlan,
       })
-      if (odemeYontemi === 'havale') {
-        const ustaId = kayitResp?.data?.usta_id
-        await fetch('/api/odeme/havale', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            usta_id: ustaId,
-            ad_soyad: havale.ad || form.ad + ' ' + form.soyad,
-            email: havale.email || form.email,
-            tutar: seciliPlan?.fiyat,
-            referans_no: havale.referans,
-          }),
-        })
-        setHavaleGonderildi(true)
-      }
-      // Google Ads dönüşüm — Kaydolma işlemi
-      if (typeof window.gtag === 'function') {
-        window.gtag('event', 'conversion', {
-          send_to: 'AW-18139050345/3g4tCJaFu6gcEOnir8lD',
-          value: 1.0,
-          currency: 'USD',
-        })
-      }
+      const ustaId = kayitResp?.data?.usta_id
+      await fetch('/api/odeme/havale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usta_id: ustaId,
+          ad_soyad: havale.ad || form.ad + ' ' + form.soyad,
+          email: havale.email || form.email,
+          tutar: seciliPlan?.fiyat,
+          referans_no: havale.referans,
+        }),
+      })
+      setHavaleGonderildi(true)
+      _gtagKayitDonusumu()
       setBasarili(true)
       setTimeout(() => navigate('/usta/panel'), 3000)
     } catch (err) {
@@ -219,12 +211,52 @@ export default function UstaKayit() {
     }
   }
 
-  const kartNoFormat = (val) =>
-    val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+  const _gtagKayitDonusumu = () => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-18139050345/3g4tCJaFu6gcEOnir8lD',
+        value: 1.0,
+        currency: 'USD',
+      })
+    }
+  }
 
-  const sonTarihFormat = (val) => {
-    const d = val.replace(/\D/g, '').slice(0, 4)
-    return d.length >= 3 ? d.slice(0, 2) + '/' + d.slice(2) : d
+  // Kredi kartı ile öde — CardPlus 3D_PAY_HOSTING: kart bilgisi bizde toplanmaz,
+  // kullanıcı doğrudan bankanın kart giriş sayfasına yönlendirilir.
+  const kartOdemeBaslat = async () => {
+    setHata('')
+    setYukleniyor(true)
+    try {
+      const kayitResp = await ustaKayit({
+        ...form,
+        sehir_id: parseInt(form.sehir_id),
+        ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
+        kategori_id: parseInt(secilenKategoriler[0]),
+        ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
+        deneyim_yil: parseInt(form.deneyim_yil) || 0,
+        plan: secilenPlan,
+      })
+      const ustaId = kayitResp?.data?.usta_id
+      const planDb = planlarDB.find(p => p.sure_tip === secilenPlan)
+      if (!planDb) {
+        setHata('Plan bilgisi yüklenemedi, lütfen sayfayı yenileyip tekrar deneyin.')
+        setYukleniyor(false)
+        return
+      }
+
+      const { data } = await cardplusBaslat({ usta_id: ustaId, plan_id: planDb.id })
+
+      _gtagKayitDonusumu()
+
+      // Kullanıcıyı bankanın 3D Secure sayfasına yönlendiren otomatik-submit
+      // form HTML'i, sayfanın tamamının yerine geçecek şekilde yazdırılır.
+      document.open()
+      document.write(data.form_html)
+      document.close()
+    } catch (err) {
+      setHata(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin')
+      setYukleniyor(false)
+    }
   }
 
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
@@ -672,7 +704,6 @@ export default function UstaKayit() {
               className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors relative
                 ${odemeYontemi === 'kart' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}>
               Kredi Kartı
-              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Yakında</span>
             </button>
           </div>
 
@@ -742,19 +773,30 @@ export default function UstaKayit() {
             </form>
           )}
 
-          {/* Kredi kartı — Yakında */}
+          {/* Kredi kartı — CardPlus 3D Secure */}
           {odemeYontemi === 'kart' && (
             <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-8 text-center">
               <p className="text-lg font-bold text-gray-900 mb-2">Kredi Kartı ile Ödeme</p>
-              <p className="text-gray-500 text-sm mb-4">Garanti BBVA 3D Secure entegrasyonu hazırlanıyor.</p>
-              <span className="inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold px-4 py-2 rounded-full">
-                Çok Yakında
-              </span>
-              <p className="text-xs text-gray-400 mt-3">Şimdilik Havale / EFT ile ödeme yapabilirsiniz.</p>
-              <button type="button" onClick={() => setOdemeYontemi('havale')}
-                className="mt-2 text-blue-600 text-sm font-semibold hover:underline block mx-auto">
-                Havale ile devam et
-              </button>
+              <p className="text-gray-500 text-sm mb-5">
+                Kart bilgileriniz bizim sunucularımıza değil, doğrudan bankanın güvenli
+                3D Secure sayfasına girilir.
+              </p>
+
+              {hata && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4 text-left">{hata}</div>
+              )}
+
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setAdim(3)} disabled={yukleniyor}
+                  className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm disabled:opacity-60">
+                  ← Geri
+                </button>
+                <button type="button" onClick={kartOdemeBaslat} disabled={yukleniyor}
+                  className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
+                  {yukleniyor ? 'Yönlendiriliyor...' : `Kredi Kartı ile Öde — $${seciliPlan?.fiyat}`}
+                </button>
+              </div>
+              <p className="text-center text-xs text-gray-400 mt-3">256-bit SSL şifreli güvenli bağlantı</p>
             </div>
           )}
 

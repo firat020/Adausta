@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify, session
-from models import db, Odeme, Usta, Abonelik, Plan
+from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog
+from routes.odeme import _usd_try_kur
 
 odeme_cardplus_bp = Blueprint('odeme_cardplus', __name__)
 
@@ -15,7 +16,6 @@ CLIENT_ID   = os.environ.get('CARDPLUS_CLIENTID', '')
 STORE_KEY   = os.environ.get('CARDPLUS_STOREKEY', '')
 CARDPLUS_MODE = os.environ.get('CARDPLUS_MODE', 'TEST')   # TEST veya PROD
 
-# TODO: Payten destek yanıtı gelince gerçek gateway adresleri buraya (env olarak) girilecek
 GATEWAY_URL = (
     os.environ.get('CARDPLUS_GATEWAY_URL_TEST', '')
     if CARDPLUS_MODE == 'TEST'
@@ -89,7 +89,11 @@ def cardplus_baslat():
     plan = Plan.query.get(plan_id) if plan_id else None
     if not plan:
         return jsonify({'hata': 'Geçersiz plan'}), 400
-    tutar = plan.fiyat
+
+    # Plan fiyatı USD olarak tutulur, tahsilat günlük kur üzerinden TRY yapılır
+    tutar_usd = plan.fiyat
+    kur       = _usd_try_kur()
+    tutar     = round(tutar_usd * kur, 2)
 
     order_id = 'CPH' + uuid.uuid4().hex[:16].upper()
 
@@ -100,7 +104,7 @@ def cardplus_baslat():
         para_birimi='TRY',
         siparis_no=order_id,
         durum='bekliyor',
-        aciklama='CardPlus (Aktifbank)',
+        aciklama=f'CardPlus (Aktifbank) — ${tutar_usd} x {kur} TRY kuru',
     )
     db.session.add(odeme)
     db.session.commit()
@@ -119,6 +123,88 @@ def cardplus_baslat():
         'callbackUrl':   callback_url,
         'currency':      CURRENCY_CODES['TRY'],
         'rnd':           order_id,   # bağlantı: gateway bu değeri callback/donus'ta aynen geri yollar
+        'storetype':     '3D_PAY_HOSTING',
+        'hashAlgorithm': 'ver3',
+        'lang':          'tr',
+        'BillToName':    bill_to_name,
+        'BillToCompany': '',
+        'refreshtime':   '5',
+    }
+    params['HASH'] = _hash_ver3(params, STORE_KEY)
+
+    inputs = ''.join(
+        f'<input type="hidden" name="{_html.escape(k)}" value="{_html.escape(str(v))}">\n'
+        for k, v in params.items()
+    )
+
+    form_html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Ödeme Yönlendiriliyor...</title></head>
+<body onload="document.getElementById('cpform').submit()">
+<p>Güvenli ödeme sayfasına yönlendiriliyorsunuz, lütfen bekleyin...</p>
+<form id="cpform" method="POST" action="{GATEWAY_URL}">
+{inputs}
+</form>
+</body>
+</html>"""
+
+    return jsonify({'form_html': form_html, 'siparis_no': order_id})
+
+
+# ---------------------------------------------------------------------------
+# POST /api/odeme/cardplus/magaza/baslat
+# Body: { siparis_no }  — Mağaza (e-ticaret) siparişi için kredi kartı ödemesi.
+# Tutar zaten TL olarak siparişte var, kur çevrimi yapılmaz.
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/magaza/baslat', methods=['POST'])
+def cardplus_magaza_baslat():
+    if not CLIENT_ID or not STORE_KEY:
+        return jsonify({'hata': 'CardPlus yapılandırması eksik (CLIENTID/STOREKEY)'}), 500
+    if not GATEWAY_URL:
+        return jsonify({'hata': 'CardPlus gateway adresi henüz tanımlanmadı'}), 500
+
+    data = request.get_json()
+    siparis_no = data.get('siparis_no')
+
+    siparis = MagazaSiparis.query.filter_by(siparis_no=siparis_no).first() if siparis_no else None
+    if not siparis:
+        return jsonify({'hata': 'Geçersiz sipariş'}), 400
+    if siparis.odeme_durumu == 'odendi':
+        return jsonify({'hata': 'Bu sipariş zaten ödenmiş'}), 400
+
+    tutar = siparis.genel_toplam_tl
+
+    order_id = 'CPM' + uuid.uuid4().hex[:16].upper()
+
+    odeme = Odeme(
+        usta_id=0,
+        abonelik_id=None,
+        tutar=float(tutar),
+        para_birimi='TRY',
+        siparis_no=order_id,
+        durum='bekliyor',
+        aciklama=f'CardPlus (Aktifbank) — Mağaza Siparişi {siparis.siparis_no}',
+        payment_source='store_order',
+        reference_type='magaza_siparis',
+        reference_id=siparis.id,
+    )
+    db.session.add(odeme)
+    db.session.commit()
+
+    donus_url    = f'{BASE_URL}/api/odeme/cardplus/donus'
+    callback_url = f'{BASE_URL}/api/odeme/cardplus/callback'
+    bill_to_name = f'{siparis.misafir_ad} {siparis.misafir_soyad}'.strip()
+
+    params = {
+        'clientid':      CLIENT_ID,
+        'amount':        f'{float(tutar):.2f}',
+        'okurl':         donus_url,
+        'failUrl':       donus_url,
+        'TranType':      'Auth',
+        'Instalment':    '',
+        'callbackUrl':   callback_url,
+        'currency':      CURRENCY_CODES['TRY'],
+        'rnd':           order_id,
         'storetype':     '3D_PAY_HOSTING',
         'hashAlgorithm': 'ver3',
         'lang':          'tr',
@@ -192,6 +278,25 @@ def _aktiflestir_abonelik(odeme: Odeme):
         usta.plan_bitis = bitis
 
 
+def _odeme_basarili_isle(odeme: Odeme):
+    """Ödeme başarılı olduğunda kaynağına göre ilgili kaydı günceller:
+    abonelik ödemesiyse Abonelik aktifleştirilir, mağaza siparişiyse
+    MagazaSiparis ödeme durumu güncellenir."""
+    if odeme.reference_type == 'magaza_siparis' and odeme.reference_id:
+        siparis = MagazaSiparis.query.get(odeme.reference_id)
+        if siparis and siparis.odeme_durumu != 'odendi':
+            siparis.odeme_durumu = 'odendi'
+            siparis.durum = 'hazirlaniyor'
+            db.session.add(MagazaSiparisDurumLog(
+                siparis_id=siparis.id,
+                eski_durum='yeni',
+                yeni_durum='hazirlaniyor',
+                aciklama='CardPlus ödeme onaylandı',
+            ))
+    else:
+        _aktiflestir_abonelik(odeme)
+
+
 # ---------------------------------------------------------------------------
 # POST /api/odeme/cardplus/donus  — okurl + failUrl (kullanıcı tarayıcısı döner)
 # NOT: Payten güvenlik rehberine göre burada sunucu taraflı redirect (3xx)
@@ -215,7 +320,7 @@ def cardplus_donus():
         odeme.durum = 'basarili'
         odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
         odeme.paid_at = datetime.utcnow()
-        _aktiflestir_abonelik(odeme)
+        _odeme_basarili_isle(odeme)
         db.session.commit()
         return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=basarili&siparis={odeme.siparis_no}')
 
@@ -243,7 +348,7 @@ def cardplus_callback():
         odeme.durum = 'basarili'
         odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
         odeme.paid_at = datetime.utcnow()
-        _aktiflestir_abonelik(odeme)
+        _odeme_basarili_isle(odeme)
         db.session.commit()
     elif mdstatus != '1' and odeme.durum == 'bekliyor':
         odeme.durum = 'basarisiz'

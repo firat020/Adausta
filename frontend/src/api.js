@@ -27,6 +27,10 @@ api.interceptors.response.use(
 export const kategorileriGetir = () => api.get('/kategoriler/');
 export const sehirleriGetir = () => api.get('/kategoriler/sehirler');
 
+// Ödeme
+export const planlariGetir = () => api.get('/odeme/planlar');
+export const cardplusBaslat = (data) => api.post('/odeme/cardplus/baslat', data);
+
 // Ustalar
 export const ustaListele = (params) => api.get('/ustalar/', { params });
 export const ustaDetay = (id, params) => api.get(`/ustalar/${id}`, { params });
