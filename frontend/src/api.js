@@ -46,6 +46,8 @@ export const giris = (data) => api.post('/auth/giris', data);
 export const kayit = (data) => api.post('/auth/kayit', data);
 export const cikis = () => api.post('/auth/cikis');
 export const benimBilgilerim = () => api.get('/auth/ben');
+export const sifreSifirlaKodGonder = (email) => api.post('/auth/sifre-sifirla/kod-gonder', { email });
+export const sifreSifirlaDogrula = (data) => api.post('/auth/sifre-sifirla/dogrula', data);
 
 // Reklamlar
 export const reklamlariGetir = (params) => api.get('/reklamlar/', { params });

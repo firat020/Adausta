@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, AdminLog
+from models import db, Kullanici, AdminLog, TelefonOtp, Usta, Sirket
 from datetime import datetime, timedelta
 from extensions import limiter
+from sms import sms_gonder
 import requests as http_requests
+import random
+import hashlib
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -76,6 +79,92 @@ def kayit():
     session['kullanici_id'] = k.id
     session['rol'] = k.rol
     return jsonify({'mesaj': 'Kayıt başarılı', 'kullanici': k.to_dict()}), 201
+
+def _kullanici_telefon(k):
+    """Kullanicinin rolune gore dogrulanmis telefon numarasini bulur."""
+    if k.rol == 'usta':
+        u = Usta.query.filter_by(kullanici_id=k.id).first()
+        return u.telefon if u else None
+    if k.rol == 'sirket':
+        s = Sirket.query.filter_by(kullanici_id=k.id).first()
+        return s.telefon if s else None
+    return k.telefon or None
+
+
+@auth_bp.route('/sifre-sifirla/kod-gonder', methods=['POST'])
+@limiter.limit('3 per minute; 10 per hour')
+def sifre_sifirla_kod_gonder():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    genel_yanit = jsonify({'mesaj': 'Bu email adresi kayıtlıysa doğrulama kodu gönderildi'})
+
+    if not email:
+        return jsonify({'hata': 'Email zorunludur'}), 400
+
+    kullanici = Kullanici.query.filter_by(email=email).first()
+    if not kullanici or kullanici.sifre_hash is None:
+        return genel_yanit  # kayıt yok ya da Google hesabı — bilgi sızdırma
+
+    telefon = _kullanici_telefon(kullanici)
+    if not telefon:
+        return genel_yanit  # sistemde telefon kayıtlı değil, SMS gönderilemez
+
+    kod = f'{random.randint(0, 999999):06d}'
+    otp = TelefonOtp(
+        telefon=telefon,
+        kod_hash=hashlib.sha256(kod.encode()).hexdigest(),
+        amac='sifre_sifirla',
+        kullanici_id=kullanici.id,
+        son_kullanma=datetime.utcnow() + timedelta(minutes=5)
+    )
+    db.session.add(otp)
+    db.session.commit()
+
+    sms_gonder(telefon, f'Ada Usta sifre sifirlama kodunuz: {kod}. 5 dakika icinde gecerlidir.')
+    return genel_yanit
+
+
+@auth_bp.route('/sifre-sifirla/dogrula', methods=['POST'])
+@limiter.limit('5 per minute; 15 per hour')
+def sifre_sifirla_dogrula():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    kod = (data.get('kod') or '').strip()
+    yeni_sifre = data.get('yeni_sifre', '')
+
+    if not email or not kod or not yeni_sifre:
+        return jsonify({'hata': 'email, kod ve yeni_sifre zorunludur'}), 400
+    if len(yeni_sifre) < 8:
+        return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
+
+    kullanici = Kullanici.query.filter_by(email=email).first()
+    if not kullanici:
+        return jsonify({'hata': 'Kod hatalı veya süresi dolmuş'}), 400
+
+    otp = TelefonOtp.query.filter_by(
+        kullanici_id=kullanici.id, amac='sifre_sifirla', dogrulandi=False
+    ).order_by(TelefonOtp.id.desc()).first()
+
+    if not otp:
+        return jsonify({'hata': 'Önce doğrulama kodu isteyin'}), 400
+    if otp.deneme_sayisi >= 5:
+        return jsonify({'hata': 'Çok fazla hatalı deneme. Yeni kod isteyin.'}), 429
+    if otp.suresi_gecti_mi():
+        return jsonify({'hata': 'Kodun süresi doldu, yeni kod isteyin'}), 400
+    if not otp.kod_kontrol(kod):
+        otp.deneme_sayisi += 1
+        db.session.commit()
+        return jsonify({'hata': 'Kod hatalı'}), 400
+
+    otp.dogrulandi = True
+    kullanici.sifre_set(yeni_sifre)
+    kullanici.giris_deneme = 0
+    kullanici.kilitli_kadar = None
+    db.session.commit()
+    log_kaydet('SIFRE_SIFIRLANDI', f'{kullanici.email} şifresini sıfırladı')
+
+    return jsonify({'mesaj': 'Şifreniz güncellendi, giriş yapabilirsiniz'})
+
 
 @auth_bp.route('/google', methods=['POST'])
 @limiter.limit('10 per minute')

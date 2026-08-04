@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { giris, kayit, benimBilgilerim } from '../api'
@@ -202,9 +202,14 @@ export default function MusteriGiris() {
 
               {/* Şifre */}
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1.5">
-                  {t('musteriGiris.sifreLabel')}
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-bold text-gray-800">
+                    {t('musteriGiris.sifreLabel')}
+                  </label>
+                  {tab === 'giris' && (
+                    <Link to="/sifremi-unuttum" className="text-xs text-blue-600 font-semibold hover:underline">Şifremi unuttum</Link>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input

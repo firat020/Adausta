@@ -59,6 +59,7 @@ class TelefonOtp(db.Model):
     kod_hash = db.Column(db.String(128), nullable=False)
     amac = db.Column(db.String(30), nullable=False)  # profil_sahiplen / sifre_sifirla
     usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     son_kullanma = db.Column(db.DateTime, nullable=False)
     dogrulandi = db.Column(db.Boolean, default=False)

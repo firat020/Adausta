@@ -64,6 +64,7 @@ import AdminMagazaSiparisler from './pages/admin/AdminMagazaSiparisler'
 import AdminBildirimler from './pages/admin/AdminBildirimler'
 // Usta Paneli
 import UstaGiris from './pages/usta-panel/UstaGiris'
+import SifremiUnuttum from './pages/SifremiUnuttum'
 import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
 import UstaPanelDashboard from './pages/usta-panel/UstaPanelDashboard'
 import UstaPanelIsTalepleri from './pages/usta-panel/UstaPanelIsTalepleri'
@@ -215,6 +216,8 @@ export default function App() {
         <Route path="saticilar-finans" element={<AdminSaticilarFinans />} />
         <Route path="finans" element={<AdminFinans />} />
       </Route>
+
+      <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
 
       {/* Usta Paneli */}
       <Route path="/usta/giris" element={<UstaGiris />} />

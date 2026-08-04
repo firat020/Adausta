@@ -130,7 +130,10 @@ export default function SirketGiris() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-indigo-300 uppercase tracking-wide mb-1.5 block">Şifre</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-indigo-300 uppercase tracking-wide block">Şifre</label>
+                <Link to="/sifremi-unuttum" className="text-xs text-indigo-400/70 font-semibold hover:text-indigo-300 transition">Şifremi unuttum</Link>
+              </div>
               <div className="relative">
                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-400/60" />
                 <input type={sifreGoster ? 'text' : 'password'} value={sifre}
