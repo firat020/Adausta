@@ -2,6 +2,7 @@ import base64
 import hashlib
 import html as _html
 import os
+import secrets
 import uuid
 from datetime import datetime, timedelta
 
@@ -12,9 +13,21 @@ from routes.odeme import _usd_try_kur
 odeme_cardplus_bp = Blueprint('odeme_cardplus', __name__)
 
 # --- CardPlus (Aktifbank / Payten) Sanal POS Config ---
-CLIENT_ID   = os.environ.get('CARDPLUS_CLIENTID', '')
-STORE_KEY   = os.environ.get('CARDPLUS_STOREKEY', '')
+# TEST ve PROD ortamlarinin clientid/storeKey'leri birbirinden farkli
+# (Payten destek yaniti, OP-423236, 01.08.2026: TEST magaza numarasi PROD'dan
+# ayri, canli numarayla TEST ortamina post edilirse "Merchant bulunamadi" hatasi aliniyor)
 CARDPLUS_MODE = os.environ.get('CARDPLUS_MODE', 'TEST')   # TEST veya PROD
+
+CLIENT_ID = (
+    os.environ.get('CARDPLUS_CLIENTID_TEST', '')
+    if CARDPLUS_MODE == 'TEST'
+    else os.environ.get('CARDPLUS_CLIENTID_PROD', '')
+)
+STORE_KEY = (
+    os.environ.get('CARDPLUS_STOREKEY_TEST', '')
+    if CARDPLUS_MODE == 'TEST'
+    else os.environ.get('CARDPLUS_STOREKEY_PROD', '')
+)
 
 GATEWAY_URL = (
     os.environ.get('CARDPLUS_GATEWAY_URL_TEST', '')
@@ -29,6 +42,10 @@ CURRENCY_CODES = {
     'USD': '840',
     'EUR': '978',
 }
+
+# Payten destek yanıtı (ticket OP-423236, 31.07.2026): bu mdStatus değerleri
+# ödemenin Nestpay API tarafından tamamlanmış sayıldığı değerlerdir.
+MDSTATUS_BASARILI = {'1', '2', '3', '4', '5', '7', '8'}
 
 
 def _hash_ver3(params: dict, store_key: str) -> str:
@@ -122,7 +139,8 @@ def cardplus_baslat():
         'Instalment':    '',
         'callbackUrl':   callback_url,
         'currency':      CURRENCY_CODES['TRY'],
-        'rnd':           order_id,   # bağlantı: gateway bu değeri callback/donus'ta aynen geri yollar
+        'oid':           order_id,   # gateway bu değeri callback/donus'ta aynen geri yollar (rnd farklı bir alan — Payten OP-423236)
+        'rnd':           secrets.token_hex(16),
         'storetype':     '3D_PAY_HOSTING',
         'hashAlgorithm': 'ver3',
         'lang':          'tr',
@@ -204,7 +222,8 @@ def cardplus_magaza_baslat():
         'Instalment':    '',
         'callbackUrl':   callback_url,
         'currency':      CURRENCY_CODES['TRY'],
-        'rnd':           order_id,
+        'oid':           order_id,
+        'rnd':           secrets.token_hex(16),
         'storetype':     '3D_PAY_HOSTING',
         'hashAlgorithm': 'ver3',
         'lang':          'tr',
@@ -235,7 +254,7 @@ def cardplus_magaza_baslat():
 
 def _bul_ve_dogrula(params: dict):
     """Callback/donus ortak: HASH doğrula + siparis_no ile Odeme kaydını bul."""
-    order_id = params.get('rnd', '') or params.get('oid', '')
+    order_id = params.get('oid', '') or params.get('rnd', '')
     odeme = Odeme.query.filter_by(siparis_no=order_id).first()
     if not odeme:
         return None, False
@@ -310,11 +329,8 @@ def cardplus_donus():
     if not odeme:
         return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=hata&sebep=siparis-bulunamadi')
 
-    # TODO: Payten'den gerçek entegrasyon dokümanı gelince mdStatus başarı
-    # kodları teyit edilecek. Garanti entegrasyonuyla tutarlı, tedbirli
-    # davranış: sadece tam 3D doğrulama (mdStatus=1) başarılı sayılıyor.
     mdstatus = params.get('mdStatus', params.get('mdstatus', ''))
-    basarili = hash_ok and mdstatus == '1'
+    basarili = hash_ok and mdstatus in MDSTATUS_BASARILI
 
     if basarili and odeme.durum != 'basarili':
         odeme.durum = 'basarili'
@@ -344,13 +360,13 @@ def cardplus_callback():
         return 'FAIL', 400
 
     mdstatus = params.get('mdStatus', params.get('mdstatus', ''))
-    if mdstatus == '1' and odeme.durum != 'basarili':
+    if mdstatus in MDSTATUS_BASARILI and odeme.durum != 'basarili':
         odeme.durum = 'basarili'
         odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
         odeme.paid_at = datetime.utcnow()
         _odeme_basarili_isle(odeme)
         db.session.commit()
-    elif mdstatus != '1' and odeme.durum == 'bekliyor':
+    elif mdstatus not in MDSTATUS_BASARILI and odeme.durum == 'bekliyor':
         odeme.durum = 'basarisiz'
         odeme.error_message = params.get('ErrMsg', params.get('errmsg', ''))
         db.session.commit()
