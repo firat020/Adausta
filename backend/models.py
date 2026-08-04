@@ -179,6 +179,19 @@ class Usta(db.Model):
     ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
     ek_kategoriler = db.relationship('Kategori', secondary=usta_kategoriler, lazy=True)
 
+    def profil_tamamlama(self):
+        maddeler = [
+            {'anahtar': 'foto', 'baslik': 'Profil fotoğrafı ekleyin', 'tamam': len(self.fotograflar) > 0},
+            {'anahtar': 'aciklama', 'baslik': 'Hakkınızda açıklama yazın (en az 20 karakter)', 'tamam': bool(self.aciklama and len(self.aciklama.strip()) >= 20)},
+            {'anahtar': 'deneyim', 'baslik': 'Deneyim yılınızı belirtin', 'tamam': (self.deneyim_yil or 0) > 0},
+            {'anahtar': 'whatsapp', 'baslik': 'WhatsApp numarası ekleyin', 'tamam': bool(self.whatsapp)},
+            {'anahtar': 'ilce', 'baslik': 'İlçe/bölge bilginizi ekleyin', 'tamam': self.ilce_id is not None},
+            {'anahtar': 'konum', 'baslik': 'Haritada konumunuzu işaretleyin', 'tamam': self.lat is not None and self.lng is not None},
+        ]
+        tamam_sayisi = sum(1 for m in maddeler if m['tamam'])
+        yuzde = round(tamam_sayisi / len(maddeler) * 100)
+        return {'yuzde': yuzde, 'maddeler': maddeler}
+
     def ortalama_puan(self):
         if not self.yorumlar:
             return 0
@@ -223,6 +236,7 @@ class Usta(db.Model):
             'aktif': self.aktif,
             'musaitlik': self.musaitlik,
             'uye_mi': bool(self.kullanici_id),
+            'profil_tamamlama': self.profil_tamamlama(),
             'plan': self.plan,
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
             'olusturma': self.olusturma.isoformat(),

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ClipboardList, Users, Star, Eye, Phone, MessageCircle,
   TrendingUp, Clock, CheckCircle, AlertCircle, X,
-  Info
+  Info, CircleCheck, Circle
 } from 'lucide-react'
 import { ustaPanelDashboard } from '../../api'
 
@@ -222,6 +222,40 @@ export default function UstaPanelDashboard() {
           )}
         </p>
       </div>
+
+      {/* Profil tamamlama */}
+      {veri.usta.profil_tamamlama && veri.usta.profil_tamamlama.yuzde < 100 && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-extrabold text-xs">
+                %{veri.usta.profil_tamamlama.yuzde}
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-800">Profilin Tamamla</h2>
+                <p className="text-xs text-gray-400">Eksiksiz profiller daha çok müşteriye ulaşır</p>
+              </div>
+            </div>
+            <button onClick={() => navigate('/usta/panel/profil')}
+              className="text-xs text-blue-600 hover:underline font-medium shrink-0">
+              Profili Düzenle
+            </button>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${veri.usta.profil_tamamlama.yuzde}%` }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {veri.usta.profil_tamamlama.maddeler.map(m => (
+              <div key={m.anahtar} className="flex items-center gap-2 text-sm">
+                {m.tamam
+                  ? <CircleCheck size={16} className="text-green-500 shrink-0" />
+                  : <Circle size={16} className="text-gray-300 shrink-0" />}
+                <span className={m.tamam ? 'text-gray-400 line-through' : 'text-gray-700'}>{m.baslik}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* İstatistik kartları — üst 4 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
