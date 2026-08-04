@@ -38,6 +38,8 @@ export const ustaKayit = (data) => api.post('/ustalar/kayit', data);
 export const enYakinUstalar = (params) => api.get('/ustalar/en-yakin', { params });
 export const yorumEkle = (id, data) => api.post(`/ustalar/${id}/yorum`, data);
 export const isTalebiGonder = (ustaId, data) => api.post(`/ustalar/${ustaId}/is-talebi`, data);
+export const ustaSahiplenKodGonder = (id, telefon) => api.post(`/ustalar/${id}/sahiplen/kod-gonder`, { telefon });
+export const ustaSahiplenDogrula = (id, data) => api.post(`/ustalar/${id}/sahiplen/dogrula`, data);
 
 // Auth
 export const giris = (data) => api.post('/auth/giris', data);

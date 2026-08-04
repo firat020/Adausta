@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+import hashlib
 import math
 
 db = SQLAlchemy()
@@ -49,6 +50,25 @@ class Kullanici(db.Model):
             sirket = Sirket.query.filter_by(kullanici_id=self.id).first()
             d['sirket_id'] = sirket.id if sirket else None
         return d
+
+
+class TelefonOtp(db.Model):
+    __tablename__ = 'telefon_otp'
+    id = db.Column(db.Integer, primary_key=True)
+    telefon = db.Column(db.String(30), nullable=False)
+    kod_hash = db.Column(db.String(128), nullable=False)
+    amac = db.Column(db.String(30), nullable=False)  # profil_sahiplen / sifre_sifirla
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    son_kullanma = db.Column(db.DateTime, nullable=False)
+    dogrulandi = db.Column(db.Boolean, default=False)
+    deneme_sayisi = db.Column(db.Integer, default=0)
+
+    def kod_kontrol(self, kod):
+        return self.kod_hash == hashlib.sha256(kod.encode()).hexdigest()
+
+    def suresi_gecti_mi(self):
+        return datetime.utcnow() > self.son_kullanma
 
 
 class AdminLog(db.Model):
@@ -201,6 +221,7 @@ class Usta(db.Model):
             'onaylanmis': self.onaylanmis,
             'aktif': self.aktif,
             'musaitlik': self.musaitlik,
+            'uye_mi': bool(self.kullanici_id),
             'plan': self.plan,
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
             'olusturma': self.olusturma.isoformat(),

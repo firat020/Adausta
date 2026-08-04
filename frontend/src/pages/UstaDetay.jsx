@@ -2,10 +2,10 @@ import API from '../config.js'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User } from 'lucide-react'
+import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User, ShieldCheck, KeyRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
-import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder } from '../api'
+import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula } from '../api'
 import SEO from '../components/SEO'
 
 export default function UstaDetay() {
@@ -26,6 +26,15 @@ export default function UstaDetay() {
     musteri_ad: '', musteri_telefon: '', musteri_adres: '',
     baslik: '', aciklama: '', tercih_tarih: ''
   })
+  const [sahiplenModal, setSahiplenModal] = useState(false)
+  const [sahiplenAdim, setSahiplenAdim] = useState(1)
+  const [sahiplenTelefon, setSahiplenTelefon] = useState('')
+  const [sahiplenKod, setSahiplenKod] = useState('')
+  const [sahiplenEmail, setSahiplenEmail] = useState('')
+  const [sahiplenSifre, setSahiplenSifre] = useState('')
+  const [sahiplenYukleniyor, setSahiplenYukleniyor] = useState(false)
+  const [sahiplenHata, setSahiplenHata] = useState('')
+  const [sahiplenBasarili, setSahiplenBasarili] = useState(false)
 
   const logIletisim = (tur) => {
     axios.post(`${API}/api/analitik/iletisim`, { usta_id: parseInt(id), tur }, { withCredentials: false })
@@ -72,6 +81,46 @@ export default function UstaDetay() {
       await yorumEkle(id, yorumForm)
       setYorumGonderildi(true)
     } catch {}
+  }
+
+  const sahiplenKapat = () => {
+    setSahiplenModal(false)
+    setSahiplenAdim(1)
+    setSahiplenTelefon('')
+    setSahiplenKod('')
+    setSahiplenEmail('')
+    setSahiplenSifre('')
+    setSahiplenHata('')
+    setSahiplenBasarili(false)
+  }
+
+  const sahiplenKodGonder = async (e) => {
+    e.preventDefault()
+    setSahiplenHata('')
+    setSahiplenYukleniyor(true)
+    try {
+      await ustaSahiplenKodGonder(id, sahiplenTelefon)
+      setSahiplenAdim(2)
+    } catch (err) {
+      setSahiplenHata(err.response?.data?.hata || 'Kod gönderilemedi. Tekrar deneyin.')
+    } finally {
+      setSahiplenYukleniyor(false)
+    }
+  }
+
+  const sahiplenTamamla = async (e) => {
+    e.preventDefault()
+    setSahiplenHata('')
+    setSahiplenYukleniyor(true)
+    try {
+      await ustaSahiplenDogrula(id, { kod: sahiplenKod, email: sahiplenEmail, sifre: sahiplenSifre })
+      setSahiplenBasarili(true)
+      setUsta(u => u ? { ...u, uye_mi: true } : u)
+    } catch (err) {
+      setSahiplenHata(err.response?.data?.hata || 'Doğrulama başarısız. Tekrar deneyin.')
+    } finally {
+      setSahiplenYukleniyor(false)
+    }
   }
 
   const Yildizlar = ({ puan, tikla = null, boyut = 16 }) => (
@@ -133,6 +182,23 @@ export default function UstaDetay() {
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors">
         <ArrowLeft size={16} /> {t('ustaDetay.geri')}
       </button>
+
+      {/* Profil sahiplenme daveti */}
+      {usta.uye_mi === false && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4 mb-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Bu profil {usta.ad_soyad} misiniz?</p>
+              <p className="text-xs text-gray-500 mt-0.5">Telefon numaranızı doğrulayarak bu profili sahiplenin, kendi panelinizden yönetin.</p>
+            </div>
+          </div>
+          <button onClick={() => setSahiplenModal(true)}
+            className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap">
+            Profili Sahiplen
+          </button>
+        </div>
+      )}
 
       {/* Profil kartı */}
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden mb-5">
@@ -397,6 +463,112 @@ export default function UstaDetay() {
                     )}
                   </button>
                   <p className="text-xs text-center text-gray-400">Giriş yapmadan da talep gönderebilirsiniz</p>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profil Sahiplenme Modal */}
+      {sahiplenModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-2xl">
+              <div>
+                <h3 className="font-extrabold text-white text-base">Profili Sahiplen</h3>
+                <p className="text-xs text-blue-100 mt-0.5 font-medium">{usta.ad_soyad} · {usta.kategori}</p>
+              </div>
+              <button onClick={sahiplenKapat}
+                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition">
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {sahiplenBasarili ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-emerald-200">
+                    <CheckCircle2 size={30} className="text-emerald-500" />
+                  </div>
+                  <p className="font-extrabold text-gray-900 text-lg mb-2">Profil Sahiplenildi!</p>
+                  <p className="text-sm text-gray-500">Hesabınız oluşturuldu, artık giriş yapıp panelinizi yönetebilirsiniz.</p>
+                  <button onClick={() => navigate('/usta/panel')}
+                    className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-3 rounded-xl text-sm transition">
+                    Panelime Git
+                  </button>
+                </div>
+              ) : sahiplenAdim === 1 ? (
+                <form onSubmit={sahiplenKodGonder} className="space-y-4">
+                  <p className="text-sm text-gray-500">
+                    Doğrulama kodu profildeki kayıtlı telefon numarasına gönderilecektir.
+                  </p>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Telefon Numaranız *</label>
+                    <div className="relative">
+                      <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input value={sahiplenTelefon}
+                        onChange={e => setSahiplenTelefon(e.target.value)}
+                        required placeholder={usta.telefon}
+                        className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400" />
+                    </div>
+                  </div>
+                  {sahiplenHata && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+                      {sahiplenHata}
+                    </div>
+                  )}
+                  <button type="submit" disabled={sahiplenYukleniyor}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-extrabold py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2">
+                    {sahiplenYukleniyor ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> Gönderiliyor...</>
+                    ) : (
+                      <><ShieldCheck size={16} /> Doğrulama Kodu Gönder</>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={sahiplenTamamla} className="space-y-4">
+                  <p className="text-sm text-gray-500">
+                    <span className="font-semibold text-gray-700">{usta.telefon}</span> numarasına gönderilen kodu ve yeni hesap bilgilerinizi girin.
+                  </p>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Doğrulama Kodu *</label>
+                    <div className="relative">
+                      <KeyRound size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input value={sahiplenKod}
+                        onChange={e => setSahiplenKod(e.target.value)}
+                        required placeholder="6 haneli kod"
+                        className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">E-posta *</label>
+                    <input type="email" value={sahiplenEmail}
+                      onChange={e => setSahiplenEmail(e.target.value)}
+                      required placeholder="ornek@email.com"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Şifre Belirle *</label>
+                    <input type="password" value={sahiplenSifre}
+                      onChange={e => setSahiplenSifre(e.target.value)}
+                      required minLength={8} placeholder="En az 8 karakter"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400" />
+                  </div>
+                  {sahiplenHata && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+                      {sahiplenHata}
+                    </div>
+                  )}
+                  <button type="submit" disabled={sahiplenYukleniyor}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white font-extrabold py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2">
+                    {sahiplenYukleniyor ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> Doğrulanıyor...</>
+                    ) : (
+                      <><CheckCircle2 size={16} /> Hesabımı Oluştur</>
+                    )}
+                  </button>
                 </form>
               )}
             </div>

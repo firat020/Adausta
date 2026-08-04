@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
-import os, uuid
+from extensions import limiter
+from datetime import datetime, timedelta
+import os, uuid, random, hashlib
 
 ustalar_bp = Blueprint('ustalar', __name__)
 
@@ -148,6 +150,97 @@ def kayit():
     )
 
     return jsonify({'mesaj': 'Kayıt başarılı', 'id': u.id, 'usta_id': u.id, 'kullanici': k.to_dict()}), 201
+
+def _telefon_normalize(t):
+    t = (t or '').replace(' ', '').replace('-', '').replace('+', '')
+    if t.startswith('00'):
+        t = t[2:]
+    return t[-9:]  # son 9 hane — ülke kodu yazım farklarını tolere eder
+
+
+@ustalar_bp.route('/<int:id>/sahiplen/kod-gonder', methods=['POST'])
+@limiter.limit('3 per minute; 10 per hour')
+def sahiplen_kod_gonder(id):
+    u = Usta.query.get_or_404(id)
+    if u.kullanici_id:
+        return jsonify({'hata': 'Bu profil zaten sahiplenilmiş'}), 400
+
+    data = request.get_json() or {}
+    telefon = (data.get('telefon') or '').strip()
+    if not telefon:
+        return jsonify({'hata': 'Telefon zorunludur'}), 400
+    if _telefon_normalize(telefon) != _telefon_normalize(u.telefon):
+        return jsonify({'hata': 'Bu telefon numarası profildeki numarayla eşleşmiyor'}), 400
+
+    kod = f'{random.randint(0, 999999):06d}'
+    otp = TelefonOtp(
+        telefon=u.telefon,
+        kod_hash=hashlib.sha256(kod.encode()).hexdigest(),
+        amac='profil_sahiplen',
+        usta_id=u.id,
+        son_kullanma=datetime.utcnow() + timedelta(minutes=5)
+    )
+    db.session.add(otp)
+    db.session.commit()
+
+    gonderildi = sms_gonder(u.telefon, f'Ada Usta dogrulama kodunuz: {kod}. 5 dakika icinde gecerlidir.')
+    if not gonderildi:
+        return jsonify({'hata': 'SMS gönderilemedi, lütfen tekrar deneyin'}), 502
+
+    return jsonify({'mesaj': 'Doğrulama kodu gönderildi'})
+
+
+@ustalar_bp.route('/<int:id>/sahiplen/dogrula', methods=['POST'])
+@limiter.limit('5 per minute; 15 per hour')
+def sahiplen_dogrula(id):
+    u = Usta.query.get_or_404(id)
+    if u.kullanici_id:
+        return jsonify({'hata': 'Bu profil zaten sahiplenilmiş'}), 400
+
+    data = request.get_json() or {}
+    kod = (data.get('kod') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    sifre = data.get('sifre', '')
+
+    if not kod or not email or not sifre:
+        return jsonify({'hata': 'kod, email ve sifre zorunludur'}), 400
+    if len(sifre) < 8:
+        return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
+    if Kullanici.query.filter_by(email=email).first():
+        return jsonify({'hata': 'Bu email adresi zaten kayıtlı'}), 400
+
+    otp = TelefonOtp.query.filter_by(
+        usta_id=u.id, amac='profil_sahiplen', dogrulandi=False
+    ).order_by(TelefonOtp.id.desc()).first()
+
+    if not otp:
+        return jsonify({'hata': 'Önce doğrulama kodu isteyin'}), 400
+    if otp.deneme_sayisi >= 5:
+        return jsonify({'hata': 'Çok fazla hatalı deneme. Yeni kod isteyin.'}), 429
+    if otp.suresi_gecti_mi():
+        return jsonify({'hata': 'Kodun süresi doldu, yeni kod isteyin'}), 400
+    if not otp.kod_kontrol(kod):
+        otp.deneme_sayisi += 1
+        db.session.commit()
+        return jsonify({'hata': 'Kod hatalı'}), 400
+
+    otp.dogrulandi = True
+
+    k = Kullanici(email=email, rol='usta')
+    k.sifre_set(sifre)
+    db.session.add(k)
+    db.session.flush()  # k.id'yi al
+
+    u.kullanici_id = k.id
+    if not u.email:
+        u.email = email
+    db.session.commit()
+
+    session['kullanici_id'] = k.id
+    session['rol'] = 'usta'
+
+    return jsonify({'mesaj': 'Profil başarıyla sahiplenildi', 'usta_id': u.id, 'kullanici': k.to_dict()})
+
 
 @ustalar_bp.route('/<int:id>/fotograf', methods=['POST'])
 def fotograf_yukle(id):
