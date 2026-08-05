@@ -538,18 +538,13 @@ def cardplus_callback():
                 paid_at=datetime.utcnow(),
             )
             db.session.add(odeme)
-            # Credit seller balances
-            from models import SellerOrder, SellerBalance, Commission
+            # NOT: Satıcı bakiyesi (SellerBalance) burada KREDİLENMEZ.
+            # Gerçek hakediş/bakiye kredisi satici_panel.py'de sipariş "teslim_edildi"
+            # olduğunda SellerHakedis üzerinden tek noktadan yapılıyor (bkz. 1.4 notu:
+            # önceden burada da ayrıca kredi verilip bakiye çift sayılıyordu).
+            from models import SellerOrder, Commission
             seller_orders = SellerOrder.query.filter_by(siparis_id=siparis.id).all()
             for so in seller_orders:
-                # Get or create SellerBalance for this store
-                balance = SellerBalance.query.filter_by(store_id=so.store_id).first()
-                if not balance:
-                    balance = SellerBalance(store_id=so.store_id)
-                    db.session.add(balance)
-                    db.session.flush()
-                balance.bekleyen_tl = round((balance.bekleyen_tl or 0.0) + so.satici_net_tl, 2)
-                balance.guncelleme = datetime.utcnow()
                 so.hakediş_durumu = 'on_hold'
                 # Mark commission as confirmed
                 kom = Commission.query.filter_by(seller_order_id=so.id).first()

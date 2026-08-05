@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import (db, Kullanici, SellerOrder, Commission, SellerBalance,
+from models import (db, Kullanici, Commission, SellerBalance,
                     MarketplaceStore, MagazaSiparis, SellerAuditLog,
                     SellerSubscriptionPlan, SellerSubscription, Odeme)
 from datetime import datetime
@@ -44,13 +44,9 @@ def finans_ozet():
         func.coalesce(func.sum(Commission.komisyon_tl), 0.0)
     ).filter(Commission.durum == 'confirmed').scalar()
 
-    bekleyen_hakedis = db.session.query(
-        func.coalesce(func.sum(SellerOrder.satici_net_tl), 0.0)
-    ).filter(SellerOrder.hakediş_durumu == 'on_hold').scalar()
-
-    kullanilabilir_hakedis = db.session.query(
-        func.coalesce(func.sum(SellerOrder.satici_net_tl), 0.0)
-    ).filter(SellerOrder.hakediş_durumu == 'available').scalar()
+    # NOT: Bekleyen/kullanılabilir hakediş rakamları artık burada gösterilmiyor.
+    # Gerçek hakediş takibi SellerHakedis üzerinden tek noktadan yapılıyor,
+    # bkz. /api/admin/saticilar/hakedisler (Satıcı Finans sayfası).
 
     toplam_satici = MarketplaceStore.query.filter_by(aktif=True).count()
 
@@ -58,8 +54,6 @@ def finans_ozet():
 
     return jsonify({
         'toplam_komisyon_tl': round(float(toplam_komisyon), 2),
-        'bekleyen_hakediş_tl': round(float(bekleyen_hakedis), 2),
-        'kullanilabilir_hakediş_tl': round(float(kullanilabilir_hakedis), 2),
         'toplam_satici': toplam_satici,
         'bekleyen_iade': bekleyen_iade,
     })
@@ -104,107 +98,13 @@ def komisyonlar_listele():
 
 
 # ─── 3. HAKEDİŞLER ────────────────────────────────────────────────────────────
-
-@admin_finans_bp.route('/hakedisler', methods=['GET'])
-def hakedisler_listele():
-    if not admin_mi():
-        return jsonify({'hata': 'Yetkisiz'}), 403
-
-    sayfa = max(1, request.args.get('sayfa', 1, type=int))
-    store_id = request.args.get('store_id', type=int)
-    hakedis_durumu = request.args.get('hakediş_durumu', '').strip()
-
-    q = db.session.query(SellerOrder, MarketplaceStore).join(
-        MarketplaceStore, SellerOrder.store_id == MarketplaceStore.id
-    )
-
-    if store_id:
-        q = q.filter(SellerOrder.store_id == store_id)
-    if hakedis_durumu:
-        q = q.filter(SellerOrder.hakediş_durumu == hakedis_durumu)
-
-    q = q.order_by(SellerOrder.olusturma.desc())
-
-    total = q.count()
-    rows = q.offset((sayfa - 1) * 30).limit(30).all()
-
-    hakedisler = []
-    for so, magaza in rows:
-        d = so.to_dict()
-        d['magaza_adi'] = magaza.magaza_adi
-        hakedisler.append(d)
-
-    return jsonify({
-        'hakedisler': hakedisler,
-        'total': total,
-        'sayfa': sayfa,
-    })
-
-
-# ─── 4. HAKEDİŞ SERBEST BIRAK ─────────────────────────────────────────────────
-
-@admin_finans_bp.route('/hakedis/<int:so_id>/serbest-birak', methods=['POST'])
-def hakedis_serbest_birak(so_id):
-    if not admin_mi():
-        return jsonify({'hata': 'Yetkisiz'}), 403
-
-    so = SellerOrder.query.get_or_404(so_id)
-
-    if so.hakediş_durumu != 'on_hold':
-        return jsonify({'hata': 'Yalnızca on_hold durumundaki hakedişler serbest bırakılabilir'}), 400
-
-    bakiye = SellerBalance.query.filter_by(store_id=so.store_id).first()
-    if not bakiye:
-        bakiye = SellerBalance(store_id=so.store_id, bekleyen_tl=0.0,
-                               kullanilabilir_tl=0.0, odenmis_tl=0.0)
-        db.session.add(bakiye)
-
-    so.hakediş_durumu = 'available'
-    bakiye.bekleyen_tl = max(0.0, (bakiye.bekleyen_tl or 0.0) - so.satici_net_tl)
-    bakiye.kullanilabilir_tl = (bakiye.kullanilabilir_tl or 0.0) + so.satici_net_tl
-    bakiye.guncelleme = datetime.utcnow()
-
-    _audit(
-        islem='hakedis_serbest_birakildi',
-        detay=f'SellerOrder #{so_id}, tutar={so.satici_net_tl} TL',
-        store_id=so.store_id,
-    )
-
-    db.session.commit()
-    return jsonify({'ok': True})
-
-
-# ─── 5. HAKEDİŞ ÖDENDİ İŞLE ──────────────────────────────────────────────────
-
-@admin_finans_bp.route('/hakedis/<int:so_id>/odendi-isle', methods=['POST'])
-def hakedis_odendi_isle(so_id):
-    if not admin_mi():
-        return jsonify({'hata': 'Yetkisiz'}), 403
-
-    so = SellerOrder.query.get_or_404(so_id)
-
-    if so.hakediş_durumu != 'available':
-        return jsonify({'hata': 'Yalnızca available durumundaki hakedişler ödenebilir'}), 400
-
-    bakiye = SellerBalance.query.filter_by(store_id=so.store_id).first()
-    if not bakiye:
-        bakiye = SellerBalance(store_id=so.store_id, bekleyen_tl=0.0,
-                               kullanilabilir_tl=0.0, odenmis_tl=0.0)
-        db.session.add(bakiye)
-
-    so.hakediş_durumu = 'paid'
-    bakiye.kullanilabilir_tl = max(0.0, (bakiye.kullanilabilir_tl or 0.0) - so.satici_net_tl)
-    bakiye.odenmis_tl = (bakiye.odenmis_tl or 0.0) + so.satici_net_tl
-    bakiye.guncelleme = datetime.utcnow()
-
-    _audit(
-        islem='hakedis_odendi',
-        detay=f'SellerOrder #{so_id}, tutar={so.satici_net_tl} TL',
-        store_id=so.store_id,
-    )
-
-    db.session.commit()
-    return jsonify({'ok': True})
+# NOT: Bu blueprint'in eski SellerOrder.hakediş_durumu tabanlı hakediş
+# liste/serbest-bırak/ödendi-işle route'ları kaldırıldı — bunlar
+# admin_saticilar.py'deki SellerHakedis tabanlı gerçek sistemle paralel
+# çalışıp aynı SellerBalance'ı bağımsız olarak güncelliyordu, bu da satıcı
+# bekleyen bakiyesinin ödeme anında (burada) ve teslimat anında
+# (satici_panel.py) çift sayılmasına yol açıyordu. Tek doğru kaynak artık
+# SellerHakedis — bkz. /api/admin/saticilar/hakedisler (Satıcı Finans sayfası).
 
 
 # ─── 6. SATICI BAKİYELERİ ─────────────────────────────────────────────────────

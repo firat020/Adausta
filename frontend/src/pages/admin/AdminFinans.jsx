@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import {
-  TrendingUp, Wallet, Users, AlertCircle, RotateCcw,
+  TrendingUp, Users, AlertCircle, RotateCcw,
   CheckCircle, Package, X, XCircle, RefreshCw, Store, Plus, Edit2
 } from 'lucide-react'
 import API from '../../config.js'
@@ -81,22 +81,6 @@ function OzetTab() {
       border: 'border-green-200',
     },
     {
-      label: 'Bekleyen Hakediş',
-      deger: fmt(ozet?.bekleyen_hakedis),
-      icon: RotateCcw,
-      renk: 'text-orange-700',
-      bg: 'bg-orange-50',
-      border: 'border-orange-200',
-    },
-    {
-      label: 'Kullanılabilir Hakediş',
-      deger: fmt(ozet?.kullanilabilir_hakedis),
-      icon: Wallet,
-      renk: 'text-blue-700',
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-    },
-    {
       label: 'Toplam Aktif Satıcı',
       deger: ozet?.aktif_satici ?? '—',
       icon: Users,
@@ -125,7 +109,7 @@ function OzetTab() {
   return (
     <div className="space-y-5">
       {/* Stat Kartları */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {kartlar.map((k) => (
           <div key={k.label} className={`${k.bg} border ${k.border} rounded-xl p-4 flex flex-col gap-2`}>
             <div className="flex items-center justify-between">
@@ -182,145 +166,12 @@ function OzetTab() {
   )
 }
 
-// ─── TAB 2: Hakedişler ────────────────────────────────────────────────────────
-function HakedislerTab({ showToast }) {
-  const [hakedisler, setHakedisler] = useState([])
-  const [yukleniyor, setYukleniyor] = useState(true)
-  const [filtre, setFiltre] = useState('on_hold')
-  const [islemId, setIslemId] = useState(null)
+// NOT: Eski "Hakedişler" sekmesi (HakedislerTab) kaldırıldı — SellerOrder.hakediş_durumu
+// tabanlıydı ve admin_saticilar.py'deki SellerHakedis tabanlı gerçek sistemle aynı
+// SellerBalance'ı bağımsız güncelleyip bakiyenin çift sayılmasına yol açıyordu.
+// Satıcı hakediş/ödeme takibi artık tek yerden: "Satıcı Finans" sayfası.
 
-  const yukle = useCallback(async (durum) => {
-    setYukleniyor(true)
-    try {
-      const r = await axios.get(`${API}/api/admin/finans/hakedisler`, {
-        params: { hakediş_durumu: durum },
-        withCredentials: true,
-      })
-      setHakedisler(r.data.hakedisler || r.data || [])
-    } catch {
-      setHakedisler([])
-    }
-    setYukleniyor(false)
-  }, [])
-
-  useEffect(() => { yukle(filtre) }, [yukle, filtre])
-
-  const serbest = async (id) => {
-    setIslemId(id)
-    try {
-      await axios.post(`${API}/api/admin/finans/hakedis/${id}/serbest-birak`, {}, { withCredentials: true })
-      showToast('Hakediş serbest bırakıldı.', 'basari')
-      yukle(filtre)
-    } catch {
-      showToast('İşlem başarısız oldu.', 'hata')
-    }
-    setIslemId(null)
-  }
-
-  const odendi = async (id) => {
-    setIslemId(id)
-    try {
-      await axios.post(`${API}/api/admin/finans/hakedis/${id}/odendi-isle`, {}, { withCredentials: true })
-      showToast('Ödeme işlendi.', 'basari')
-      yukle(filtre)
-    } catch {
-      showToast('İşlem başarısız oldu.', 'hata')
-    }
-    setIslemId(null)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <select
-          value={filtre}
-          onChange={e => setFiltre(e.target.value)}
-          className="border border-[#C8CDD4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] bg-white"
-        >
-          <option value="on_hold">Beklemede (on_hold)</option>
-          <option value="available">Kullanılabilir (available)</option>
-          <option value="paid">Ödendi (paid)</option>
-          <option value="pending">Onay Bekliyor (pending)</option>
-        </select>
-        <button
-          onClick={() => yukle(filtre)}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#0052CC] transition"
-        >
-          <RefreshCw size={14} /> Yenile
-        </button>
-      </div>
-
-      <div className="bg-white border border-[#C8CDD4] rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#C8CDD4] flex items-center gap-2">
-          <Wallet size={16} className="text-[#0052CC]" />
-          <h3 className="font-semibold text-[#1e293b] text-sm">Hakedişler</h3>
-          {!yukleniyor && hakedisler.length > 0 && (
-            <span className="ml-auto text-xs text-gray-400">{hakedisler.length} kayıt</span>
-          )}
-        </div>
-
-        {yukleniyor ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
-          </div>
-        ) : hakedisler.length === 0 ? (
-          <div className="text-center py-16">
-            <Wallet size={36} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm font-semibold">Bu filtrede hakediş bulunamadı</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[#F8F9FA] border-b border-[#C8CDD4]">
-                <tr>
-                  {['Sipariş No', 'Mağaza', 'Tutar TL', 'Komisyon', 'Net TL', 'Durum', 'Aksiyonlar'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F0F4F8]">
-                {hakedisler.map(h => (
-                  <tr key={h.id} className="hover:bg-[#F8FAFC] transition">
-                    <td className="px-4 py-3 font-mono font-bold text-[#1e293b]">#{h.siparis_id || h.id}</td>
-                    <td className="px-4 py-3 text-gray-700">{h.magaza_adi || '—'}</td>
-                    <td className="px-4 py-3 font-mono text-gray-700">{fmt(h.tutar)}</td>
-                    <td className="px-4 py-3 font-mono text-orange-600">{fmt(h.komisyon)}</td>
-                    <td className="px-4 py-3 font-mono text-green-600 font-semibold">{fmt(h.net)}</td>
-                    <td className="px-4 py-3"><DurumRozet durum={h.durum} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {h.durum === 'on_hold' && (
-                          <button
-                            onClick={() => serbest(h.id)}
-                            disabled={islemId === h.id}
-                            className="text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition whitespace-nowrap"
-                          >
-                            {islemId === h.id ? '...' : 'Serbest Bırak'}
-                          </button>
-                        )}
-                        {h.durum === 'available' && (
-                          <button
-                            onClick={() => odendi(h.id)}
-                            disabled={islemId === h.id}
-                            className="text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 disabled:opacity-50 transition whitespace-nowrap"
-                          >
-                            {islemId === h.id ? '...' : 'Ödendi İşle'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── TAB 3: Komisyonlar ───────────────────────────────────────────────────────
+// ─── TAB 2: Komisyonlar ───────────────────────────────────────────────────────
 function KomisyonlarTab() {
   const [komisyonlar, setKomisyonlar] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
@@ -677,7 +528,6 @@ function AbonelikPlanlariTab({ showToast }) {
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'ozet',           label: 'Özet',             icon: TrendingUp },
-  { id: 'hakedisler',     label: 'Hakedişler',        icon: Wallet },
   { id: 'komisyonlar',    label: 'Komisyonlar',       icon: RotateCcw },
   { id: 'abonelik-planlari', label: 'Abonelik Planları', icon: Package },
 ]
@@ -697,7 +547,7 @@ export default function AdminFinans() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-[#1e293b]">Finans Yönetimi</h2>
-          <p className="text-gray-500 text-sm">Hakedişler, komisyonlar ve abonelik planları</p>
+          <p className="text-gray-500 text-sm">Komisyonlar ve abonelik planları (hakediş takibi için "Satıcı Finans" sayfasını kullanın)</p>
         </div>
       </div>
 
@@ -724,7 +574,6 @@ export default function AdminFinans() {
 
       {/* Tab İçerikleri */}
       {aktifTab === 'ozet'              && <OzetTab />}
-      {aktifTab === 'hakedisler'        && <HakedislerTab showToast={showToast} />}
       {aktifTab === 'komisyonlar'       && <KomisyonlarTab />}
       {aktifTab === 'abonelik-planlari' && <AbonelikPlanlariTab showToast={showToast} />}
 
