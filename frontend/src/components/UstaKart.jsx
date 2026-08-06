@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
+import { ustaSlugUrl } from '../data/hizmetler.js'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
@@ -12,7 +13,7 @@ export default function UstaKart({ usta }) {
 
   return (
     <div
-      onClick={() => navigate(`/usta/${usta.id}`)}
+      onClick={() => navigate(ustaSlugUrl(usta))}
       className="bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group"
     >
       {/* Üst şerit */}

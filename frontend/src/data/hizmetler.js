@@ -277,3 +277,14 @@ export function addenSlug(ad) {
     .replace(/ü/g,'u').replace(/ö/g,'o').replace(/ı/g,'i').replace(/İ/g,'i')
     .replace(/[^a-z0-9-]/g,'')
 }
+
+// Usta profil URL'i: /usta/{id}-{isim-kategori-sehir-slug} — SEO'lu, ID'yi de
+// içerdiği için mevcut /usta/123 linkleri kırılmadan çalışmaya devam eder
+// (frontend parseInt(param) baştaki sayıyı otomatik ayıklar).
+export function ustaSlugUrl(usta) {
+  if (!usta || usta.id == null) return '/usta'
+  const parcalar = [usta.ad_soyad || `${usta.ad || ''} ${usta.soyad || ''}`.trim(), usta.kategori, usta.sehir]
+    .filter(Boolean).join(' ')
+  const slug = addenSlug(parcalar)
+  return slug ? `/usta/${usta.id}-${slug}` : `/usta/${usta.id}`
+}

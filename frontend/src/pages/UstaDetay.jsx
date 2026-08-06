@@ -7,9 +7,13 @@ import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula } from '../api'
 import SEO from '../components/SEO'
+import { ustaSlugUrl } from '../data/hizmetler.js'
 
 export default function UstaDetay() {
   const { id } = useParams()
+  // URL /usta/123 ya da SEO'lu /usta/123-ahmet-elektrikci-lefkosa olabilir —
+  // her iki durumda da baştaki sayı gerçek usta ID'si.
+  const numericId = parseInt(id, 10)
   const navigate = useNavigate()
   const location = useLocation()
   const { t, i18n } = useTranslation()
@@ -37,17 +41,26 @@ export default function UstaDetay() {
   const [sahiplenBasarili, setSahiplenBasarili] = useState(false)
 
   const logIletisim = (tur) => {
-    axios.post(`${API}/api/analitik/iletisim`, { usta_id: parseInt(id), tur }, { withCredentials: false })
+    axios.post(`${API}/api/analitik/iletisim`, { usta_id: numericId, tur }, { withCredentials: false })
       .catch(() => {})
   }
 
   useEffect(() => {
-    ustaDetay(id)
-      .then(r => { setUsta(r.data); logIletisim('goruntule') })
+    ustaDetay(numericId)
+      .then(r => {
+        setUsta(r.data)
+        logIletisim('goruntule')
+        // Eski /usta/123 (veya yanlış/eski slug) ile açılmışsa, adres çubuğunu
+        // sessizce güncel SEO'lu URL'ye çevir (Google'a tek doğru URL sinyali).
+        const dogruYol = ustaSlugUrl(r.data)
+        if (location.pathname !== dogruYol) {
+          navigate(dogruYol, { replace: true })
+        }
+      })
       .catch(() => {})
       .finally(() => setYukleniyor(false))
     benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
-  }, [id])
+  }, [numericId])
 
   const teklifAlTikla = () => {
     logIletisim('teklif')
@@ -59,7 +72,7 @@ export default function UstaDetay() {
     setTeklifHata('')
     setTeklifYukleniyor(true)
     try {
-      await isTalebiGonder(id, teklifForm)
+      await isTalebiGonder(numericId, teklifForm)
       setTeklifGonderildi(true)
     } catch (err) {
       setTeklifHata(err.response?.data?.hata || 'Talep gönderilemedi. Tekrar deneyin.')
@@ -78,7 +91,7 @@ export default function UstaDetay() {
   const yorumGonder = async (e) => {
     e.preventDefault()
     try {
-      await yorumEkle(id, yorumForm)
+      await yorumEkle(numericId, yorumForm)
       setYorumGonderildi(true)
     } catch {}
   }
@@ -99,7 +112,7 @@ export default function UstaDetay() {
     setSahiplenHata('')
     setSahiplenYukleniyor(true)
     try {
-      await ustaSahiplenKodGonder(id, sahiplenTelefon)
+      await ustaSahiplenKodGonder(numericId, sahiplenTelefon)
       setSahiplenAdim(2)
     } catch (err) {
       setSahiplenHata(err.response?.data?.hata || 'Kod gönderilemedi. Tekrar deneyin.')
@@ -113,7 +126,7 @@ export default function UstaDetay() {
     setSahiplenHata('')
     setSahiplenYukleniyor(true)
     try {
-      await ustaSahiplenDogrula(id, { kod: sahiplenKod, email: sahiplenEmail, sifre: sahiplenSifre })
+      await ustaSahiplenDogrula(numericId, { kod: sahiplenKod, email: sahiplenEmail, sifre: sahiplenSifre })
       setSahiplenBasarili(true)
       setUsta(u => u ? { ...u, uye_mi: true } : u)
     } catch (err) {
@@ -175,7 +188,7 @@ export default function UstaDetay() {
         baslik={`${usta.ad_soyad} — ${usta.kategori} Ustası KKTC`}
         aciklama={`${usta.ad_soyad}, Kuzey Kıbrıs'ta ${usta.kategori} ustası. ${usta.sehir ? `${usta.sehir}'da` : 'KKTC\'de'} hizmet vermektedir. Puan: ${usta.ortalama_puan || 5}/5.`}
         anahtar={`${usta.kategori} KKTC, ${usta.kategori} ustası, ${usta.sehir || 'Kuzey Kıbrıs'} ${usta.kategori}`}
-        url={`/usta/${id}`}
+        url={ustaSlugUrl(usta)}
         schema={schema}
       />
       <button onClick={() => navigate(-1)}

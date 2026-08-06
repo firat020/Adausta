@@ -6,6 +6,7 @@ import { kategorileriGetir, ustaListele, sehirleriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
+import { ustaSlugUrl } from '../data/hizmetler.js'
 
 const HIZLI_KATEGORILER = [
   { key: 'tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
@@ -394,7 +395,7 @@ export default function Anasayfa() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {enIyiUstalar.map((u, i) => (
               <div key={u.id}
-                onClick={() => navigate(`/usta/${u.id}`)}
+                onClick={() => navigate(ustaSlugUrl(u))}
                 className="bg-white rounded-2xl border border-blue-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5">
                 <div className="h-1.5 bg-gradient-to-r from-blue-600 to-yellow-400" />
                 <div className="p-6">
