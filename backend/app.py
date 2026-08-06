@@ -119,11 +119,38 @@ def guvenlik_basliklari(response):
 def uploads(dosya):
     return send_from_directory(app.config['UPLOAD_FOLDER'], dosya)
 
+def _slug_uret(metin):
+    """Frontend'deki addenSlug() ile birebir aynı algoritma (hizmetler.js)."""
+    import re
+    metin = (metin or '').lower()
+    metin = metin.replace(' & ', '-').replace(' ', '-')
+    for a, b in (('ç','c'),('ş','s'),('ğ','g'),('ü','u'),('ö','o'),('ı','i'),('İ','i')):
+        metin = metin.replace(a, b)
+    return re.sub(r'[^a-z0-9-]', '', metin)
+
+
+# Blog yazıları statik (frontend/src/pages/Blog.jsx içinde tanımlı, DB'de yok)
+_BLOG_SLUGLARI = [
+    'kibris-su-kacagi-tespiti',
+    'kktc-elektrikci-bulma-rehberi',
+    'lefkosa-klima-servisi',
+    'kibris-boya-badana-fiyatlari',
+    'kktc-ev-temizligi-hizmetleri',
+    'girne-nakliyat-rehberi',
+]
+
+# 5 şehir (frontend/src/data/hizmetler.js SEHIR_SLUG ile birebir aynı)
+_SEHIR_SLUGLARI = ['lefkosa', 'girne', 'gazimagusa', 'guzelyurt', 'iskele']
+
+
 @app.route('/sitemap.xml')
 def sitemap():
-    from models import Usta
+    from models import Usta, Kategori, Sirket
     base = 'https://adausta.com'
     urls = []
+
+    def ekle(path, pri, freq):
+        urls.append(f'<url><loc>{base}{path}</loc><changefreq>{freq}</changefreq><priority>{pri}</priority></url>')
 
     static_pages = [
         ('/', '1.0', 'daily'),
@@ -136,11 +163,35 @@ def sitemap():
         ('/sirket-kayit', '0.6', 'monthly'),
     ]
     for path, pri, freq in static_pages:
-        urls.append(f'<url><loc>{base}{path}</loc><changefreq>{freq}</changefreq><priority>{pri}</priority></url>')
+        ekle(path, pri, freq)
 
+    # Usta profilleri — SEO'lu slug ile (frontend ustaSlugUrl() ile aynı format)
     ustalar = Usta.query.filter_by(onaylanmis=True, aktif=True).all()
     for u in ustalar:
-        urls.append(f'<url><loc>{base}/usta/{u.id}</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>')
+        ad_soyad = f'{u.ad} {u.soyad}'.strip()
+        parcalar = ' '.join(filter(None, [ad_soyad, u.kategori.ad if u.kategori else '', u.sehir.ad if u.sehir else '']))
+        slug = _slug_uret(parcalar)
+        yol = f'/usta/{u.id}-{slug}' if slug else f'/usta/{u.id}'
+        ekle(yol, '0.9', 'weekly')
+
+    # Şirket profilleri
+    sirketler = Sirket.query.filter_by(onaylanmis=True, aktif=True).all()
+    for s in sirketler:
+        ekle(f'/sirket/{s.id}', '0.7', 'weekly')
+
+    # Kategori (hizmet) sayfaları + kategori×şehir kombinasyonları
+    kategoriler = Kategori.query.filter_by(aktif=True).all()
+    for k in kategoriler:
+        kslug = _slug_uret(k.ad)
+        if not kslug:
+            continue
+        ekle(f'/hizmet/{kslug}', '0.85', 'weekly')
+        for sslug in _SEHIR_SLUGLARI:
+            ekle(f'/hizmet/{kslug}/{sslug}', '0.8', 'weekly')
+
+    # Blog yazıları
+    for bslug in _BLOG_SLUGLARI:
+        ekle(f'/blog/{bslug}', '0.6', 'monthly')
 
     xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(urls) + '</urlset>'
     return Response(xml, mimetype='application/xml')
