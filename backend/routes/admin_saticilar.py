@@ -33,7 +33,7 @@ def audit_log(islem, detay='', basvuru_id=None, store_id=None):
 
 # ─── 1. BAŞVURU LİSTESİ ────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvurular', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/basvurular', methods=['GET'])
 def basvurular_listele():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -68,7 +68,7 @@ def basvurular_listele():
 
 # ─── 2. BAŞVURU DETAYI ─────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>', methods=['GET'])
 def basvuru_detay(bid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -79,7 +79,7 @@ def basvuru_detay(bid):
 
 # ─── 3. BELGE ONAYLA ───────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>/belge-onayla/<int:did>', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>/belge-onayla/<int:did>', methods=['POST'])
 def belge_onayla(bid, did):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -103,7 +103,7 @@ def belge_onayla(bid, did):
 
 # ─── 4. BELGE REDDET ───────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>/belge-reddet/<int:did>', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>/belge-reddet/<int:did>', methods=['POST'])
 def belge_reddet(bid, did):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -133,7 +133,7 @@ def belge_reddet(bid, did):
 
 # ─── 5. EK BELGE İSTE ─────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>/ek-belge-iste', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>/ek-belge-iste', methods=['POST'])
 def ek_belge_iste(bid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -160,7 +160,7 @@ def ek_belge_iste(bid):
 
 # ─── 6. BAŞVURU ONAYLA ─────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>/onayla', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>/onayla', methods=['POST'])
 def basvuru_onayla(bid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -231,7 +231,7 @@ def basvuru_onayla(bid):
 
 # ─── 7. BAŞVURU REDDET ─────────────────────────────────────────
 
-@admin_saticilar_bp.route('/basvuru/<int:bid>/reddet', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/basvuru/<int:bid>/reddet', methods=['POST'])
 def basvuru_reddet(bid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -263,7 +263,7 @@ def basvuru_reddet(bid):
 
 # ─── 8. MAĞAZA LİSTESİ ─────────────────────────────────────────
 
-@admin_saticilar_bp.route('/magazalar', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/magazalar', methods=['GET'])
 def magazalar_listele():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -300,7 +300,7 @@ def magazalar_listele():
 
 # ─── 9. MAĞAZA ASKIYA AL ───────────────────────────────────────
 
-@admin_saticilar_bp.route('/magaza/<int:sid>/askiya-al', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/magaza/<int:sid>/askiya-al', methods=['POST'])
 def magaza_askiya_al(sid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -326,7 +326,7 @@ def magaza_askiya_al(sid):
 
 # ─── 10. MAĞAZA AKTİF ET ──────────────────────────────────────
 
-@admin_saticilar_bp.route('/magaza/<int:sid>/aktif-et', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/magaza/<int:sid>/aktif-et', methods=['POST'])
 def magaza_aktif_et(sid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -347,7 +347,7 @@ def magaza_aktif_et(sid):
 
 # ─── 11. MAĞAZA GÜNCELLE (Admin) ───────────────────────────────
 
-@admin_saticilar_bp.route('/magaza/<int:sid>', methods=['PUT'])
+@admin_saticilar_bp.route('/saticilar/magaza/<int:sid>', methods=['PUT'])
 def magaza_guncelle(sid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -384,7 +384,7 @@ def magaza_guncelle(sid):
 
 # ─── 12. MAĞAZA OLUŞTUR (Admin) ────────────────────────────────
 
-@admin_saticilar_bp.route('/magaza', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/magaza', methods=['POST'])
 def magaza_olustur():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -436,7 +436,7 @@ def magaza_olustur():
 
 # ─── 13. BELGE İNDİR ──────────────────────────────────────────
 
-@admin_saticilar_bp.route('/belge/<int:did>/indir', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/belge/<int:did>/indir', methods=['GET'])
 def belge_indir(did):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -466,7 +466,7 @@ def belge_indir(did):
 
 # ─── 13. ÜRÜN ONAY ROUTES ──────────────────────────────────────
 
-@admin_saticilar_bp.route('/urunler/bekleyenler', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/urunler/bekleyenler', methods=['GET'])
 def urunler_bekleyenler():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -487,7 +487,7 @@ def urunler_bekleyenler():
     return jsonify({'urunler': sonuc, 'total': total, 'sayfa': sayfa})
 
 
-@admin_saticilar_bp.route('/urun/<int:uid>/onayla', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/urun/<int:uid>/onayla', methods=['POST'])
 def urun_onayla(uid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -507,7 +507,7 @@ def urun_onayla(uid):
     return jsonify({'ok': True, 'urun_durum': 'active'})
 
 
-@admin_saticilar_bp.route('/urun/<int:uid>/reddet', methods=['POST'])
+@admin_saticilar_bp.route('/saticilar/urun/<int:uid>/reddet', methods=['POST'])
 def urun_reddet(uid):
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
@@ -533,7 +533,7 @@ def urun_reddet(uid):
 
 # ─── 12. ÖZET (Sidebar badge) ─────────────────────────────────
 
-@admin_saticilar_bp.route('/ozet', methods=['GET'])
+@admin_saticilar_bp.route('/saticilar/ozet', methods=['GET'])
 def ozet():
     if not admin_mi():
         return jsonify({'hata': 'Yetkisiz'}), 403
