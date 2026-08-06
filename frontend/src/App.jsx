@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense, lazy } from 'react'
 import { initGA, trackPage } from './analytics'
 import ScrollToTop from './components/ScrollToTop'
 import axios from 'axios'
@@ -10,6 +10,7 @@ import Hosgeldin from './pages/Hosgeldin'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WhatsappButon from './components/WhatsappButon'
+// Müşteriye açık (SEO kritik) sayfalar — ilk yüklemede eager kalır
 import Anasayfa from './pages/Anasayfa'
 import Kategoriler from './pages/Kategoriler'
 import UstaListesi from './pages/UstaListesi'
@@ -43,66 +44,78 @@ import MagazaUrunDetay from './pages/MagazaUrunDetay'
 import MagazaSiparisBasarili from './pages/MagazaSiparisBasarili'
 import MagazaSiparisBasarisiz from './pages/MagazaSiparisBasarisiz'
 import MagazaSiparislerim from './pages/MagazaSiparislerim'
-import AdminLogin from './pages/admin/AdminLogin'
-import AdminLayout from './pages/admin/AdminLayout'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminUstalar from './pages/admin/AdminUstalar'
-import AdminYorumlar from './pages/admin/AdminYorumlar'
-import AdminKategoriler from './pages/admin/AdminKategoriler'
-import AdminLoglar from './pages/admin/AdminLoglar'
-import AdminKaraListe from './pages/admin/AdminKaraListe'
-import AdminAnalitik from './pages/admin/AdminAnalitik'
-import AdminReklamlar from './pages/admin/AdminReklamlar'
-import AdminPlanlar from './pages/admin/AdminPlanlar'
-import AdminAbonelikler from './pages/admin/AdminAbonelikler'
-import AdminOdemeler from './pages/admin/AdminOdemeler'
 import TalepTakip from './pages/TalepTakip'
-import AdminUrunler from './pages/admin/AdminUrunler'
-import AdminUrunEkle from './pages/admin/AdminUrunEkle'
-import AdminSiparisler from './pages/admin/AdminSiparisler'
-import AdminMagazaSiparisler from './pages/admin/AdminMagazaSiparisler'
-import AdminBildirimler from './pages/admin/AdminBildirimler'
-// Usta Paneli
-import UstaGiris from './pages/usta-panel/UstaGiris'
 import SifremiUnuttum from './pages/SifremiUnuttum'
-import UstaPanelLayout from './pages/usta-panel/UstaPanelLayout'
-import UstaPanelDashboard from './pages/usta-panel/UstaPanelDashboard'
-import UstaPanelIsTalepleri from './pages/usta-panel/UstaPanelIsTalepleri'
-import UstaPanelMusteriler from './pages/usta-panel/UstaPanelMusteriler'
-import UstaPanelIstatistik from './pages/usta-panel/UstaPanelIstatistik'
-import UstaPanelYorumlar from './pages/usta-panel/UstaPanelYorumlar'
-import UstaPanelProfil from './pages/usta-panel/UstaPanelProfil'
-import UstaPanelMagaza from './pages/usta-panel/UstaPanelMagaza'
-// Şirket Paneli
-import SirketGiris from './pages/sirket-panel/SirketGiris'
-import SirketPanelLayout from './pages/sirket-panel/SirketPanelLayout'
-import SirketPanelDashboard from './pages/sirket-panel/SirketPanelDashboard'
-import SirketPanelTalepler from './pages/sirket-panel/SirketPanelTalepler'
-import SirketPanelProfil from './pages/sirket-panel/SirketPanelProfil'
-// Müşteri Paneli
-import MusteriPanelLayout from './pages/musteri-panel/MusteriPanelLayout'
-import MusteriPanelDashboard from './pages/musteri-panel/MusteriPanelDashboard'
-import MusteriPanelTalepler from './pages/musteri-panel/MusteriPanelTalepler'
-import MusteriPanelProfil from './pages/musteri-panel/MusteriPanelProfil'
-// Satıcı Başvuru & Paneli
-import SaticiBasvuruGiris from './pages/satici/SaticiBasvuruGiris'
-import SaticiBasvuruForm from './pages/satici/SaticiBasvuruForm'
-import SaticiBasvuruDurum from './pages/satici/SaticiBasvuruDurum'
-import SaticiGiris from './pages/satici/SaticiGiris'
-import SaticiPanelLayout from './pages/satici-panel/SaticiPanelLayout'
-import SaticiPanelDashboard from './pages/satici-panel/SaticiPanelDashboard'
-import SaticiPanelUrunler from './pages/satici-panel/SaticiPanelUrunler'
-import SaticiPanelSiparisler from './pages/satici-panel/SaticiPanelSiparisler'
-import SaticiPanelMagaza from './pages/satici-panel/SaticiPanelMagaza'
-import SaticiPanelPersonel from './pages/satici-panel/SaticiPanelPersonel'
-import SaticiPanelBakiye from './pages/satici-panel/SaticiPanelBakiye'
-import SaticiPanelIadeler from './pages/satici-panel/SaticiPanelIadeler'
-import SaticiPanelHakedis from './pages/satici-panel/SaticiPanelHakedis'
-import AdminSaticilar from './pages/admin/AdminSaticilar'
-import AdminSaticilarFinans from './pages/admin/AdminSaticilarFinans'
-import AdminFinans from './pages/admin/AdminFinans'
 import MagazaSatici from './pages/MagazaSatici'
 import MagazaSaticilar from './pages/MagazaSaticilar'
+
+// Rol bazlı paneller (admin/usta/şirket/satıcı/müşteri) — sadece o role
+// girenler indirsin diye lazy-load. Bkz. Faz 2 SEO: ana bundle'ı küçültüp
+// müşteri sayfalarının ilk yükleme hızını artırmak için.
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminUstalar = lazy(() => import('./pages/admin/AdminUstalar'))
+const AdminYorumlar = lazy(() => import('./pages/admin/AdminYorumlar'))
+const AdminKategoriler = lazy(() => import('./pages/admin/AdminKategoriler'))
+const AdminLoglar = lazy(() => import('./pages/admin/AdminLoglar'))
+const AdminKaraListe = lazy(() => import('./pages/admin/AdminKaraListe'))
+const AdminAnalitik = lazy(() => import('./pages/admin/AdminAnalitik'))
+const AdminReklamlar = lazy(() => import('./pages/admin/AdminReklamlar'))
+const AdminPlanlar = lazy(() => import('./pages/admin/AdminPlanlar'))
+const AdminAbonelikler = lazy(() => import('./pages/admin/AdminAbonelikler'))
+const AdminOdemeler = lazy(() => import('./pages/admin/AdminOdemeler'))
+const AdminUrunler = lazy(() => import('./pages/admin/AdminUrunler'))
+const AdminUrunEkle = lazy(() => import('./pages/admin/AdminUrunEkle'))
+const AdminSiparisler = lazy(() => import('./pages/admin/AdminSiparisler'))
+const AdminMagazaSiparisler = lazy(() => import('./pages/admin/AdminMagazaSiparisler'))
+const AdminBildirimler = lazy(() => import('./pages/admin/AdminBildirimler'))
+const AdminSaticilar = lazy(() => import('./pages/admin/AdminSaticilar'))
+const AdminSaticilarFinans = lazy(() => import('./pages/admin/AdminSaticilarFinans'))
+const AdminFinans = lazy(() => import('./pages/admin/AdminFinans'))
+// Usta Paneli
+const UstaGiris = lazy(() => import('./pages/usta-panel/UstaGiris'))
+const UstaPanelLayout = lazy(() => import('./pages/usta-panel/UstaPanelLayout'))
+const UstaPanelDashboard = lazy(() => import('./pages/usta-panel/UstaPanelDashboard'))
+const UstaPanelIsTalepleri = lazy(() => import('./pages/usta-panel/UstaPanelIsTalepleri'))
+const UstaPanelMusteriler = lazy(() => import('./pages/usta-panel/UstaPanelMusteriler'))
+const UstaPanelIstatistik = lazy(() => import('./pages/usta-panel/UstaPanelIstatistik'))
+const UstaPanelYorumlar = lazy(() => import('./pages/usta-panel/UstaPanelYorumlar'))
+const UstaPanelProfil = lazy(() => import('./pages/usta-panel/UstaPanelProfil'))
+const UstaPanelMagaza = lazy(() => import('./pages/usta-panel/UstaPanelMagaza'))
+// Şirket Paneli
+const SirketGiris = lazy(() => import('./pages/sirket-panel/SirketGiris'))
+const SirketPanelLayout = lazy(() => import('./pages/sirket-panel/SirketPanelLayout'))
+const SirketPanelDashboard = lazy(() => import('./pages/sirket-panel/SirketPanelDashboard'))
+const SirketPanelTalepler = lazy(() => import('./pages/sirket-panel/SirketPanelTalepler'))
+const SirketPanelProfil = lazy(() => import('./pages/sirket-panel/SirketPanelProfil'))
+// Müşteri Paneli
+const MusteriPanelLayout = lazy(() => import('./pages/musteri-panel/MusteriPanelLayout'))
+const MusteriPanelDashboard = lazy(() => import('./pages/musteri-panel/MusteriPanelDashboard'))
+const MusteriPanelTalepler = lazy(() => import('./pages/musteri-panel/MusteriPanelTalepler'))
+const MusteriPanelProfil = lazy(() => import('./pages/musteri-panel/MusteriPanelProfil'))
+// Satıcı Başvuru & Paneli
+const SaticiBasvuruGiris = lazy(() => import('./pages/satici/SaticiBasvuruGiris'))
+const SaticiBasvuruForm = lazy(() => import('./pages/satici/SaticiBasvuruForm'))
+const SaticiBasvuruDurum = lazy(() => import('./pages/satici/SaticiBasvuruDurum'))
+const SaticiGiris = lazy(() => import('./pages/satici/SaticiGiris'))
+const SaticiPanelLayout = lazy(() => import('./pages/satici-panel/SaticiPanelLayout'))
+const SaticiPanelDashboard = lazy(() => import('./pages/satici-panel/SaticiPanelDashboard'))
+const SaticiPanelUrunler = lazy(() => import('./pages/satici-panel/SaticiPanelUrunler'))
+const SaticiPanelSiparisler = lazy(() => import('./pages/satici-panel/SaticiPanelSiparisler'))
+const SaticiPanelMagaza = lazy(() => import('./pages/satici-panel/SaticiPanelMagaza'))
+const SaticiPanelPersonel = lazy(() => import('./pages/satici-panel/SaticiPanelPersonel'))
+const SaticiPanelBakiye = lazy(() => import('./pages/satici-panel/SaticiPanelBakiye'))
+const SaticiPanelIadeler = lazy(() => import('./pages/satici-panel/SaticiPanelIadeler'))
+const SaticiPanelHakedis = lazy(() => import('./pages/satici-panel/SaticiPanelHakedis'))
+
+function PanelYukleniyor() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
+    </div>
+  )
+}
 
 function PublicSite() {
   return (
@@ -189,6 +202,7 @@ export default function App() {
   return (
     <>
     <ScrollToTop />
+    <Suspense fallback={<PanelYukleniyor />}>
     <Routes>
       {/* APK Karşılama */}
       <Route path="/hosgeldin" element={<Hosgeldin />} />
@@ -261,6 +275,7 @@ export default function App() {
       {/* Public site */}
       <Route path="/*" element={<PublicSite />} />
     </Routes>
+    </Suspense>
     </>
   )
 }
