@@ -35,6 +35,18 @@ GATEWAY_URL = (
     else os.environ.get('CARDPLUS_GATEWAY_URL_PROD', '')
 )
 
+# Server-to-server XML API (SafeKey ile 3D'siz otomatik tahsilat için, `est3Dgate` HPP
+# adresinden farklı — `/fim/api`, Payten teyidi OP-425363, 11.08.2026).
+# API_USERNAME/API_PASSWORD, panelde "EUPHRATES" adıyla oluşturulan API Kullanıcısına ait
+# (api_user + Safekey Ön Provizyon + Order Check,PostAuth,Refund rolleri, 12.08.2026).
+API_URL = (
+    os.environ.get('CARDPLUS_API_URL_TEST', '')
+    if CARDPLUS_MODE == 'TEST'
+    else os.environ.get('CARDPLUS_API_URL_PROD', '')
+)
+API_USERNAME = os.environ.get('CARDPLUS_API_USERNAME', '')
+API_PASSWORD = os.environ.get('CARDPLUS_API_PASSWORD', '')
+
 BASE_URL = os.environ.get('SITE_URL', 'https://adausta.com')
 
 CURRENCY_CODES = {
@@ -46,6 +58,12 @@ CURRENCY_CODES = {
 # Payten destek yanıtı (ticket OP-423236, 31.07.2026): bu mdStatus değerleri
 # ödemenin Nestpay API tarafından tamamlanmış sayıldığı değerlerdir.
 MDSTATUS_BASARILI = {'1', '2', '3', '4', '5', '7', '8'}
+
+# Merchant Safe (otomatik yenileme / SafeKey) — Payten destek yanıtı (OP-425363, 10.08.2026)
+# Kart bilgisini biz saklamıyoruz; Payten'in "Merchant Safe" servisi bizim ürettiğimiz
+# bu referans değeri kartla eşleştiriyor, sonraki tahsilatlarda sadece bu değer gönderiliyor.
+def _safekey_for_usta(usta_id: int) -> str:
+    return f'ADAUSTA-USTA-{usta_id}'
 
 
 def _hash_ver3(params: dict, store_key: str) -> str:
@@ -95,9 +113,10 @@ def cardplus_baslat():
     if not GATEWAY_URL:
         return jsonify({'hata': 'CardPlus gateway adresi henüz tanımlanmadı'}), 500
 
-    data    = request.get_json()
-    usta_id = data.get('usta_id')
-    plan_id = data.get('plan_id')
+    data              = request.get_json()
+    usta_id           = data.get('usta_id')
+    plan_id           = data.get('plan_id')
+    otomatik_yenileme = bool(data.get('otomatik_yenileme'))  # "kartımı kaydet, otomatik yenilensin" onay kutusu
 
     usta = Usta.query.get(usta_id) if usta_id else None
     if not usta:
@@ -122,6 +141,7 @@ def cardplus_baslat():
         siparis_no=order_id,
         durum='bekliyor',
         aciklama=f'CardPlus (Aktifbank) — ${tutar_usd} x {kur} TRY kuru',
+        safekey_talep_edildi=otomatik_yenileme,
     )
     db.session.add(odeme)
     db.session.commit()
@@ -148,6 +168,11 @@ def cardplus_baslat():
         'BillToCompany': '',
         'refreshtime':   '5',
     }
+    if otomatik_yenileme:
+        # Merchant Safe (OP-425363): 3D doğrulama + minimum tutar PreAuth ile kart
+        # geçerliliği teyit edilip SafeKey eşleştiriliyor, dönüşte MERCHANTSAFEKEY geri geliyor.
+        params['MERCHANTSAFEKEY']     = _safekey_for_usta(usta.id)
+        params['MERCHANTSAFEAUTHTYPE'] = '3DPAYAUTH'
     params['HASH'] = _hash_ver3(params, STORE_KEY)
 
     inputs = ''.join(
@@ -264,7 +289,30 @@ def _bul_ve_dogrula(params: dict):
     return odeme, hash_ok
 
 
-def _aktiflestir_abonelik(odeme: Odeme):
+def _safekey_kaydet(odeme: Odeme, abonelik: Abonelik, params: dict):
+    """Ödeme "kartımı kaydet" ile başlatıldıysa ve gateway dönüşünde MERCHANTSAFEKEY
+    geri geldiyse (Merchant Safe eşleştirmesi başarılı demek), SafeKey'i kalıcı olarak
+    usta'ya kaydeder ve bu abonelik için otomatik yenilemeyi açar. Eşleştirme başarısız
+    olursa (alan boş/hata) sessizce atlanır — ödeme yine de geçerlidir, sadece otomatik
+    yenileme açılmaz, usta bir sonraki dönemde yine elle ödeme yapar.
+    NOT: Gateway'in bu alanı gerçekten dönüp dönmediği/tam adı henüz canlıda doğrulanmadı
+    (doküman örneği HPP dönüşünde MERCHANTSAFEKEY'i "aynı gönderildiği gibi" döndürüyor
+    diyor) — ilk gerçek test sonrası teyit/düzeltme gerekebilir.
+    """
+    if not odeme.safekey_talep_edildi:
+        return
+    usta = Usta.query.get(odeme.usta_id)
+    if not usta:
+        return
+    donen_safekey = params.get('MERCHANTSAFEKEY', params.get('merchantsafekey', ''))
+    beklenen_safekey = _safekey_for_usta(usta.id)
+    if donen_safekey and donen_safekey == beklenen_safekey:
+        usta.cardplus_safekey = beklenen_safekey
+        if abonelik:
+            abonelik.otomatik_yenileme = True
+
+
+def _aktiflestir_abonelik(odeme: Odeme, params: dict):
     usta = Usta.query.get(odeme.usta_id)
     if not usta:
         return
@@ -280,6 +328,7 @@ def _aktiflestir_abonelik(odeme: Odeme):
         usta.plan = mevcut.plan.ad if mevcut.plan else 'aylik'
         usta.plan_bitis = mevcut.bitis
         odeme.abonelik_id = mevcut.id
+        _safekey_kaydet(odeme, mevcut, params)
     else:
         plan = Plan.query.filter_by(aktif=True).first()
         bitis = datetime.utcnow() + timedelta(days=30)
@@ -295,9 +344,10 @@ def _aktiflestir_abonelik(odeme: Odeme):
         odeme.abonelik_id = ab.id
         usta.plan = plan.ad if plan else 'aylik'
         usta.plan_bitis = bitis
+        _safekey_kaydet(odeme, ab, params)
 
 
-def _odeme_basarili_isle(odeme: Odeme):
+def _odeme_basarili_isle(odeme: Odeme, params: dict):
     """Ödeme başarılı olduğunda kaynağına göre ilgili kaydı günceller:
     abonelik ödemesiyse Abonelik aktifleştirilir, mağaza siparişiyse
     MagazaSiparis ödeme durumu güncellenir."""
@@ -313,7 +363,7 @@ def _odeme_basarili_isle(odeme: Odeme):
                 aciklama='CardPlus ödeme onaylandı',
             ))
     else:
-        _aktiflestir_abonelik(odeme)
+        _aktiflestir_abonelik(odeme, params)
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +386,7 @@ def cardplus_donus():
         odeme.durum = 'basarili'
         odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
         odeme.paid_at = datetime.utcnow()
-        _odeme_basarili_isle(odeme)
+        _odeme_basarili_isle(odeme, params)
         db.session.commit()
         return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=basarili&siparis={odeme.siparis_no}')
 
@@ -364,7 +414,7 @@ def cardplus_callback():
         odeme.durum = 'basarili'
         odeme.provider_transaction_id = params.get('TransId', params.get('transid', ''))
         odeme.paid_at = datetime.utcnow()
-        _odeme_basarili_isle(odeme)
+        _odeme_basarili_isle(odeme, params)
         db.session.commit()
     elif mdstatus not in MDSTATUS_BASARILI and odeme.durum == 'bekliyor':
         odeme.durum = 'basarisiz'

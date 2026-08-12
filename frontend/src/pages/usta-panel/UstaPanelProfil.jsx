@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag } from 'lucide-react'
-import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir } from '../../api'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw } from 'lucide-react'
+import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
 import axios from 'axios'
 
 import API from '../../config.js'
@@ -14,7 +14,13 @@ export default function UstaPanelProfil() {
   const [yukleniyor, setYukleniyor] = useState(true)
   const [kayıtYukleniyor, setKayitYukleniyor] = useState(false)
   const [mesaj, setMesaj] = useState({ tip: '', metin: '' })
+  const [abonelik, setAbonelik] = useState(null)
+  const [abonelikYukleniyor, setAbonelikYukleniyor] = useState(false)
   const fileRef = useRef()
+
+  const abonelikiYenile = () => {
+    ustaAbonelikGetir().then(r => setAbonelik(r.data)).catch(() => {})
+  }
 
   useEffect(() => {
     Promise.all([
@@ -37,7 +43,20 @@ export default function UstaPanelProfil() {
         if (k.data.ana_kategori) setKategoriler(k.data)
       })
       .finally(() => setYukleniyor(false))
+    abonelikiYenile()
   }, [])
+
+  const handleOtomatikYenileme = async (acik) => {
+    setAbonelikYukleniyor(true)
+    try {
+      await ustaOtomatikYenilemeAyarla(acik)
+      abonelikiYenile()
+    } catch (err) {
+      setMesaj({ tip: 'hata', metin: err.response?.data?.hata || 'İşlem başarısız, tekrar deneyin' })
+    } finally {
+      setAbonelikYukleniyor(false)
+    }
+  }
 
   const handleKaydet = async (e) => {
     e.preventDefault()
@@ -105,6 +124,48 @@ export default function UstaPanelProfil() {
         }`}>
           {mesaj.tip === 'basari' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
           {mesaj.metin}
+        </div>
+      )}
+
+      {/* Abonelik */}
+      {abonelik && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <CreditCard size={18} className="text-blue-600" /> Abonelik
+          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="text-sm text-gray-600">
+              Plan: <span className="font-semibold text-gray-900 capitalize">{abonelik.plan || 'ücretsiz'}</span>
+              {abonelik.plan_bitis && (
+                <span className="text-gray-400"> — {new Date(abonelik.plan_bitis).toLocaleDateString('tr-TR')} tarihine kadar</span>
+              )}
+            </div>
+          </div>
+
+          {abonelik.kayitli_kart_var ? (
+            <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <RefreshCw size={15} className={abonelik.abonelik?.otomatik_yenileme ? 'text-green-600' : 'text-gray-400'} />
+                Otomatik yenileme {abonelik.abonelik?.otomatik_yenileme ? 'açık' : 'kapalı'}
+              </div>
+              <button
+                type="button"
+                disabled={abonelikYukleniyor}
+                onClick={() => handleOtomatikYenileme(!abonelik.abonelik?.otomatik_yenileme)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 ${
+                  abonelik.abonelik?.otomatik_yenileme
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'bg-blue-600 text-white hover:bg-blue-500'
+                }`}
+              >
+                {abonelik.abonelik?.otomatik_yenileme ? 'Kapat' : 'Aç'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">
+              Kayıtlı kartınız yok. Bir sonraki ödemenizde "kartımı kaydet" seçeneğini işaretlerseniz otomatik yenileme açılır.
+            </p>
+          )}
         </div>
       )}
 

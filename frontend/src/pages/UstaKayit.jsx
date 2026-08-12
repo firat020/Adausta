@@ -145,6 +145,7 @@ export default function UstaKayit() {
   const [havaleGonderildi, setHavaleGonderildi] = useState(false)
   const [kur, setKur] = useState(null) // USD→TRY
   const [planlarDB, setPlanlarDB] = useState([]) // gerçek plan id'leri (backend)
+  const [otomatikYenileme, setOtomatikYenileme] = useState(false) // "kartımı kaydet, otomatik yenilensin" — açık rıza gerektiği için varsayılan kapalı
 
   useEffect(() => {
     kategorileriGetir().then(r => setKategoriler(r.data.kategoriler || []))
@@ -244,7 +245,7 @@ export default function UstaKayit() {
         return
       }
 
-      const { data } = await cardplusBaslat({ usta_id: ustaId, plan_id: planDb.id })
+      const { data } = await cardplusBaslat({ usta_id: ustaId, plan_id: planDb.id, otomatik_yenileme: otomatikYenileme })
 
       _gtagKayitDonusumu()
 
@@ -785,6 +786,17 @@ export default function UstaKayit() {
               {hata && (
                 <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4 text-left">{hata}</div>
               )}
+
+              <label className="flex items-start gap-2.5 text-left bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-5 cursor-pointer">
+                <input type="checkbox" checked={otomatikYenileme}
+                  onChange={(e) => setOtomatikYenileme(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-relaxed">
+                  <span className="font-semibold text-gray-800">Kartımı kaydet, {secilenPlan === 'yillik' ? 'her yıl' : 'her ay'} otomatik yenilensin.</span>
+                  {' '}Dönem sonunda kartınızdan otomatik tahsilat yapılır, 3D Secure'a tekrar girmenize gerek kalmaz.
+                  İstediğiniz zaman panelinizden kapatabilirsiniz.
+                </span>
+              </label>
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setAdim(3)} disabled={yukleniyor}

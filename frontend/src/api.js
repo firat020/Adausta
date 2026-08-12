@@ -57,6 +57,8 @@ export const reklamTikla = (id) => api.post(`/reklamlar/${id}/tikla`);
 export const ustaPanelDashboard = () => api.get('/usta/panel');
 export const ustaPanelProfil = () => api.get('/usta/profil');
 export const ustaPanelProfilGuncelle = (data) => api.put('/usta/profil', data);
+export const ustaAbonelikGetir = () => api.get('/usta/abonelik');
+export const ustaOtomatikYenilemeAyarla = (acik) => api.post('/usta/abonelik/otomatik-yenileme', { acik });
 export const ustaPanelFotografYukle = (formData) =>
   api.post('/usta/profil/fotograf', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const ustaPanelFotografSil = (fid) => api.delete(`/usta/profil/fotograf/${fid}`);

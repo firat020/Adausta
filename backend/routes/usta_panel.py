@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik
 from datetime import datetime, timedelta
 from functools import wraps
 import uuid, os
@@ -323,3 +323,49 @@ def talep_okundu(usta, tid):
 def okunmamis_sayisi(usta):
     sayi = IsTalebi.query.filter_by(usta_id=usta.id, okundu=False).count()
     return jsonify({'sayi': sayi})
+
+
+# ──────────────────────────────────────────────────────────
+# Abonelik durumu (güncel plan + otomatik yenileme bilgisi)
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/abonelik', methods=['GET'])
+@usta_gerekli
+def abonelik_durumu(usta):
+    ab = (
+        Abonelik.query.filter_by(usta_id=usta.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+        or Abonelik.query.filter_by(usta_id=usta.id, durum='askida').order_by(Abonelik.id.desc()).first()
+    )
+    return jsonify({
+        'plan': usta.plan,
+        'plan_bitis': usta.plan_bitis.isoformat() if usta.plan_bitis else None,
+        'kayitli_kart_var': bool(usta.cardplus_safekey),
+        'abonelik': ab.to_dict() if ab else None,
+    })
+
+
+# ──────────────────────────────────────────────────────────
+# Otomatik yenilemeyi aç/kapat
+# Body: { acik: true/false }
+# Kapatmak: sadece bayrağı kapatır, mevcut dönem sonuna kadar plan aktif kalır.
+# Açmak: sadece daha önce kart kaydedilmişse (cardplus_safekey varsa) mümkündür —
+# kart hiç kaydedilmediyse önce ödeme ekranından "kartımı kaydet" ile ödeme yapılmalı.
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/abonelik/otomatik-yenileme', methods=['POST'])
+@usta_gerekli
+def otomatik_yenileme_ayarla(usta):
+    data = request.get_json() or {}
+    acik = bool(data.get('acik'))
+
+    ab = (
+        Abonelik.query.filter_by(usta_id=usta.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+        or Abonelik.query.filter_by(usta_id=usta.id, durum='askida').order_by(Abonelik.id.desc()).first()
+    )
+    if not ab:
+        return jsonify({'hata': 'Aktif bir aboneliğiniz bulunmuyor'}), 400
+
+    if acik and not usta.cardplus_safekey:
+        return jsonify({'hata': 'Otomatik yenileme için önce kayıtlı bir kartınız olmalı. Lütfen ödeme ekranından "kartımı kaydet" seçeneğiyle bir kez ödeme yapın.'}), 400
+
+    ab.otomatik_yenileme = acik
+    db.session.commit()
+    return jsonify({'mesaj': 'Otomatik yenileme açıldı' if acik else 'Otomatik yenileme kapatıldı, mevcut döneminiz sonuna kadar planınız aktif kalacak', 'otomatik_yenileme': ab.otomatik_yenileme})

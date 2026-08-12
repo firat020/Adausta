@@ -171,6 +171,7 @@ class Usta(db.Model):
     musaitlik = db.Column(db.Boolean, default=True)   # Müsait mi?
     plan = db.Column(db.String(20), default='ucretsiz')  # ucretsiz / aylik / yillik
     plan_bitis = db.Column(db.DateTime, nullable=True)
+    cardplus_safekey = db.Column(db.String(64), nullable=True)  # Payten Merchant Safe kayıtlı kart referansı (otomatik yenileme için)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     fotograflar = db.relationship('Fotograf', backref='usta', lazy=True, cascade='all, delete-orphan')
     yorumlar = db.relationship('Yorum', backref='usta', lazy=True, cascade='all, delete-orphan')
@@ -239,6 +240,7 @@ class Usta(db.Model):
             'profil_tamamlama': self.profil_tamamlama(),
             'plan': self.plan,
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
+            'kayitli_kart_var': bool(self.cardplus_safekey),
             'olusturma': self.olusturma.isoformat(),
             'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler],
             'tum_kategoriler': (
@@ -400,6 +402,9 @@ class Abonelik(db.Model):
     bitis = db.Column(db.DateTime, nullable=True)
     durum = db.Column(db.String(20), default='aktif')  # aktif / askida / iptal
     yenileme_tarihi = db.Column(db.DateTime, nullable=True)
+    otomatik_yenileme = db.Column(db.Boolean, default=False)  # SafeKey ile sessiz (3D'siz) otomatik tahsilat açık mı
+    basarisiz_deneme_sayisi = db.Column(db.Integer, default=0)  # otomatik tahsilat dunning sayacı
+    son_deneme_tarihi = db.Column(db.DateTime, nullable=True)  # son otomatik tahsilat deneme zamanı (başarılı/başarısız)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     usta = db.relationship('Usta', foreign_keys=[usta_id])
     odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
@@ -416,6 +421,8 @@ class Abonelik(db.Model):
             'bitis': fmt(self.bitis),
             'durum': self.durum,
             'yenileme_tarihi': fmt(self.yenileme_tarihi),
+            'otomatik_yenileme': self.otomatik_yenileme,
+            'basarisiz_deneme_sayisi': self.basarisiz_deneme_sayisi,
             'olusturma': fmt(self.olusturma),
         }
 
@@ -442,6 +449,8 @@ class Odeme(db.Model):
     paid_at                 = db.Column(db.DateTime, nullable=True)
     refunded_at             = db.Column(db.DateTime, nullable=True)
     idempotency_key         = db.Column(db.String(100), unique=True, nullable=True)
+    safekey_talep_edildi    = db.Column(db.Boolean, default=False)  # ödeme sırasında "kartımı kaydet" işaretlendi mi
+    otomatik_tahsilat       = db.Column(db.Boolean, default=False)  # bu ödeme SafeKey ile sessiz otomatik yenilemeden mi geldi
     usta = db.relationship('Usta', foreign_keys=[usta_id])
 
     def to_dict(self):
@@ -466,6 +475,7 @@ class Odeme(db.Model):
             'paid_at': fmt(self.paid_at),
             'refunded_at': fmt(self.refunded_at),
             'idempotency_key': self.idempotency_key,
+            'otomatik_tahsilat': self.otomatik_tahsilat,
         }
 
 
