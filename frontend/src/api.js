@@ -35,6 +35,8 @@ export const cardplusBaslat = (data) => api.post('/odeme/cardplus/baslat', data)
 export const ustaListele = (params) => api.get('/ustalar/', { params });
 export const ustaDetay = (id, params) => api.get(`/ustalar/${id}`, { params });
 export const ustaKayit = (data) => api.post('/ustalar/kayit', data);
+export const ustaKayitOtpGonder = (telefon) => api.post('/ustalar/kayit/otp-gonder', { telefon });
+export const ustaKayitOtpDogrula = (telefon, kod) => api.post('/ustalar/kayit/otp-dogrula', { telefon, kod });
 export const enYakinUstalar = (params) => api.get('/ustalar/en-yakin', { params });
 export const yorumEkle = (id, data) => api.post(`/ustalar/${id}/yorum`, data);
 export const isTalebiGonder = (ustaId, data) => api.post(`/ustalar/${ustaId}/is-talebi`, data);

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
   CreditCard, Shield, Star, Check, Eye, EyeOff, Lock,
-  Wrench, Building2, Gift, Store
+  Wrench, Building2, Gift, Store, LocateFixed
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat } from '../api'
+import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat, ustaKayitOtpGonder, ustaKayitOtpDogrula } from '../api'
 import API from '../config.js'
 
 const PLANLAR = [
@@ -136,7 +136,16 @@ export default function UstaKayit() {
     email: '', sehir_id: '', ilce_id: '',
     aciklama: '', deneyim_yil: '',
     sifre: '', sifre_tekrar: '',
+    lat: null, lng: null,
   })
+  const [konumDurumu, setKonumDurumu] = useState('') // '' | 'yukleniyor' | 'basarili' | 'hata' | 'desteklenmiyor'
+
+  const [telefonDogrulandi, setTelefonDogrulandi] = useState(false)
+  const [otpGonderildi, setOtpGonderildi] = useState(false)
+  const [otpGonderiliyor, setOtpGonderiliyor] = useState(false)
+  const [otpDogrulaniyor, setOtpDogrulaniyor] = useState(false)
+  const [otpKod, setOtpKod] = useState('')
+  const [otpHata, setOtpHata] = useState('')
   const [sifreGoster, setSifreGoster] = useState(false)
   const [sifreHata, setSifreHata] = useState('')
 
@@ -166,8 +175,60 @@ export default function UstaKayit() {
     setIlceler(s?.ilceler || [])
   }
 
+  const telefonKoduGonder = async () => {
+    if (!form.telefon) { setOtpHata('Önce telefon numaranızı girin'); return }
+    setOtpGonderiliyor(true)
+    setOtpHata('')
+    try {
+      await ustaKayitOtpGonder(form.telefon)
+      setOtpGonderildi(true)
+    } catch (err) {
+      setOtpHata(err.response?.data?.hata || 'Kod gönderilemedi, tekrar deneyin')
+    } finally {
+      setOtpGonderiliyor(false)
+    }
+  }
+
+  const telefonKoduDogrula = async () => {
+    if (!otpKod) { setOtpHata('Kodu girin'); return }
+    setOtpDogrulaniyor(true)
+    setOtpHata('')
+    try {
+      await ustaKayitOtpDogrula(form.telefon, otpKod)
+      setTelefonDogrulandi(true)
+    } catch (err) {
+      setOtpHata(err.response?.data?.hata || 'Kod hatalı, tekrar deneyin')
+    } finally {
+      setOtpDogrulaniyor(false)
+    }
+  }
+
+  const telefonDegisti = (telefon) => {
+    setForm(f => ({ ...f, telefon }))
+    if (telefonDogrulandi || otpGonderildi) {
+      setTelefonDogrulandi(false)
+      setOtpGonderildi(false)
+      setOtpKod('')
+      setOtpHata('')
+    }
+  }
+
+  const konumAl = () => {
+    if (!navigator.geolocation) { setKonumDurumu('desteklenmiyor'); return }
+    setKonumDurumu('yukleniyor')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(f => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }))
+        setKonumDurumu('basarili')
+      },
+      () => setKonumDurumu('hata'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
   const formGonder = (e) => {
     e.preventDefault()
+    if (!telefonDogrulandi) { setSifreHata('Devam etmeden önce telefon numaranızı SMS ile doğrulamanız gerekiyor'); return }
     if (secilenKategoriler.length === 0) { setSifreHata('En az bir kategori seçmelisiniz'); return }
     if (form.sifre.length < 6) { setSifreHata('Şifre en az 6 karakter olmalıdır'); return }
     if (form.sifre !== form.sifre_tekrar) { setSifreHata('Şifreler eşleşmiyor'); return }
@@ -470,7 +531,7 @@ export default function UstaKayit() {
             <div>
               <label className={labelCls}>Telefon *</label>
               <input type="tel" required value={form.telefon}
-                onChange={e => setForm(f => ({ ...f, telefon: e.target.value }))}
+                onChange={e => telefonDegisti(e.target.value)}
                 className={inputCls} placeholder="+90 548 000 0000" />
             </div>
             <div>
@@ -485,6 +546,44 @@ export default function UstaKayit() {
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className={inputCls} placeholder="ornek@email.com" />
             </div>
+          </div>
+
+          {/* Telefon doğrulama */}
+          <div className="mt-4 bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+            {telefonDogrulandi ? (
+              <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5">
+                <CheckCircle size={15} /> Telefon numaranız doğrulandı
+              </p>
+            ) : !otpGonderildi ? (
+              <>
+                <button type="button" onClick={telefonKoduGonder} disabled={otpGonderiliyor}
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-60">
+                  {otpGonderiliyor ? 'Kod gönderiliyor...' : 'SMS ile Doğrulama Kodu Gönder'}
+                </button>
+                <p className="text-xs text-gray-400 mt-1">Kayıt için telefon numaranızı doğrulamanız gerekiyor.</p>
+              </>
+            ) : (
+              <div>
+                <p className="text-xs text-gray-500 mb-2">
+                  <strong>{form.telefon}</strong> numarasına gönderilen 6 haneli kodu girin.
+                </p>
+                <div className="flex gap-2">
+                  <input type="text" inputMode="numeric" maxLength={6} value={otpKod}
+                    onChange={e => setOtpKod(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    className="w-32 border-2 border-gray-400 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 tracking-widest" />
+                  <button type="button" onClick={telefonKoduDogrula} disabled={otpDogrulaniyor}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">
+                    {otpDogrulaniyor ? 'Doğrulanıyor...' : 'Doğrula'}
+                  </button>
+                </div>
+                <button type="button" onClick={telefonKoduGonder} disabled={otpGonderiliyor}
+                  className="text-xs text-blue-600 hover:underline mt-2">
+                  Kodu tekrar gönder
+                </button>
+              </div>
+            )}
+            {otpHata && <p className="text-xs text-red-500 mt-2">{otpHata}</p>}
           </div>
         </div>
 
@@ -514,6 +613,24 @@ export default function UstaKayit() {
                 {ilceler.map(i => <option key={i.id} value={i.id}>{i.ad}</option>)}
               </select>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <button type="button" onClick={konumAl} disabled={konumDurumu === 'yukleniyor'}
+              className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-60">
+              <LocateFixed size={15} />
+              {konumDurumu === 'yukleniyor' ? 'Konum alınıyor...' : form.lat ? 'Konumu Güncelle' : 'Konumumu Kullan'}
+            </button>
+            <p className="text-xs text-gray-400 mt-1.5">Konumunuz "En Yakın Usta" aramasında çıkmanız için kullanılır, isteğe bağlıdır.</p>
+            {konumDurumu === 'basarili' && (
+              <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1"><Check size={12} /> Konumunuz alındı.</p>
+            )}
+            {konumDurumu === 'hata' && (
+              <p className="text-xs text-red-500 mt-1.5">Konum alınamadı — tarayıcı izni gerekiyor. Bu adımı atlayıp daha sonra profilinizden de ekleyebilirsiniz.</p>
+            )}
+            {konumDurumu === 'desteklenmiyor' && (
+              <p className="text-xs text-gray-400 mt-1.5">Tarayıcınız konum özelliğini desteklemiyor.</p>
+            )}
           </div>
         </div>
 

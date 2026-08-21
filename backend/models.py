@@ -224,6 +224,8 @@ class Usta(db.Model):
             'ilce': self.ilce.ad if self.ilce else '',
             'sehir_id': self.sehir_id,
             'ilce_id': self.ilce_id,
+            'lat': self.lat,
+            'lng': self.lng,
             'kategori': self.kategori.ad if self.kategori else '',
             'kategori_id': self.kategori_id,
             'kategori_ikon': self.kategori.ikon if self.kategori else '🔧',

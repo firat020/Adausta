@@ -47,6 +47,8 @@ CORS(app, supports_credentials=True, origins=[
     'http://localhost',
     'https://adausta.com',
     'http://adausta.com',
+    'https://www.adausta.com',
+    'http://www.adausta.com',
 ])
 
 db.init_app(app)

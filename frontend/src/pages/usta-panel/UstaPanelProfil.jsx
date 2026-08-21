@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw } from 'lucide-react'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check } from 'lucide-react'
 import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
 import axios from 'axios'
 
@@ -16,6 +16,8 @@ export default function UstaPanelProfil() {
   const [mesaj, setMesaj] = useState({ tip: '', metin: '' })
   const [abonelik, setAbonelik] = useState(null)
   const [abonelikYukleniyor, setAbonelikYukleniyor] = useState(false)
+  const [ilceler, setIlceler] = useState([])
+  const [konumDurumu, setKonumDurumu] = useState('') // '' | 'yukleniyor' | 'basarili' | 'hata' | 'desteklenmiyor'
   const fileRef = useRef()
 
   const abonelikiYenile = () => {
@@ -38,13 +40,38 @@ export default function UstaPanelProfil() {
           aciklama: r.data.usta.aciklama || '',
           deneyim_yil: r.data.usta.deneyim_yil || 0,
           sehir_id: r.data.usta.sehir_id || '',
+          ilce_id: r.data.usta.ilce_id || '',
+          lat: r.data.usta.lat ?? null,
+          lng: r.data.usta.lng ?? null,
         })
-        setSehirler(s.data.sehirler || [])
+        const sehirListesi = s.data.sehirler || []
+        setSehirler(sehirListesi)
+        const mevcutSehir = sehirListesi.find(sh => sh.id === r.data.usta.sehir_id)
+        setIlceler(mevcutSehir?.ilceler || [])
         if (k.data.ana_kategori) setKategoriler(k.data)
       })
       .finally(() => setYukleniyor(false))
     abonelikiYenile()
   }, [])
+
+  const sehirDegisti = (sehir_id) => {
+    setForm(p => ({ ...p, sehir_id, ilce_id: '' }))
+    const s = sehirler.find(sh => sh.id === parseInt(sehir_id))
+    setIlceler(s?.ilceler || [])
+  }
+
+  const konumAl = () => {
+    if (!navigator.geolocation) { setKonumDurumu('desteklenmiyor'); return }
+    setKonumDurumu('yukleniyor')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(p => ({ ...p, lat: pos.coords.latitude, lng: pos.coords.longitude }))
+        setKonumDurumu('basarili')
+      },
+      () => setKonumDurumu('hata'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   const handleOtomatikYenileme = async (acik) => {
     setAbonelikYukleniyor(true)
@@ -265,7 +292,7 @@ export default function UstaPanelProfil() {
             <label className="text-sm font-bold text-gray-800 mb-1.5 block">Şehir</label>
             <div className="relative">
               <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <select value={form.sehir_id} onChange={e => setForm(p => ({ ...p, sehir_id: e.target.value }))}
+              <select value={form.sehir_id} onChange={e => sehirDegisti(e.target.value)}
                 className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">Seçin</option>
                 {sehirler.map(s => (
@@ -275,14 +302,48 @@ export default function UstaPanelProfil() {
             </div>
           </div>
           <div>
-            <label className="text-sm font-bold text-gray-800 mb-1.5 block">Deneyim (Yıl)</label>
+            <label className="text-sm font-bold text-gray-800 mb-1.5 block">İlçe</label>
             <div className="relative">
-              <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={form.deneyim_yil} onChange={e => setForm(p => ({ ...p, deneyim_yil: Number(e.target.value) }))}
-                type="number" min={0} max={50}
-                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <select value={form.ilce_id} onChange={e => setForm(p => ({ ...p, ilce_id: e.target.value }))}
+                disabled={!form.sehir_id}
+                className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50 disabled:cursor-not-allowed">
+                <option value="">Seçin</option>
+                {ilceler.map(i => (
+                  <option key={i.id} value={i.id}>{i.ad}</option>
+                ))}
+              </select>
             </div>
           </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 block">Deneyim (Yıl)</label>
+          <div className="relative">
+            <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={form.deneyim_yil} onChange={e => setForm(p => ({ ...p, deneyim_yil: Number(e.target.value) }))}
+              type="number" min={0} max={50}
+              className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 block">Harita Konumu</label>
+          <button type="button" onClick={konumAl} disabled={konumDurumu === 'yukleniyor'}
+            className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-60">
+            <LocateFixed size={15} />
+            {konumDurumu === 'yukleniyor' ? 'Konum alınıyor...' : (form.lat ? 'Konumu Güncelle' : 'Konumumu Kullan')}
+          </button>
+          <p className="text-xs text-gray-400 mt-1.5">"En Yakın Usta" aramasında çıkmanız için gereklidir.</p>
+          {form.lat && konumDurumu !== 'hata' && (
+            <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1"><Check size={12} /> Konumunuz kayıtlı.</p>
+          )}
+          {konumDurumu === 'hata' && (
+            <p className="text-xs text-red-500 mt-1.5">Konum alınamadı — tarayıcı izni gerekiyor.</p>
+          )}
+          {konumDurumu === 'desteklenmiyor' && (
+            <p className="text-xs text-gray-400 mt-1.5">Tarayıcınız konum özelliğini desteklemiyor.</p>
+          )}
         </div>
 
         <div>
