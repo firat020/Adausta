@@ -794,13 +794,7 @@ def abonelik_ekle():
     data = request.get_json()
     plan = Plan.query.get_or_404(data['plan_id'])
     bas = datetime.utcnow()
-    if plan.sure_tip == 'yillik':
-        bit = bas.replace(year=bas.year + 1)
-    else:
-        if bas.month == 12:
-            bit = bas.replace(year=bas.year + 1, month=1)
-        else:
-            bit = bas.replace(month=bas.month + 1)
+    bit = bas + timedelta(days=plan.sure_gun())
     a = Abonelik(
         usta_id=data['usta_id'],
         plan_id=data['plan_id'],

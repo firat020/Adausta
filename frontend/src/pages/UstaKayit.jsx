@@ -14,9 +14,38 @@ const PLANLAR = [
     ad: 'Aylık Plan',
     fiyat: '9.99',
     birim: '/ ay',
+    donemMetin: 'her ay',
     aciklama: 'Esnek aylık üyelik, istediğin zaman iptal et',
     ozellikler: ['Profil sayfası', 'Müşteri talepleri al', 'Kategori listesi', 'E-posta desteği'],
     rozet: null,
+  },
+  {
+    id: '3ay',
+    ad: '3 Aylık Plan',
+    fiyat: '26.99',
+    birim: '/ 3 ay',
+    ayBirim: '9.00',
+    tasarruf: '2.98',
+    donemMetin: 'her 3 ayda bir',
+    ayRozet: 'Tasarruf $2.98',
+    ozetMetin: 'Tek seferde 3 aylık ödeme — aylığa göre tasarruf',
+    aciklama: '3 aylık üyelik, aylığa göre biraz daha avantajlı',
+    ozellikler: ['Profil sayfası', 'Müşteri talepleri al', 'Kategori listesi', 'E-posta desteği'],
+    rozet: null,
+  },
+  {
+    id: '6ay',
+    ad: '6 Aylık Plan',
+    fiyat: '47.99',
+    birim: '/ 6 ay',
+    ayBirim: '8.00',
+    tasarruf: '11.95',
+    donemMetin: 'her 6 ayda bir',
+    ayRozet: 'Tasarruf $11.95',
+    ozetMetin: 'Tek seferde 6 aylık ödeme — daha fazla tasarruf',
+    aciklama: '6 aylık üyelik, daha uzun süre daha fazla tasarruf',
+    ozellikler: ['Profil sayfası', 'Müşteri talepleri al', 'Öne çıkan listeleme', '7/24 öncelikli destek'],
+    rozet: 'Tasarruflu',
   },
   {
     id: 'yillik',
@@ -25,6 +54,9 @@ const PLANLAR = [
     birim: '/ yıl',
     ayBirim: '7.61',
     tasarruf: '30.87',
+    donemMetin: 'her yıl',
+    ayRozet: '1 ay bedava',
+    ozetMetin: '13 ay kapsar — 1 ay bedava',
     aciklama: '13 ay kapsar — 1 ay ücretsiz hediye',
     ozellikler: ['Profil sayfası', 'Müşteri talepleri al', 'Öne çıkan listeleme', '7/24 öncelikli destek'],
     rozet: 'En Popüler',
@@ -762,15 +794,18 @@ export default function UstaKayit() {
               <p className="text-sm font-semibold text-orange-600 mb-1">{tlGoster(plan.fiyat)}</p>
             )}
 
-            {plan.id === 'yillik' && (
+            {plan.ayBirim ? (
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="text-xs text-blue-600 font-semibold">Aylık ${plan.ayBirim} {kur ? `(${tlGoster(plan.ayBirim)})` : ''}</span>
-                <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  1 ay bedava
-                </span>
+                {plan.ayRozet && (
+                  <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {plan.ayRozet}
+                  </span>
+                )}
               </div>
+            ) : (
+              <div className="mb-3" />
             )}
-            {plan.id === 'aylik' && <div className="mb-3" />}
 
             <ul className="space-y-2">
               {plan.ozellikler.map((o, i) => (
@@ -909,7 +944,7 @@ export default function UstaKayit() {
                   onChange={(e) => setOtomatikYenileme(e.target.checked)}
                   className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
                 <span className="text-xs text-gray-600 leading-relaxed">
-                  <span className="font-semibold text-gray-800">Kartımı kaydet, {secilenPlan === 'yillik' ? 'her yıl' : 'her ay'} otomatik yenilensin.</span>
+                  <span className="font-semibold text-gray-800">Kartımı kaydet, {seciliPlan?.donemMetin || 'her ay'} otomatik yenilensin.</span>
                   {' '}Dönem sonunda kartınızdan otomatik tahsilat yapılır, 3D Secure'a tekrar girmenize gerek kalmaz.
                   İstediğiniz zaman panelinizden kapatabilirsiniz.
                 </span>
@@ -948,15 +983,17 @@ export default function UstaKayit() {
                   {kur && <p className="text-orange-600 text-xs font-semibold">{tlGoster(seciliPlan?.fiyat)}</p>}
                 </div>
               </div>
-              {seciliPlan?.id === 'yillik' && (
+              {seciliPlan?.ozetMetin && (
                 <>
                   <div className="text-xs text-orange-600 font-medium">
-                    13 ay kapsar — 1 ay bedava
+                    {seciliPlan.ozetMetin}
                   </div>
-                  <div className="flex justify-between text-emerald-600 text-xs font-semibold">
-                    <span>Tasarruf</span>
-                    <span>-${seciliPlan.tasarruf} {kur ? `(${tlGoster(seciliPlan.tasarruf)})` : ''}</span>
-                  </div>
+                  {seciliPlan.tasarruf && (
+                    <div className="flex justify-between text-emerald-600 text-xs font-semibold">
+                      <span>Tasarruf</span>
+                      <span>-${seciliPlan.tasarruf} {kur ? `(${tlGoster(seciliPlan.tasarruf)})` : ''}</span>
+                    </div>
+                  )}
                 </>
               )}
               {form.telefon && (

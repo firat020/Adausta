@@ -7,6 +7,11 @@ import API from '../../config.js'
 
 const bos = { ad: '', fiyat: '', sure_tip: 'aylik', ilan_siniri: 5, one_cikma: false }
 
+// sure_tip -> görünen etiket / birim. Not: fiyat alanı 'yillik' hariç her tip için dönemin TOPLAM
+// tutarıdır (ör. 3ay planında fiyat = 3 aylık toplam ücret) — yillik'te ise aylık eşdeğer tutardır.
+const SURE_ETIKET = { aylik: 'Aylık Plan', '3ay': '3 Aylık Plan', '6ay': '6 Aylık Plan', yillik: 'Yıllık Plan' }
+const SURE_BIRIM = { aylik: 'ay', '3ay': '3 ay', '6ay': '6 ay', yillik: 'ay' }
+
 // Aylık: $99.99 | Yıllık: $89/ay → $1,068/yıl
 const VARSAYILAN_PLANLAR = [
   { ad: 'Ücretsiz', fiyat: 0, sure_tip: 'aylik', ilan_siniri: 1, one_cikma: false },
@@ -124,7 +129,7 @@ export default function AdminPlanlar() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-widest opacity-75 mb-1">
-                      {p.sure_tip === 'yillik' ? 'Yıllık Plan' : 'Aylık Plan'}
+                      {SURE_ETIKET[p.sure_tip] || 'Aylık Plan'}
                     </p>
                     <h3 className="text-xl font-bold">{p.ad}</h3>
                   </div>
@@ -135,7 +140,7 @@ export default function AdminPlanlar() {
                   <div className="mt-3">
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold">${p.fiyat.toLocaleString('en-US')}</span>
-                      <span className="text-sm opacity-75">/ {p.sure_tip === 'yillik' ? 'ay' : 'ay'}</span>
+                      <span className="text-sm opacity-75">/ {SURE_BIRIM[p.sure_tip] || 'ay'}</span>
                     </div>
                     {p.sure_tip === 'yillik' && (
                       <p className="text-xs opacity-70 mt-0.5">Yıllık ${(p.fiyat * 12).toLocaleString('en-US')} faturalandırılır</p>
@@ -217,7 +222,7 @@ export default function AdminPlanlar() {
                   {kur && parseFloat(form.fiyat) > 0 && (
                     <p className="text-xs text-gray-400 mt-1">
                       ≈ {(parseFloat(form.fiyat) * (form.sure_tip === 'yillik' ? 12 : 1) * kur).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
-                      {form.sure_tip === 'yillik' ? '/yıl' : '/ay'}
+                      {form.sure_tip === 'yillik' ? '/yıl' : `/${SURE_BIRIM[form.sure_tip] || 'ay'}`}
                     </p>
                   )}
                 </div>
@@ -226,6 +231,8 @@ export default function AdminPlanlar() {
                   <select className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#0052CC]"
                     value={form.sure_tip} onChange={e => setForm({ ...form, sure_tip: e.target.value })}>
                     <option value="aylik">Aylık</option>
+                    <option value="3ay">3 Aylık</option>
+                    <option value="6ay">6 Aylık</option>
                     <option value="yillik">Yıllık ($X/ay olarak gösterilir)</option>
                   </select>
                 </div>

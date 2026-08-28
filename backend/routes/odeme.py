@@ -97,18 +97,15 @@ def admin_odeme_onayla(id):
         if mevcut:
             mevcut.durum = 'aktif'
             mevcut.baslangic = datetime.utcnow()
-            if mevcut.plan and mevcut.plan.sure_tip == 'yillik':
-                mevcut.bitis = datetime.utcnow() + timedelta(days=365)
-                mevcut.yenileme_tarihi = mevcut.bitis
-            else:
-                mevcut.bitis = datetime.utcnow() + timedelta(days=30)
-                mevcut.yenileme_tarihi = mevcut.bitis
+            ek_gun = mevcut.plan.sure_gun() if mevcut.plan else 30
+            mevcut.bitis = datetime.utcnow() + timedelta(days=ek_gun)
+            mevcut.yenileme_tarihi = mevcut.bitis
             usta.plan = mevcut.plan.ad if mevcut.plan else 'aylik'
             usta.plan_bitis = mevcut.bitis
             odeme.abonelik_id = mevcut.id
         else:
             plan = Plan.query.filter_by(aktif=True).first()
-            bitis = datetime.utcnow() + timedelta(days=30)
+            bitis = datetime.utcnow() + timedelta(days=plan.sure_gun() if plan else 30)
             ab = Abonelik(
                 usta_id=usta.id,
                 plan_id=plan.id if plan else None,

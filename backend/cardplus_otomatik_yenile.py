@@ -136,7 +136,7 @@ def _yenile(ab: Abonelik):
         odeme.paid_at = datetime.utcnow()
         db.session.add(odeme)
 
-        ek_gun = 365 if plan and plan.sure_tip == 'yillik' else 30
+        ek_gun = plan.sure_gun() if plan else 30
         yeni_bitis = max(ab.bitis or datetime.utcnow(), datetime.utcnow()) + timedelta(days=ek_gun)
         ab.bitis = yeni_bitis
         ab.yenileme_tarihi = yeni_bitis

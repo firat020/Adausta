@@ -1,5 +1,5 @@
 """
-Usta abonelik planlarını (Aylık / Yıllık) planlar tablosuna ekler.
+Usta abonelik planlarını (Aylık / 3 Aylık / 6 Aylık / Yıllık) planlar tablosuna ekler.
 Tablo boşsa çalışır, mevcut kayıtlara dokunmaz.
 Fiyatlar USD'dir — tahsilat sırasında günlük kura göre TRY'ye çevrilir.
 """
@@ -13,6 +13,8 @@ DB = os.path.join(os.path.dirname(__file__), 'instance', 'adausta.db')
 
 PLANLAR = [
     ('Aylık Plan', 9.99, 'aylik', 0),
+    ('3 Aylık Plan', 26.99, '3ay', 0),
+    ('6 Aylık Plan', 47.99, '6ay', 1),
     ('Yıllık Plan', 99.0, 'yillik', 1),
 ]
 

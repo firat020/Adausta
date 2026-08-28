@@ -373,17 +373,31 @@ class IsTalebi(db.Model):
         }
 
 
+# sure_tip -> abonelik dönemi gün sayısı. Yeni bir süre tipi eklemek için sadece buraya ekle,
+# tüm bitiş tarihi hesaplamaları (odeme.py, odeme_cardplus.py, cardplus_otomatik_yenile.py, admin.py) buradan okur.
+PLAN_SURE_GUN = {
+    'aylik': 30,
+    '3ay': 90,
+    '6ay': 180,
+    'yillik': 365,
+}
+
+
 class Plan(db.Model):
     __tablename__ = 'planlar'
     id = db.Column(db.Integer, primary_key=True)
     ad = db.Column(db.String(50), nullable=False)
     fiyat = db.Column(db.Float, default=0.0)
-    sure_tip = db.Column(db.String(20), default='aylik')  # aylik / yillik
+    sure_tip = db.Column(db.String(20), default='aylik')  # aylik / 3ay / 6ay / yillik
     ilan_siniri = db.Column(db.Integer, default=1)
     one_cikma = db.Column(db.Boolean, default=False)
     aktif = db.Column(db.Boolean, default=True)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     abonelikler = db.relationship('Abonelik', backref='plan', lazy=True)
+
+    def sure_gun(self):
+        """Bu planın dönem uzunluğu (gün). Bilinmeyen sure_tip için varsayılan 30 gün (aylık)."""
+        return PLAN_SURE_GUN.get(self.sure_tip, 30)
 
     def to_dict(self):
         return {
