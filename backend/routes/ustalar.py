@@ -84,60 +84,6 @@ def detay(id):
     veri['yorumlar'] = [y.to_dict() for y in u.yorumlar if y.onaylanmis]
     return jsonify(veri)
 
-@ustalar_bp.route('/kayit/otp-gonder', methods=['POST'])
-@limiter.limit('3 per minute; 10 per hour')
-def kayit_otp_gonder():
-    data = request.get_json() or {}
-    telefon = (data.get('telefon') or '').strip()
-    if not telefon:
-        return jsonify({'hata': 'Telefon zorunludur'}), 400
-
-    kod = f'{random.randint(0, 999999):06d}'
-    otp = TelefonOtp(
-        telefon=telefon,
-        kod_hash=hashlib.sha256(kod.encode()).hexdigest(),
-        amac='kayit_dogrulama',
-        son_kullanma=datetime.utcnow() + timedelta(minutes=5)
-    )
-    db.session.add(otp)
-    db.session.commit()
-
-    gonderildi = sms_gonder(telefon, f'Ada Usta kayit dogrulama kodunuz: {kod}. 5 dakika icinde gecerlidir.')
-    if not gonderildi:
-        return jsonify({'hata': 'SMS gönderilemedi, lütfen tekrar deneyin'}), 502
-
-    return jsonify({'mesaj': 'Doğrulama kodu gönderildi'})
-
-
-@ustalar_bp.route('/kayit/otp-dogrula', methods=['POST'])
-@limiter.limit('5 per minute; 15 per hour')
-def kayit_otp_dogrula():
-    data = request.get_json() or {}
-    telefon = (data.get('telefon') or '').strip()
-    kod = (data.get('kod') or '').strip()
-    if not telefon or not kod:
-        return jsonify({'hata': 'telefon ve kod zorunludur'}), 400
-
-    otp = TelefonOtp.query.filter_by(
-        telefon=telefon, amac='kayit_dogrulama', dogrulandi=False
-    ).order_by(TelefonOtp.id.desc()).first()
-
-    if not otp:
-        return jsonify({'hata': 'Önce doğrulama kodu isteyin'}), 400
-    if otp.deneme_sayisi >= 5:
-        return jsonify({'hata': 'Çok fazla hatalı deneme. Yeni kod isteyin.'}), 429
-    if otp.suresi_gecti_mi():
-        return jsonify({'hata': 'Kodun süresi doldu, yeni kod isteyin'}), 400
-    if not otp.kod_kontrol(kod):
-        otp.deneme_sayisi += 1
-        db.session.commit()
-        return jsonify({'hata': 'Kod hatalı'}), 400
-
-    otp.dogrulandi = True
-    db.session.commit()
-    return jsonify({'mesaj': 'Telefon doğrulandı'})
-
-
 @ustalar_bp.route('/kayit', methods=['POST'])
 def kayit():
     data = request.get_json()
@@ -147,13 +93,6 @@ def kayit():
             return jsonify({'hata': f'{alan} zorunludur'}), 400
     if len(data.get('sifre', '')) < 8:
         return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
-
-    # Telefon numarası SMS ile doğrulanmış olmalı (son 60 dk içinde doğrulanmış bir kod)
-    otp = TelefonOtp.query.filter_by(
-        telefon=data['telefon'], amac='kayit_dogrulama', dogrulandi=True
-    ).order_by(TelefonOtp.id.desc()).first()
-    if not otp or datetime.utcnow() - otp.olusturma > timedelta(minutes=60):
-        return jsonify({'hata': 'Telefon numaranız doğrulanmamış. Lütfen önce SMS ile doğrulama yapın.'}), 400
 
     # Email zaten var mı kontrol et
     if Kullanici.query.filter_by(email=data['email']).first():
