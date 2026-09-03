@@ -2,5 +2,13 @@
   "enabledMcpjsonServers": [
     "ruflo"
   ],
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "allow": [
+      "Bash(*PuTTY/pscp.exe*)",
+      "Bash(*PuTTY/plink.exe*)",
+      "Bash(*PuTTY\\\\pscp.exe*)",
+      "Bash(*PuTTY\\\\plink.exe*)"
+    ]
+  }
 }
