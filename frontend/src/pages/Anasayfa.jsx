@@ -38,15 +38,6 @@ const OZELLIKLER_IKONLAR = [
 ]
 const OZELLIKLER_KEYS = ['guvenilir', 'hizli', 'ucretsiz']
 
-const HERO_CHIPLER = [
-  { key: 'elektrik',  ikon: <Zap size={12} /> },
-  { key: 'tesisat',   ikon: <Droplets size={12} /> },
-  { key: 'tadilat',   ikon: <Hammer size={12} /> },
-  { key: 'nakliyat',  ikon: <Truck size={12} /> },
-  { key: 'temizlik',  ikon: <Sparkles size={12} /> },
-  { key: 'klima',     ikon: <Wind size={12} /> },
-]
-
 export default function Anasayfa() {
   const { t } = useTranslation()
   const [kategoriler, setKategoriler] = useState([])
@@ -132,17 +123,23 @@ export default function Anasayfa() {
             <span className="text-white text-3xl md:text-5xl block" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>{t('hero.baslik3')}</span>
           </h1>
 
-          {/* Hizmet chip'leri */}
-          <div className="flex flex-wrap justify-center gap-2 mb-3">
-            {HERO_CHIPLER.map(h => (
-              <span key={h.key} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/20"
-                style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}>
-                {h.ikon} {t(`heroChipler.${h.key}`)}
-              </span>
+          {/* Popüler etiketler (hızlı arama) */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+            <span className="text-blue-200 text-xs font-medium">{t('hero.populer')}</span>
+            {[
+              { key: 'elektrikci',  arama: 'Elektrikçi' },
+              { key: 'suTesisati',  arama: 'Su Tesisatı' },
+              { key: 'boyaBadana',  arama: 'Boya Badana' },
+              { key: 'klima',       arama: 'Klima' },
+              { key: 'temizlik',    arama: 'Temizlik' },
+            ].map(tag => (
+              <button key={tag.key}
+                type="button"
+                onClick={() => navigate(`/ustalar?arama=${tag.arama}${secilenSehirId ? `&sehir_id=${secilenSehirId}` : ''}`)}
+                className="text-xs text-white bg-white/10 hover:bg-white/20 border border-white/25 px-3 py-1 rounded-full transition-colors">
+                {t(`heroTaglar.${tag.key}`)}
+              </button>
             ))}
-            <span className="flex items-center gap-1 bg-yellow-400/20 backdrop-blur-sm text-yellow-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-yellow-400/30">
-              <Plus size={11} /> {t('heroChipler.artiBes')}
-            </span>
           </div>
           <p className="text-white/80 text-xs sm:text-sm mb-8" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
             {t('hero.aciklama')}
@@ -197,24 +194,6 @@ export default function Anasayfa() {
               {t('hero.hemenBul')}
             </button>
           </form>
-
-          {/* Hızlı etiketler */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-            <span className="text-blue-200 text-xs font-medium">{t('hero.populer')}</span>
-            {[
-              { key: 'elektrikci',  arama: 'Elektrikçi' },
-              { key: 'suTesisati',  arama: 'Su Tesisatı' },
-              { key: 'boyaBadana',  arama: 'Boya Badana' },
-              { key: 'klima',       arama: 'Klima' },
-              { key: 'temizlik',    arama: 'Temizlik' },
-            ].map(tag => (
-              <button key={tag.key}
-                onClick={() => navigate(`/ustalar?arama=${tag.arama}${secilenSehirId ? `&sehir_id=${secilenSehirId}` : ''}`)}
-                className="text-xs text-white bg-white/10 hover:bg-white/20 border border-white/25 px-3 py-1 rounded-full transition-colors">
-                {t(`heroTaglar.${tag.key}`)}
-              </button>
-            ))}
-          </div>
         </div>
       </section>
 
