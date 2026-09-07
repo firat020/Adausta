@@ -118,7 +118,7 @@ def kayit():
         deneyim_yil=data.get('deneyim_yil', 0),
         lat=data.get('lat'),
         lng=data.get('lng'),
-        onaylanmis=True,
+        onaylanmis=False,  # kayıt + ödeme sonrası admin onayı bekler, listelemede görünmez
         aktif=True
     )
     db.session.add(u)

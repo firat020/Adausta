@@ -304,6 +304,121 @@ def toplu_kategori():
     return jsonify({'mesaj': f'{len(ustalar)} ustaya kategori atandı'})
 
 
+# ─── ŞİRKET YÖNETİMİ ───────────────────────────────────────────
+
+@admin_bp.route('/sirketler', methods=['GET'])
+@admin_gerekli
+def sirketler():
+    filtre = request.args.get('filtre', 'hepsi')  # hepsi / bekleyen / onaylandi / pasif
+    arama = request.args.get('arama', '')
+    kategori_id = request.args.get('kategori_id', type=int)
+
+    q = Sirket.query
+    if filtre == 'bekleyen':
+        q = q.filter_by(onaylanmis=False, aktif=True)
+    elif filtre == 'onaylandi':
+        q = q.filter_by(onaylanmis=True, aktif=True)
+    elif filtre == 'pasif':
+        q = q.filter_by(aktif=False)
+
+    if kategori_id:
+        q = q.filter_by(kategori_id=kategori_id)
+
+    if arama:
+        q = q.filter(
+            Sirket.sirket_adi.ilike(f'%{arama}%') |
+            Sirket.yetkili_ad.ilike(f'%{arama}%') |
+            Sirket.telefon.ilike(f'%{arama}%')
+        )
+
+    return jsonify({'sirketler': [s.to_dict() for s in q.order_by(Sirket.olusturma.desc()).all()]})
+
+
+@admin_bp.route('/sirketler/<int:id>/onayla', methods=['POST'])
+@admin_gerekli
+def sirket_onayla(id):
+    s = Sirket.query.get_or_404(id)
+    s.onaylanmis = True
+    s.aktif = True
+    db.session.commit()
+    log_kaydet('SIRKET_ONAYLA', f'Şirket #{id} {s.sirket_adi} onaylandı')
+    return jsonify({'mesaj': 'Şirket onaylandı'})
+
+
+@admin_bp.route('/sirketler/<int:id>/reddet', methods=['POST'])
+@admin_gerekli
+def sirket_reddet(id):
+    s = Sirket.query.get_or_404(id)
+    s.aktif = False
+    s.onaylanmis = False
+    db.session.commit()
+    log_kaydet('SIRKET_REDDET', f'Şirket #{id} {s.sirket_adi} reddedildi')
+    return jsonify({'mesaj': 'Şirket reddedildi'})
+
+
+@admin_bp.route('/sirketler/<int:id>/aktifet', methods=['POST'])
+@admin_gerekli
+def sirket_aktifet(id):
+    s = Sirket.query.get_or_404(id)
+    s.aktif = True
+    s.onaylanmis = False  # Tekrar incelemeye alınır
+    db.session.commit()
+    log_kaydet('SIRKET_YASAK_KALDIR', f'Şirket #{id} {s.sirket_adi} yasağı kaldırıldı, beklemede')
+    return jsonify({'mesaj': 'Yasak kaldırıldı, şirket bekleme listesine alındı'})
+
+
+@admin_bp.route('/sirketler/<int:id>', methods=['PUT'])
+@admin_gerekli
+def sirket_guncelle(id):
+    s = Sirket.query.get_or_404(id)
+    data = request.get_json()
+    for alan in ['sirket_adi', 'vergi_no', 'yetkili_ad', 'telefon', 'whatsapp', 'email',
+                 'sehir_id', 'ilce_id', 'kategori_id', 'adres', 'aciklama', 'website',
+                 'onaylanmis', 'aktif', 'plan']:
+        if alan in data:
+            setattr(s, alan, data[alan])
+    db.session.commit()
+    log_kaydet('SIRKET_GUNCELLE', f'Şirket #{id} {s.sirket_adi} güncellendi')
+    return jsonify({'mesaj': 'Güncellendi', 'sirket': s.to_dict()})
+
+
+@admin_bp.route('/sirketler/<int:id>', methods=['DELETE'])
+@admin_gerekli
+def sirket_sil(id):
+    s = Sirket.query.get_or_404(id)
+    ad = s.sirket_adi
+    db.session.delete(s)
+    db.session.commit()
+    log_kaydet('SIRKET_SIL', f'Şirket #{id} {ad} silindi')
+    return jsonify({'mesaj': 'Silindi'})
+
+
+@admin_bp.route('/sirketler/toplu', methods=['POST'])
+@admin_gerekli
+def sirket_toplu_islem():
+    data = request.get_json()
+    islem = data.get('islem')  # onayla / reddet / sil
+    idler = data.get('idler', [])
+
+    if not idler or islem not in ['onayla', 'reddet', 'sil']:
+        return jsonify({'hata': 'Geçersiz istek'}), 400
+
+    sirketler_ = Sirket.query.filter(Sirket.id.in_(idler)).all()
+    for s in sirketler_:
+        if islem == 'onayla':
+            s.onaylanmis = True
+            s.aktif = True
+        elif islem == 'reddet':
+            s.aktif = False
+            s.onaylanmis = False
+        elif islem == 'sil':
+            db.session.delete(s)
+
+    db.session.commit()
+    log_kaydet('TOPLU_İŞLEM', f'{len(sirketler_)} şirket için {islem} yapıldı (idler: {idler})')
+    return jsonify({'mesaj': f'{len(sirketler_)} şirket için işlem tamamlandı'})
+
+
 @admin_bp.route('/export/ustalar', methods=['GET'])
 @admin_gerekli
 def export_ustalar():

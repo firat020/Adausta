@@ -92,7 +92,7 @@ def kayit():
         adres=data.get('adres', ''),
         aciklama=data.get('aciklama', ''),
         website=data.get('website', ''),
-        onaylanmis=True,
+        onaylanmis=False,  # kayıt + ödeme sonrası admin onayı bekler, listelemede görünmez
         aktif=True,
     )
     db.session.add(s)

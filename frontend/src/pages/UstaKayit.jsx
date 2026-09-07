@@ -317,7 +317,9 @@ export default function UstaKayit() {
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Kaydınız Tamamlandı!</h2>
       <p className="text-gray-500 leading-relaxed mb-6">
-        Profiliniz oluşturuldu ve kategorinize eklendi. Usta panelinize yönlendiriliyorsunuz...
+        Profiliniz oluşturuldu, havale bildiriminiz alındı. Ödemeniz onaylandıktan ve
+        ekibimiz başvurunuzu inceledikten sonra profiliniz yayına alınacak. Usta panelinize
+        yönlendiriliyorsunuz...
       </p>
       <button onClick={() => navigate('/usta/panel')}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">

@@ -3,7 +3,8 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
-  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone, Store, TrendingUp
+  CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone, Store, TrendingUp,
+  Building2
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -12,6 +13,7 @@ const menuItems = [
   { to: '/admin/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/analitik',     icon: BarChart2,       label: 'Analitik & Rapor' },
   { to: '/admin/ustalar',      icon: Users,           label: 'Usta Yönetimi', kayitBadge: true },
+  { to: '/admin/sirketler',    icon: Building2,       label: 'Şirket Yönetimi' },
   { to: '/admin/kara-liste',   icon: ShieldOff,       label: 'Kara Liste' },
   { to: '/admin/planlar',      icon: PackageCheck,    label: 'Plan Yönetimi' },
   { to: '/admin/abonelikler',  icon: CreditCard,      label: 'Abonelik Takibi' },

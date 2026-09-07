@@ -218,7 +218,8 @@ export default function SirketKayit() {
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Şirket Kaydınız Tamamlandı!</h2>
       <p className="text-gray-500 leading-relaxed mb-6">
-        Şirket profiliniz oluşturuldu. Şirket panelinize yönlendiriliyorsunuz...
+        Şirket profiliniz oluşturuldu. Ödemeniz onaylandıktan ve ekibimiz başvurunuzu
+        inceledikten sonra profiliniz yayına alınacak. Şirket panelinize yönlendiriliyorsunuz...
       </p>
       <button onClick={() => navigate('/sirket/panel')}
         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">
@@ -344,7 +345,7 @@ export default function SirketKayit() {
                 className={inputCls} placeholder="ABC Teknik Hizmetler Ltd." />
             </div>
             <div>
-              <label className={labelCls}>Vergi No</label>
+              <label className={labelCls}>Vergi No <span className="font-normal text-gray-400">(isteğe bağlı)</span></label>
               <input type="text" value={form.vergi_no}
                 onChange={e => setForm(f => ({ ...f, vergi_no: e.target.value }))}
                 className={inputCls} placeholder="1234567890" />
