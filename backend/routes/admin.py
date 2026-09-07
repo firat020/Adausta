@@ -95,11 +95,16 @@ def ustalar():
         q = q.filter_by(kategori_id=kategori_id)
 
     if arama:
-        q = q.filter(
-            Usta.ad.ilike(f'%{arama}%') |
-            Usta.soyad.ilike(f'%{arama}%') |
-            Usta.telefon.ilike(f'%{arama}%')
-        )
+        # "Ahmet Yılmaz" gibi ad+soyad birlikte aranınca da bulunsun diye
+        # kelime kelime eşleşiyor: her kelime ad/soyad/telefondan en az
+        # birine denk gelmeli (tek "ad soyad" alanı olmadığı için tek
+        # parça olarak aramak hiçbir sütunla eşleşmiyordu).
+        for kelime in arama.split():
+            q = q.filter(
+                Usta.ad.ilike(f'%{kelime}%') |
+                Usta.soyad.ilike(f'%{kelime}%') |
+                Usta.telefon.ilike(f'%{kelime}%')
+            )
 
     return jsonify({'ustalar': [u.to_dict() for u in q.order_by(Usta.olusturma.desc()).all()]})
 
@@ -325,11 +330,14 @@ def sirketler():
         q = q.filter_by(kategori_id=kategori_id)
 
     if arama:
-        q = q.filter(
-            Sirket.sirket_adi.ilike(f'%{arama}%') |
-            Sirket.yetkili_ad.ilike(f'%{arama}%') |
-            Sirket.telefon.ilike(f'%{arama}%')
-        )
+        # Kelime kelime eşleştir: "Ada Teknik Ahmet" gibi şirket adı+yetkili
+        # adı birlikte aranınca da bulunsun (bkz. /ustalar aynı düzeltme).
+        for kelime in arama.split():
+            q = q.filter(
+                Sirket.sirket_adi.ilike(f'%{kelime}%') |
+                Sirket.yetkili_ad.ilike(f'%{kelime}%') |
+                Sirket.telefon.ilike(f'%{kelime}%')
+            )
 
     return jsonify({'sirketler': [s.to_dict() for s in q.order_by(Sirket.olusturma.desc()).all()]})
 
