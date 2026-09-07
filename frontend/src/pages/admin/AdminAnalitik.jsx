@@ -7,7 +7,7 @@ import {
 import {
   TrendingUp, Users, Phone, MessageCircle, Eye, Bell,
   MapPin, Tag, Star, Mail, Trash2, RefreshCw, Download,
-  ToggleLeft, ToggleRight, AlertCircle
+  ToggleLeft, ToggleRight, AlertCircle, X, Search
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -37,8 +37,32 @@ export default function AdminAnalitik() {
   const [aboneArama, setAboneArama] = useState('')
   const [aboneYukleniyor, setAboneYukleniyor] = useState(false)
 
+  // Telefon / WhatsApp kartlarına tıklayınca açılan detay penceresi
+  const [detay, setDetay] = useState({ acik: false, tur: null, kayitlar: [], yukleniyor: false, arama: '' })
+
   useEffect(() => { yukle() }, [aralik])
   useEffect(() => { if (sekme === 'aboneler') aboneleriYukle() }, [sekme])
+
+  const detayAc = (tur) => {
+    setDetay({ acik: true, tur, kayitlar: [], yukleniyor: true, arama: '' })
+    detayYukle(tur, '')
+  }
+
+  const detayYukle = async (tur, arama) => {
+    setDetay(prev => ({ ...prev, yukleniyor: true }))
+    try {
+      const r = await axios.get(
+        `${API}/api/admin/iletisim-log?tur=${tur}&aralik=${aralik}&arama=${encodeURIComponent(arama || '')}`,
+        { withCredentials: true }
+      )
+      setDetay(prev => ({ ...prev, kayitlar: r.data.kayitlar || [], yukleniyor: false }))
+    } catch (e) {
+      console.error(e)
+      setDetay(prev => ({ ...prev, kayitlar: [], yukleniyor: false }))
+    }
+  }
+
+  const detayKapat = () => setDetay({ acik: false, tur: null, kayitlar: [], yukleniyor: false, arama: '' })
 
   const yukle = async () => {
     setYukleniyor(true)
@@ -126,11 +150,17 @@ export default function AdminAnalitik() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: 'Toplam Etkileşim', deger: toplamIletisim, ikon: TrendingUp,    renk: 'from-blue-600 to-blue-800',   alt: `${aralik} günde` },
-          { label: 'Telefon Araması',  deger: toplamAra,       ikon: Phone,         renk: 'from-orange-500 to-orange-700', alt: 'Ara tıklaması' },
-          { label: 'WhatsApp',         deger: toplamWa,        ikon: MessageCircle, renk: 'from-green-500 to-green-700',  alt: 'Mesaj tıklaması' },
-          { label: 'Toplam Abone',     deger: veri?.toplam_abone || 0, ikon: Bell,  renk: 'from-purple-600 to-purple-800', alt: `+${veri?.yeni_abone || 0} yeni` },
-        ].map(({ label, deger, ikon: Icon, renk, alt }) => (
-          <div key={label} className={`bg-gradient-to-br ${renk} rounded-xl p-4 text-white`}>
+          { label: 'Telefon Araması',  deger: toplamAra,       ikon: Phone,         renk: 'from-orange-500 to-orange-700', alt: 'Ara tıklaması · detay için tıkla', tikla: () => detayAc('ara') },
+          { label: 'WhatsApp',         deger: toplamWa,        ikon: MessageCircle, renk: 'from-green-500 to-green-700',  alt: 'Mesaj tıklaması · detay için tıkla', tikla: () => detayAc('whatsapp') },
+          { label: 'Toplam Abone',     deger: veri?.toplam_abone || 0, ikon: Bell,  renk: 'from-purple-600 to-purple-800', alt: `+${veri?.yeni_abone || 0} yeni · liste için tıkla`, tikla: () => setSekme('aboneler') },
+        ].map(({ label, deger, ikon: Icon, renk, alt, tikla }) => (
+          <div
+            key={label}
+            onClick={tikla}
+            className={`bg-gradient-to-br ${renk} rounded-xl p-4 text-white ${
+              tikla ? 'cursor-pointer hover:brightness-110 hover:-translate-y-0.5 transition-all' : ''
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium opacity-80">{label}</span>
               <Icon size={16} className="opacity-70" />
@@ -570,6 +600,106 @@ export default function AdminAnalitik() {
           </div>
         </div>
       )}
+
+      {/* ══ İLETİŞİM DETAY PENCERESİ (Telefon/WhatsApp kartlarından açılır) ══ */}
+      {detay.acik && (
+        <DetayPenceresi
+          detay={detay}
+          aralik={aralik}
+          onAramaDegisti={(v) => setDetay(prev => ({ ...prev, arama: v }))}
+          onAramaCalistir={() => detayYukle(detay.tur, detay.arama)}
+          onKapat={detayKapat}
+        />
+      )}
+    </div>
+  )
+}
+
+function DetayPenceresi({ detay, aralik, onAramaDegisti, onAramaCalistir, onKapat }) {
+  const araBu = detay.tur === 'ara'
+  const baslik = araBu ? 'Telefon Araması Detayları' : 'WhatsApp Mesajlaşma Detayları'
+  const Icon = araBu ? Phone : MessageCircle
+  const renk = araBu ? 'text-orange-400' : 'text-green-400'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onKapat}>
+      <div
+        className="bg-[#0d1322] border border-[#1a2744] rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Başlık */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a2744]">
+          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+            <Icon size={16} className={renk} />
+            {baslik}
+            <span className="text-[#6a7ea0] text-xs font-normal">· Son {aralik} gün · {detay.kayitlar.length} kayıt</span>
+          </h3>
+          <button onClick={onKapat} className="p-1.5 rounded-lg hover:bg-[#1a2744] text-[#6a7ea0] hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Arama */}
+        <div className="px-5 py-3 border-b border-[#1a2744]">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7ea0]" />
+            <input
+              type="text"
+              placeholder="Usta adına göre filtrele, Enter'a bas..."
+              value={detay.arama}
+              onChange={(e) => onAramaDegisti(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onAramaCalistir()}
+              className="w-full bg-[#121929] border border-[#1a2744] rounded-lg pl-9 pr-3 py-2 text-white text-sm placeholder-[#6a7ea0] outline-none focus:border-[#0052CC]"
+            />
+          </div>
+        </div>
+
+        {/* Liste */}
+        <div className="overflow-y-auto flex-1">
+          {detay.yukleniyor ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0052CC]" />
+            </div>
+          ) : detay.kayitlar.length === 0 ? (
+            <div className="p-8">
+              <Bos
+                mesaj={araBu ? 'Bu aralıkta arama kaydı yok' : 'Bu aralıkta WhatsApp kaydı yok'}
+                altMesaj="Kullanıcılar usta ile iletişime geçtikçe burada listelenecek"
+              />
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-[#0d1322]">
+                <tr className="text-[#6a7ea0] text-xs border-b border-[#1a2744]">
+                  <th className="text-left px-5 py-3">Usta</th>
+                  <th className="text-left px-4 py-3">Kategori</th>
+                  <th className="text-left px-4 py-3">Şehir</th>
+                  <th className="text-left px-4 py-3">{araBu ? 'Telefon' : 'WhatsApp'}</th>
+                  <th className="text-right px-5 py-3">Tarih / Saat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detay.kayitlar.map((k) => (
+                  <tr key={k.id} className="border-b border-[#1a2744]/50 hover:bg-[#121929] transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${araBu ? 'from-orange-500 to-orange-700' : 'from-green-500 to-green-700'} flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+                          {k.usta_ad_soyad?.[0] || '?'}
+                        </div>
+                        <span className="text-white font-medium text-xs">{k.usta_ad_soyad}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[#6a7ea0] text-xs">{k.kategori || '—'}</td>
+                    <td className="px-4 py-3 text-[#6a7ea0] text-xs">{k.sehir || '—'}</td>
+                    <td className="px-4 py-3 text-[#6a7ea0] text-xs">{(araBu ? k.telefon : k.whatsapp) || '—'}</td>
+                    <td className="px-5 py-3 text-right text-[#6a7ea0] text-xs whitespace-nowrap">{k.tarih}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

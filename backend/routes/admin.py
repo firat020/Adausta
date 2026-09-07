@@ -724,6 +724,51 @@ def analitik():
     })
 
 
+@admin_bp.route('/iletisim-log', methods=['GET'])
+@admin_gerekli
+def iletisim_log_listesi():
+    """Telefon/WhatsApp kartlarına tıklanınca açılan detay penceresi için:
+    hangi usta, ne zaman, hangi kanaldan (arama/whatsapp) iletişim aldı."""
+    tur = request.args.get('tur', '')            # ara / whatsapp / goruntule / teklif / '' (tümü)
+    aralik = request.args.get('aralik', '30')
+    arama = (request.args.get('arama') or '').strip()
+    try:
+        gun = int(aralik)
+    except ValueError:
+        gun = 30
+    baslangic = datetime.utcnow() - timedelta(days=gun)
+
+    q = IletisimLog.query.filter(IletisimLog.tarih >= baslangic)
+    if tur in ('ara', 'whatsapp', 'goruntule', 'teklif'):
+        q = q.filter(IletisimLog.tur == tur)
+
+    kayitlar = q.order_by(IletisimLog.tarih.desc()).limit(300).all()
+
+    # N+1 sorgudan kaçınmak için ustaları tek seferde çek
+    usta_idler = {k.usta_id for k in kayitlar}
+    ustalar = {u.id: u for u in Usta.query.filter(Usta.id.in_(usta_idler)).all()} if usta_idler else {}
+
+    sonuc = []
+    for log in kayitlar:
+        u = ustalar.get(log.usta_id)
+        ad_soyad = f'{u.ad} {u.soyad}'.strip() if u else 'Silinmiş usta'
+        if arama and arama.lower() not in ad_soyad.lower():
+            continue
+        sonuc.append({
+            'id': log.id,
+            'usta_id': log.usta_id,
+            'usta_ad_soyad': ad_soyad,
+            'kategori': u.kategori.ad if u and u.kategori else '',
+            'sehir': log.sehir or (u.sehir.ad if u and u.sehir else ''),
+            'telefon': u.telefon if u else '',
+            'whatsapp': (u.whatsapp or u.telefon) if u else '',
+            'tur': log.tur,
+            'tarih': log.tarih.strftime('%d.%m.%Y %H:%M'),
+        })
+
+    return jsonify({'kayitlar': sonuc, 'toplam': len(sonuc)})
+
+
 @admin_bp.route('/aboneler', methods=['GET'])
 @admin_gerekli
 def aboneler():
