@@ -14,7 +14,7 @@ export default function MusteriGiris() {
   const from = location.state?.from || '/musteri/panel'
   const googleBtnRef = useRef(null)
 
-  const [tab, setTab] = useState('giris')
+  const [tab, setTab] = useState(location.state?.tab === 'kayit' ? 'kayit' : 'giris')
   const [email, setEmail] = useState('')
   const [sifre, setSifre] = useState('')
   const [sifreGoster, setSifreGoster] = useState(false)

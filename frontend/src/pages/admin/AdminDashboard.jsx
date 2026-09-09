@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, AreaChart, Area
 } from 'recharts'
-import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle, ShoppingCart, X } from 'lucide-react'
+import { Users, Clock, Star, TrendingUp, TrendingDown, Tag, DollarSign, CreditCard, AlertCircle, ShoppingCart, X, Building2, UserCheck } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -146,6 +146,13 @@ export default function AdminDashboard() {
         <StatKart baslik="Onay Bekleyen" deger={veri.bekleyen_usta} alt="İnceleme gerekiyor" ikon={Clock} renk="bg-orange-500" />
         <StatKart baslik="Bu Ay Kayıt" deger={veri.bu_ay_kayit} trend={trend} ikon={TrendingUp} renk="bg-green-500" />
         <StatKart baslik="Bekleyen Yorum" deger={veri.bekleyen_yorum} alt={`${veri.toplam_yorum} toplam`} ikon={Star} renk="bg-yellow-500" />
+      </div>
+
+      {/* Kayıt türü dağılımı — Usta / Şirket / Üye net ayrım */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatKart baslik="Toplam Usta" deger={veri.toplam_usta} alt="Bireysel usta kaydı" ikon={Users} renk="bg-[#0052CC]" />
+        <StatKart baslik="Toplam Şirket" deger={veri.toplam_sirket} alt="Kurumsal şirket kaydı" ikon={Building2} renk="bg-indigo-600" />
+        <StatKart baslik="Toplam Üye" deger={veri.toplam_uye} alt="“Üye Ol” ile kaydolan müşteri" ikon={UserCheck} renk="bg-green-600" />
       </div>
 
       {/* Sipariş Özeti */}

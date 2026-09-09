@@ -61,6 +61,8 @@ def istatistik():
         'toplam_usta': Usta.query.count(),
         'onaylanan_usta': Usta.query.filter_by(onaylanmis=True).count(),
         'bekleyen_usta': Usta.query.filter_by(onaylanmis=False, aktif=True).count(),
+        'toplam_sirket': Sirket.query.count(),
+        'toplam_uye': Kullanici.query.filter_by(rol='musteri').count(),
         'toplam_yorum': Yorum.query.count(),
         'bekleyen_yorum': Yorum.query.filter_by(onaylanmis=False).count(),
         'toplam_kategori': Kategori.query.count(),
@@ -493,6 +495,68 @@ def export_istatistik():
                          mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     except ImportError:
         return jsonify({'hata': 'openpyxl paketi yüklü değil'}), 500
+
+
+# ─── ÜYE (MÜŞTERİ) YÖNETİMİ ────────────────────────────────────
+# "/usta-kayit" sayfasındaki "Üye Ol" kartından (ve /giris'ten Google ile)
+# kaydolanlar burada yönetilir — Usta/Şirket'ten farklı olarak Kullanici
+# tablosunda rol='musteri' olarak tutulurlar.
+
+@admin_bp.route('/uyeler', methods=['GET'])
+@admin_gerekli
+def uyeler():
+    filtre = request.args.get('filtre', 'hepsi')  # hepsi / aktif / pasif
+    arama = request.args.get('arama', '')
+
+    q = Kullanici.query.filter_by(rol='musteri')
+    if filtre == 'aktif':
+        q = q.filter_by(aktif=True)
+    elif filtre == 'pasif':
+        q = q.filter_by(aktif=False)
+
+    if arama:
+        for kelime in arama.split():
+            q = q.filter(
+                Kullanici.ad.ilike(f'%{kelime}%') |
+                Kullanici.soyad.ilike(f'%{kelime}%') |
+                Kullanici.email.ilike(f'%{kelime}%') |
+                Kullanici.telefon.ilike(f'%{kelime}%')
+            )
+
+    return jsonify({'uyeler': [k.to_dict() for k in q.order_by(Kullanici.olusturma.desc()).all()]})
+
+
+@admin_bp.route('/uyeler/<int:id>/aktifet', methods=['POST'])
+@admin_gerekli
+def uye_aktifet(id):
+    k = Kullanici.query.filter_by(id=id, rol='musteri').first_or_404()
+    k.aktif = True
+    k.giris_deneme = 0
+    k.kilitli_kadar = None
+    db.session.commit()
+    log_kaydet('ÜYE_AKTİFET', f'Üye #{id} {k.email} aktifleştirildi')
+    return jsonify({'mesaj': 'Üye aktifleştirildi'})
+
+
+@admin_bp.route('/uyeler/<int:id>/pasifet', methods=['POST'])
+@admin_gerekli
+def uye_pasifet(id):
+    k = Kullanici.query.filter_by(id=id, rol='musteri').first_or_404()
+    k.aktif = False
+    db.session.commit()
+    log_kaydet('ÜYE_PASİFET', f'Üye #{id} {k.email} pasifleştirildi')
+    return jsonify({'mesaj': 'Üye pasifleştirildi'})
+
+
+@admin_bp.route('/uyeler/<int:id>', methods=['DELETE'])
+@admin_gerekli
+def uye_sil(id):
+    k = Kullanici.query.filter_by(id=id, rol='musteri').first_or_404()
+    email = k.email
+    db.session.delete(k)
+    db.session.commit()
+    log_kaydet('ÜYE_SİL', f'Üye #{id} {email} silindi')
+    return jsonify({'mesaj': 'Silindi'})
 
 
 # ─── YORUM YÖNETİMİ ────────────────────────────────────────────

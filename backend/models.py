@@ -42,7 +42,8 @@ class Kullanici(db.Model):
     def to_dict(self):
         d = {'id': self.id, 'email': self.email, 'rol': self.rol,
              'ad': self.ad, 'soyad': self.soyad, 'telefon': self.telefon,
-             'adres': self.adres, 'olusturma': fmt(self.olusturma)}
+             'adres': self.adres, 'aktif': self.aktif, 'sifre_var': self.sifre_hash is not None,
+             'olusturma': fmt(self.olusturma)}
         if self.rol == 'usta':
             usta = Usta.query.filter_by(kullanici_id=self.id).first()
             d['usta_id'] = usta.id if usta else None

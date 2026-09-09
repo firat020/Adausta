@@ -414,7 +414,7 @@ export default function UstaKayit() {
 
         {/* Üye Ol */}
         <div
-          onClick={() => navigate('/giris')}
+          onClick={() => navigate('/giris', { state: { tab: 'kayit' } })}
           className="relative border-2 rounded-2xl p-8 cursor-pointer transition-all border-green-200 bg-white hover:border-green-500 hover:shadow-lg hover:shadow-green-50 group"
         >
           <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-green-100 transition-colors">

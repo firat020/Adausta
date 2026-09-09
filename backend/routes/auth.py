@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, AdminLog, TelefonOtp, Usta, Sirket
+from models import db, Kullanici, AdminLog, TelefonOtp, Usta, Sirket, AdminBildirim
 from datetime import datetime, timedelta
 from extensions import limiter
 from sms import sms_gonder
@@ -75,6 +75,8 @@ def kayit():
     k = Kullanici(email=data.get('email'), rol='musteri')
     k.sifre_set(sifre)
     db.session.add(k)
+    db.session.flush()  # k.id'yi al
+    db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'Yeni üye kaydı: {k.email}'))
     db.session.commit()
     session['kullanici_id'] = k.id
     session['rol'] = k.rol
@@ -207,6 +209,8 @@ def google_giris():
         kullanici = Kullanici(email=email, rol='musteri')
         kullanici.sifre_hash = None  # OAuth kullanıcısı — şifre yok
         db.session.add(kullanici)
+        db.session.flush()  # kullanici.id'yi al
+        db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'Yeni üye kaydı (Google): {email}'))
         db.session.commit()
 
     if not kullanici.aktif:

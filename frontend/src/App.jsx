@@ -57,6 +57,7 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminUstalar = lazy(() => import('./pages/admin/AdminUstalar'))
 const AdminSirketler = lazy(() => import('./pages/admin/AdminSirketler'))
+const AdminUyeler = lazy(() => import('./pages/admin/AdminUyeler'))
 const AdminYorumlar = lazy(() => import('./pages/admin/AdminYorumlar'))
 const AdminKategoriler = lazy(() => import('./pages/admin/AdminKategoriler'))
 const AdminLoglar = lazy(() => import('./pages/admin/AdminLoglar'))
@@ -214,6 +215,7 @@ export default function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="ustalar" element={<AdminUstalar />} />
         <Route path="sirketler" element={<AdminSirketler />} />
+        <Route path="uyeler" element={<AdminUyeler />} />
         <Route path="yorumlar" element={<AdminYorumlar />} />
         <Route path="kategoriler" element={<AdminKategoriler />} />
         <Route path="loglar" element={<AdminLoglar />} />

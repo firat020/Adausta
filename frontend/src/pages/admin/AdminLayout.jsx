@@ -4,7 +4,7 @@ import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
   CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone, Store, TrendingUp,
-  Building2
+  Building2, UserCheck
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -14,6 +14,7 @@ const menuItems = [
   { to: '/admin/analitik',     icon: BarChart2,       label: 'Analitik & Rapor' },
   { to: '/admin/ustalar',      icon: Users,           label: 'Usta Yönetimi', kayitBadge: true },
   { to: '/admin/sirketler',    icon: Building2,       label: 'Şirket Yönetimi' },
+  { to: '/admin/uyeler',       icon: UserCheck,       label: 'Üye Yönetimi' },
   { to: '/admin/kara-liste',   icon: ShieldOff,       label: 'Kara Liste' },
   { to: '/admin/planlar',      icon: PackageCheck,    label: 'Plan Yönetimi' },
   { to: '/admin/abonelikler',  icon: CreditCard,      label: 'Abonelik Takibi' },
