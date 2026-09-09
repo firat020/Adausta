@@ -186,8 +186,7 @@ export default function UstaListesi() {
       .finally(() => setYukleniyor(false))
   }, [filtreler, konum])
 
-  const temizle = () => setFiltreler({ kategori_id: '', sehir_id: '', arama: '' })
-  const aktifFiltre = filtreler.kategori_id || filtreler.sehir_id || filtreler.arama
+  const temizle = () => setFiltreler(f => ({ ...f, kategori_id: '', sehir_id: '' }))
 
   const aramaTerimi = searchParams.get('arama') || ''
   const sehirTerimi = searchParams.get('sehir') || ''
@@ -243,7 +242,7 @@ export default function UstaListesi() {
         schema={seoSchema}
       />
       {/* Başlık */}
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {kategoriAd || t('ustaListesi.baslik')}
@@ -266,23 +265,28 @@ export default function UstaListesi() {
           className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 hover:border-orange-400 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
           <SlidersHorizontal size={16} />
           {t('ustaListesi.filtrele')}
-          {aktifFiltre && <span className="w-2 h-2 bg-orange-500 rounded-full" />}
+          {(filtreler.kategori_id || filtreler.sehir_id) && <span className="w-2 h-2 bg-orange-500 rounded-full" />}
         </button>
+      </div>
+
+      {/* İsim / soyisim / hizmet arama — her zaman görünür */}
+      <div className="relative mb-6">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input type="text" value={filtreler.arama}
+          onChange={e => setFiltreler(f => ({ ...f, arama: e.target.value }))}
+          placeholder="Usta ismi, soyismi veya hizmet ara..."
+          className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white shadow-sm" />
+        {filtreler.arama && (
+          <button onClick={() => setFiltreler(f => ({ ...f, arama: '' }))}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Filtre paneli */}
       {filtrePaneli && (
-        <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.arama')}</label>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" value={filtreler.arama}
-                onChange={e => setFiltreler(f => ({ ...f, arama: e.target.value }))}
-                placeholder={t('ustaListesi.aramaPlaceholder')}
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
-            </div>
-          </div>
+        <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.hizmetTuru')}</label>
             <select value={filtreler.kategori_id}
@@ -301,8 +305,8 @@ export default function UstaListesi() {
               {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
             </select>
           </div>
-          {aktifFiltre && (
-            <div className="md:col-span-3 flex justify-end">
+          {(filtreler.kategori_id || filtreler.sehir_id) && (
+            <div className="md:col-span-2 flex justify-end">
               <button onClick={temizle}
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors">
                 <X size={14} /> {t('ustaListesi.filtreleriTemizle')}

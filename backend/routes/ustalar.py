@@ -49,11 +49,17 @@ def listele():
     if ilce_id:
         q = q.filter_by(ilce_id=ilce_id)
     if arama:
-        q = q.join(Kategori, Usta.kategori_id == Kategori.id, isouter=True).filter(
-            Usta.ad.ilike(f'%{arama}%') |
-            Usta.aciklama.ilike(f'%{arama}%') |
-            Kategori.ad.ilike(f'%{arama}%')
-        )
+        # "Osman Çelik" gibi ad+soyad birlikte aranınca da bulunsun diye
+        # kelime kelime eşleşiyor: her kelime ad/soyad/açıklama/kategoriden
+        # en az birine denk gelmeli (bkz. admin.py /ustalar aynı düzeltme).
+        q = q.join(Kategori, Usta.kategori_id == Kategori.id, isouter=True)
+        for kelime in arama.split():
+            q = q.filter(
+                Usta.ad.ilike(f'%{kelime}%') |
+                Usta.soyad.ilike(f'%{kelime}%') |
+                Usta.aciklama.ilike(f'%{kelime}%') |
+                Kategori.ad.ilike(f'%{kelime}%')
+            )
 
     ustalar = q.all()
 
