@@ -7,8 +7,9 @@ import uuid
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify, session
-from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog
+from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog, AdminBildirim
 from routes.odeme import _usd_try_kur
+from whatsapp import admin_whatsapp_gonder
 
 odeme_cardplus_bp = Blueprint('odeme_cardplus', __name__)
 
@@ -359,8 +360,13 @@ def _odeme_basarili_isle(odeme: Odeme, params: dict):
                 yeni_durum='hazirlaniyor',
                 aciklama='CardPlus ödeme onaylandı',
             ))
+        db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'Magaza siparisi #{siparis.id if siparis else "?"} - {odeme.tutar} TL kredi kartiyla odendi'))
+        admin_whatsapp_gonder(f'Odeme alindi (magaza siparisi): {odeme.tutar} TL kredi karti ile.')
     else:
         _aktiflestir_abonelik(odeme, params)
+        usta_ad = f'{odeme.usta.ad} {odeme.usta.soyad}'.strip() if odeme.usta else '-'
+        db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'{usta_ad} - {odeme.tutar} TL kredi kartiyla odedi (abonelik)'))
+        admin_whatsapp_gonder(f'Odeme alindi: {usta_ad} - {odeme.tutar} TL kredi karti ile abonelik odedi.')
 
 
 # ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Sirket, Kullanici, Kategori, Sehir, SirketIsTalebi, AdminBildirim
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
+from whatsapp import admin_whatsapp_gonder
 import os, uuid
 
 sirketler_bp = Blueprint('sirketler', __name__)
@@ -112,6 +113,7 @@ def kayit():
     )
     db.session.add(bildirim)
     db.session.commit()
+    admin_whatsapp_gonder(f'🏢 Yeni şirket kaydı\n{data["sirket_adi"]} — {data["telefon"]}')
 
     session['kullanici_id'] = k.id
     session['rol'] = 'sirket'

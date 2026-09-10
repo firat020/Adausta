@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
+from whatsapp import admin_whatsapp_gonder
 from extensions import limiter
 from datetime import datetime, timedelta
 import os, uuid, random, hashlib
@@ -144,6 +145,7 @@ def kayit():
     )
     db.session.add(bildirim)
     db.session.commit()
+    admin_whatsapp_gonder(f'🔧 Yeni usta kaydı\n{data["ad"]} {data.get("soyad", "")} — {data["telefon"]}\nKategori: {u.kategori.ad if u.kategori else "-"}')
 
     # Otomatik giriş yap
     session['kullanici_id'] = k.id

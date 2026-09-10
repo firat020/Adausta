@@ -3,7 +3,8 @@ import uuid
 import requests as _requests
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, session
-from models import db, Odeme, Usta, Abonelik, Plan
+from models import db, Odeme, Usta, Abonelik, Plan, AdminBildirim
+from whatsapp import admin_whatsapp_gonder
 
 _kur_cache = {'rate': None, 'zaman': None}
 
@@ -61,7 +62,12 @@ def havale_bildir():
         aciklama=f'Havale — {ad_soyad} | {email} | Ref: {referans or "belirtilmedi"}',
     )
     db.session.add(odeme)
+    db.session.add(AdminBildirim(
+        tur='yeni_havale',
+        mesaj=f'Havale bildirimi: {ad_soyad} — {tutar} TL (Ref: {referans or "belirtilmedi"}) — onay bekliyor'
+    ))
     db.session.commit()
+    admin_whatsapp_gonder(f'Havale bildirimi geldi: {ad_soyad} — {tutar} TL. Ref: {referans or "belirtilmedi"}. Onay icin Odeme Gecmisi sayfasina bakin.')
 
     return jsonify({'mesaj': 'Bildirim alındı', 'siparis_no': order_id}), 201
 

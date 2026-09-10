@@ -3,6 +3,7 @@ from models import db, Kullanici, AdminLog, TelefonOtp, Usta, Sirket, AdminBildi
 from datetime import datetime, timedelta
 from extensions import limiter
 from sms import sms_gonder
+from whatsapp import admin_whatsapp_gonder
 import requests as http_requests
 import random
 import hashlib
@@ -78,6 +79,7 @@ def kayit():
     db.session.flush()  # k.id'yi al
     db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'Yeni üye kaydı: {k.email}'))
     db.session.commit()
+    admin_whatsapp_gonder(f'🟢 Yeni üye kaydı\n{k.email}')
     session['kullanici_id'] = k.id
     session['rol'] = k.rol
     return jsonify({'mesaj': 'Kayıt başarılı', 'kullanici': k.to_dict()}), 201
@@ -212,6 +214,7 @@ def google_giris():
         db.session.flush()  # kullanici.id'yi al
         db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'Yeni üye kaydı (Google): {email}'))
         db.session.commit()
+        admin_whatsapp_gonder(f'🟢 Yeni üye kaydı (Google)\n{email}')
 
     if not kullanici.aktif:
         return jsonify({'hata': 'Hesabınız aktif değil'}), 403
