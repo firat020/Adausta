@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
-import { Plus, Pencil, Trash2, Check, X, Star, RefreshCw } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, Star, RefreshCw, ArrowRight } from 'lucide-react'
 
 import API from '../../config.js'
 // API
@@ -167,10 +168,15 @@ export default function AdminPlanlar() {
                     {p.one_cikma ? 'Var' : 'Yok'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <Link to={`/admin/abonelikler?plan_id=${p.id}`}
+                  className="flex items-center justify-between text-sm group/abone -mx-1 px-1 py-0.5 rounded-md hover:bg-[#F0F4FF] transition-colors"
+                  title="Bu plandaki aboneleri ve ödemelerini gör">
                   <span className="text-gray-500">Aktif Abone</span>
-                  <span className="font-semibold text-[#0052CC]">{p.abone_sayisi}</span>
-                </div>
+                  <span className="font-semibold text-[#0052CC] flex items-center gap-1">
+                    {p.abone_sayisi}
+                    <ArrowRight size={12} className="opacity-0 group-hover/abone:opacity-100 transition-opacity" />
+                  </span>
+                </Link>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setForm({ ...p })}
                     className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-[#F0F4FF] text-[#0052CC] rounded-lg text-xs font-medium hover:bg-[#E0ECFF] transition">

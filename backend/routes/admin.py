@@ -1011,9 +1011,12 @@ def plan_sil(id):
 def abonelik_listesi():
     filtre = request.args.get('filtre', 'hepsi')
     arama = request.args.get('arama', '')
+    plan_id = request.args.get('plan_id', type=int)
     q = Abonelik.query
     if filtre != 'hepsi':
         q = q.filter_by(durum=filtre)
+    if plan_id:
+        q = q.filter_by(plan_id=plan_id)
     liste = q.order_by(Abonelik.olusturma.desc()).all()
     if arama:
         liste = [a for a in liste if arama.lower() in (a.usta.ad + ' ' + a.usta.soyad).lower()]
@@ -1154,17 +1157,25 @@ def odemeler_listele():
 @admin_gerekli
 def odeme_ekle():
     data = request.get_json()
+    abonelik_id = data.get('abonelik_id')
+    if not abonelik_id:
+        # Manuel ödeme formu abonelik seçtirmiyor — usta'nın güncel aktif
+        # aboneliğine otomatik bağla ki "Abonelik Takibi"nde ödenen tutar görünsün.
+        mevcut = Abonelik.query.filter_by(usta_id=data['usta_id'], durum='aktif') \
+            .order_by(Abonelik.olusturma.desc()).first()
+        if mevcut:
+            abonelik_id = mevcut.id
     o = Odeme(
         usta_id=data['usta_id'],
-        abonelik_id=data.get('abonelik_id'),
+        abonelik_id=abonelik_id,
         tutar=data['tutar'],
         durum=data.get('durum', 'basarili'),
         aciklama=data.get('aciklama', ''),
     )
     db.session.add(o)
     # Ödeme başarılıysa aboneliği aktifleştir
-    if o.durum == 'basarili' and data.get('abonelik_id'):
-        ab = Abonelik.query.get(data['abonelik_id'])
+    if o.durum == 'basarili' and abonelik_id:
+        ab = Abonelik.query.get(abonelik_id)
         if ab:
             ab.durum = 'aktif'
             if ab.usta:

@@ -427,10 +427,13 @@ class Abonelik(db.Model):
     odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
 
     def to_dict(self):
+        basarili_odemeler = [o for o in self.odemeler if o.durum == 'basarili']
+        son_odeme = max(basarili_odemeler, key=lambda o: o.tarih) if basarili_odemeler else None
         return {
             'id': self.id,
             'usta_id': self.usta_id,
             'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'usta_telefon': self.usta.telefon if self.usta else '',
             'plan_id': self.plan_id,
             'plan_ad': self.plan.ad if self.plan else '',
             'plan_fiyat': self.plan.fiyat if self.plan else 0,
@@ -441,6 +444,11 @@ class Abonelik(db.Model):
             'otomatik_yenileme': self.otomatik_yenileme,
             'basarisiz_deneme_sayisi': self.basarisiz_deneme_sayisi,
             'olusturma': fmt(self.olusturma),
+            # Bu aboneliğe bağlı, gerçekten yapılmış (durum=basarili) ödemelerin toplamı —
+            # plan_fiyat sadece planın liste fiyatı, bu ise usta'nın fiilen ödediği tutar.
+            'toplam_odenen': round(sum(o.tutar for o in basarili_odemeler), 2),
+            'odeme_sayisi': len(basarili_odemeler),
+            'son_odeme_tarihi': fmt(son_odeme.tarih) if son_odeme else None,
         }
 
 

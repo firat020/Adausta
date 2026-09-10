@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import axios from 'axios'
-import { AlertCircle, Plus, X, MessageCircle, RefreshCw } from 'lucide-react'
+import { AlertCircle, Plus, X, MessageCircle, RefreshCw, Wallet } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -11,11 +12,13 @@ const durumRenk = {
 }
 
 export default function AdminAbonelikler() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [liste, setListe] = useState([])
   const [planlar, setPlanlar] = useState([])
   const [ustalar, setUstalar] = useState([])
   const [kategoriler, setKategoriler] = useState([])
   const [filtre, setFiltre] = useState('hepsi')
+  const [planFiltre, setPlanFiltre] = useState(searchParams.get('plan_id') || '')
   const [arama, setArama] = useState('')
   const [yeniForm, setYeniForm] = useState(null)
   const [modalKategori, setModalKategori] = useState('')
@@ -24,16 +27,28 @@ export default function AdminAbonelikler() {
   const [waListe, setWaListe] = useState([])
   const [waYukleniyor, setWaYukleniyor] = useState(false)
 
-  const yukle = () =>
-    axios.get(`${API}/api/admin/abonelik-listesi?filtre=${filtre}&arama=${arama}`, { withCredentials: true })
+  const yukle = () => {
+    const params = { filtre, arama }
+    if (planFiltre) params.plan_id = planFiltre
+    return axios.get(`${API}/api/admin/abonelik-listesi`, { params, withCredentials: true })
       .then(r => setListe(r.data.abonelikler))
+  }
 
   useEffect(() => {
     yukle()
     axios.get(`${API}/api/admin/planlar`, { withCredentials: true }).then(r => setPlanlar(r.data.planlar))
     axios.get(`${API}/api/admin/ustalar`, { withCredentials: true }).then(r => setUstalar(r.data.ustalar))
     axios.get(`${API}/api/kategoriler`).then(r => setKategoriler(r.data.kategoriler || []))
-  }, [filtre])
+  }, [filtre, planFiltre])
+
+  const planFiltreDegistir = (deger) => {
+    setPlanFiltre(deger)
+    const yeni = new URLSearchParams(searchParams)
+    if (deger) yeni.set('plan_id', deger); else yeni.delete('plan_id')
+    setSearchParams(yeni, { replace: true })
+  }
+
+  const seciliPlanAdi = planFiltre ? planlar.find(p => String(p.id) === String(planFiltre))?.ad : null
 
   const durumDegistir = async (id, durum) => {
     await axios.post(`${API}/api/admin/abonelik-listesi/${id}/durum`, { durum }, { withCredentials: true })
@@ -118,7 +133,7 @@ export default function AdminAbonelikler() {
       </div>
 
       {/* Filtreler */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-center">
         <input
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] w-60"
           placeholder="Usta ara..."
@@ -131,6 +146,17 @@ export default function AdminAbonelikler() {
             {f === 'hepsi' ? 'Tümü' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
+        <select value={planFiltre} onChange={e => planFiltreDegistir(e.target.value)}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0052CC] bg-white">
+          <option value="">Tüm planlar</option>
+          {planlar.map(p => <option key={p.id} value={p.id}>{p.ad}</option>)}
+        </select>
+        {planFiltre && (
+          <span className="inline-flex items-center gap-1.5 bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] text-xs font-semibold px-3 py-1.5 rounded-lg">
+            Plan: {seciliPlanAdi || '...'}
+            <button onClick={() => planFiltreDegistir('')} className="hover:text-red-500"><X size={12} /></button>
+          </span>
+        )}
       </div>
 
       {/* Tablo */}
@@ -139,18 +165,19 @@ export default function AdminAbonelikler() {
           <table className="w-full text-sm">
             <thead className="bg-[#F8F9FA] border-b border-[#E0E0E0]">
               <tr>
-                {['Usta', 'Plan', 'Fiyat', 'Başlangıç', 'Bitiş', 'Yenileme', 'Durum', 'İşlem'].map(h => (
+                {['Usta', 'Plan', 'Plan Fiyatı', 'Ödenen Tutar', 'Başlangıç', 'Bitiş', 'Yenileme', 'Durum', 'İşlem'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtreli.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-10 text-gray-400">Abonelik bulunamadı</td></tr>
+                <tr><td colSpan={9} className="text-center py-10 text-gray-400">Abonelik bulunamadı</td></tr>
               ) : filtreli.map(a => (
                 <tr key={a.id} className={`hover:bg-gray-50 transition ${yaklasiyor(a.yenileme_tarihi) ? 'bg-yellow-50' : ''}`}>
                   <td className="px-4 py-3 font-medium text-[#1e293b]">
                     {a.usta_ad}
+                    <div className="text-xs text-gray-400 font-normal">{a.usta_telefon}</div>
                     {yaklasiyor(a.yenileme_tarihi) && (
                       <span className="ml-2 inline-flex items-center gap-1 text-xs text-orange-600">
                         <AlertCircle size={11} /> Yenileme yaklaşıyor
@@ -159,6 +186,20 @@ export default function AdminAbonelikler() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">{a.plan_ad}</td>
                   <td className="px-4 py-3 text-gray-600">{a.plan_fiyat > 0 ? `${a.plan_fiyat} ₺` : 'Ücretsiz'}</td>
+                  <td className="px-4 py-3">
+                    {a.toplam_odenen > 0 ? (
+                      <div>
+                        <span className="font-semibold text-green-700">{a.toplam_odenen.toLocaleString('tr-TR')} ₺</span>
+                        <div className="text-xs text-gray-400">
+                          <Link to={`/admin/odemeler?arama=${encodeURIComponent(a.usta_ad)}`} className="hover:text-[#0052CC] hover:underline">
+                            {a.odeme_sayisi} ödeme{a.son_odeme_tarihi ? ` · son ${a.son_odeme_tarihi}` : ''}
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Ödeme yok</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{a.baslangic}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{a.bitis || '—'}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{a.yenileme_tarihi || '—'}</td>

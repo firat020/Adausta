@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { Plus, X } from 'lucide-react'
 
@@ -11,10 +12,11 @@ const durumRenk = {
 }
 
 export default function AdminOdemeler() {
+  const [searchParams] = useSearchParams()
   const [liste, setListe] = useState([])
   const [ustalar, setUstalar] = useState([])
   const [filtre, setFiltre] = useState('hepsi')
-  const [arama, setArama] = useState('')
+  const [arama, setArama] = useState(searchParams.get('arama') || '')
   const [yeniForm, setYeniForm] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(false)
   const [kur, setKur] = useState(null)
