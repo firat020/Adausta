@@ -8,12 +8,24 @@ const WA_LINK = `https://wa.me/${WA_TEL}?text=${WA_MESAJ}`
 export default function WhatsappButon() {
   const [balonAcik, setBalonAcik] = useState(false)
   const [uyariAcik, setUyariAcik] = useState(false)
+  const [mobilMenuAcik, setMobilMenuAcik] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
     const t = setTimeout(() => setBalonAcik(true), 3500)
     return () => clearTimeout(t)
   }, [])
+
+  // Mobil menü açıkken (Navbar.jsx) bu widget'ı tamamen gizle — aksi halde
+  // sağ altta sabit duran buton/balon, menüdeki "Kayıt Ol" gibi linklerin
+  // üzerine binip dokunulamaz hale getiriyordu
+  useEffect(() => {
+    const dinle = (e) => setMobilMenuAcik(e.detail)
+    window.addEventListener('adaustaMobilMenu', dinle)
+    return () => window.removeEventListener('adaustaMobilMenu', dinle)
+  }, [])
+
+  if (mobilMenuAcik) return null
 
   const ustaAra = () => {
     setUyariAcik(false)

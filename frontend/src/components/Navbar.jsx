@@ -34,6 +34,12 @@ export default function Navbar() {
     return () => document.removeEventListener('click', kapat)
   }, [girisAcik])
 
+  // Mobil menü açık/kapalı durumunu diğer bileşenlere (ör. WhatsappButon) bildir
+  // ki menü açıkken WhatsApp balonu/butonu menüdeki linklerin üzerine binmesin
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('adaustaMobilMenu', { detail: menuAcik }))
+  }, [menuAcik])
+
   const handleCikis = async () => {
     await cikis()
     setKullanici(null)
