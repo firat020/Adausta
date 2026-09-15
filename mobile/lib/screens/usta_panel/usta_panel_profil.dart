@@ -1,6 +1,12 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import '../../config/api_config.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
+import 'usta_panel_musteriler.dart';
+import 'usta_panel_istatistik.dart';
+import 'usta_panel_abonelik.dart';
+import 'usta_panel_belgeler.dart';
 
 class UstaPanelProfil extends StatefulWidget {
   final ApiService api;
@@ -14,6 +20,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
   Map<String, dynamic>? _usta;
   bool _loading = true;
   bool _kaydediliyor = false;
+  bool _fotoYukleniyor = false;
   String? _mesaj;
   bool _mesajOk = false;
 
@@ -83,6 +90,61 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
     }
   }
 
+  String _fotoUrl(Map f) {
+    final url = f['url'] as String?;
+    if (url != null && url.isNotEmpty) {
+      return url.startsWith('http') ? url : '${ApiConfig.baseUrl}$url';
+    }
+    return '${ApiConfig.uploads}/${f['dosya']}';
+  }
+
+  Future<void> _fotoYukle() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result == null || result.files.single.path == null) return;
+    setState(() => _fotoYukleniyor = true);
+    try {
+      final res = await widget.api.ustaProfilFotoYukle(result.files.single.path!);
+      final foto = res['fotograf'] as Map<String, dynamic>?;
+      if (foto != null && mounted) {
+        setState(() {
+          final list = List<Map<String, dynamic>>.from((_usta?['fotograflar'] as List?) ?? []);
+          list.add(foto);
+          _usta = {...?_usta, 'fotograflar': list};
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _mesaj = e.toString().replaceAll('Exception: ', ''); _mesajOk = false; });
+    }
+    if (mounted) setState(() => _fotoYukleniyor = false);
+  }
+
+  Future<void> _fotoSil(int id) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Fotoğrafı Sil'),
+        content: const Text('Bu fotoğrafı silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sil', style: TextStyle(color: AppColors.error))),
+        ],
+      ),
+    );
+    if (onay != true) return;
+    try {
+      await widget.api.ustaProfilFotoSil(id);
+      if (mounted) {
+        setState(() {
+          final list = List<Map<String, dynamic>>.from((_usta?['fotograflar'] as List?) ?? []);
+          list.removeWhere((f) => f['id'] == id);
+          _usta = {...?_usta, 'fotograflar': list};
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _mesaj = e.toString().replaceAll('Exception: ', ''); _mesajOk = false; });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.primary));
@@ -144,6 +206,85 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Profil fotoğrafları
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Profil Fotoğrafları', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+                const SizedBox(height: 14),
+                Builder(builder: (context) {
+                  final fotograflar = List<Map<String, dynamic>>.from((_usta?['fotograflar'] as List?) ?? []);
+                  return Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      ...fotograflar.map((f) => Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(
+                                  _fotoUrl(f),
+                                  width: 84,
+                                  height: 84,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    width: 84, height: 84, color: AppColors.background,
+                                    child: const Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () => _fotoSil(f['id'] as int),
+                                  child: Container(
+                                    width: 22, height: 22,
+                                    decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                    child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )),
+                      if (fotograflar.length < 6)
+                        GestureDetector(
+                          onTap: _fotoYukleniyor ? null : _fotoYukle,
+                          child: Container(
+                            width: 84, height: 84,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: _fotoYukleniyor
+                                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                                : const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_a_photo_outlined, color: AppColors.textSecondary, size: 20),
+                                      SizedBox(height: 4),
+                                      Text('Ekle', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                    ],
+                  );
+                }),
+                const SizedBox(height: 8),
+                const Text('Maksimum 6 fotoğraf · PNG, JPG, WEBP', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -219,8 +360,94 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Diğer — hızlı erişim
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 18, 20, 4),
+                  child: Text('Diğer', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+                ),
+                _HizliErisimSatir(
+                  ikon: Icons.people_alt_rounded,
+                  renk: const Color(0xFF3498db),
+                  baslik: 'Müşterilerim',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => UstaPanelMusteriler(api: widget.api))),
+                ),
+                _HizliErisimSatir(
+                  ikon: Icons.bar_chart_rounded,
+                  renk: const Color(0xFF9b59b6),
+                  baslik: 'İstatistiklerim',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => UstaPanelIstatistik(api: widget.api))),
+                ),
+                _HizliErisimSatir(
+                  ikon: Icons.workspace_premium_rounded,
+                  renk: AppColors.accent,
+                  baslik: 'Abonelik Durumum',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => UstaPanelAbonelik(api: widget.api))),
+                ),
+                _HizliErisimSatir(
+                  ikon: Icons.description_rounded,
+                  renk: const Color(0xFF2ecc71),
+                  baslik: 'Belgelerim',
+                  sonSatir: true,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => UstaPanelBelgeler(api: widget.api))),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class _HizliErisimSatir extends StatelessWidget {
+  final IconData ikon;
+  final Color renk;
+  final String baslik;
+  final VoidCallback onTap;
+  final bool sonSatir;
+
+  const _HizliErisimSatir({
+    required this.ikon,
+    required this.renk,
+    required this.baslik,
+    required this.onTap,
+    this.sonSatir = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.vertical(bottom: sonSatir ? const Radius.circular(20) : Radius.zero),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          border: sonSatir ? null : Border(bottom: BorderSide(color: Colors.grey.shade100)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(color: renk.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+              child: Icon(ikon, color: renk, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(baslik, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppColors.textSecondary),
+          ],
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ import axios from 'axios'
 import {
   LayoutDashboard, Users, Star, Tag, LogOut, Menu, FileText, ShieldOff, BarChart2, Megaphone,
   CreditCard, PackageCheck, Wallet, Power, PowerOff, ShoppingBag, ShoppingCart, Bell, Smartphone, Store, TrendingUp,
-  Building2, UserCheck
+  Building2, UserCheck, MessageCircle, FileCheck2
 } from 'lucide-react'
 
 import API from '../../config.js'
@@ -13,6 +13,8 @@ const menuItems = [
   { to: '/admin/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/analitik',     icon: BarChart2,       label: 'Analitik & Rapor' },
   { to: '/admin/ustalar',      icon: Users,           label: 'Usta Yönetimi', kayitBadge: true },
+  { to: '/admin/mesajlar',     icon: MessageCircle,   label: 'Mesajlar', mesajBadge: true },
+  { to: '/admin/belgeler',     icon: FileCheck2,      label: 'Belge Onayı', belgeBadge: true },
   { to: '/admin/sirketler',    icon: Building2,       label: 'Şirket Yönetimi' },
   { to: '/admin/uyeler',       icon: UserCheck,       label: 'Üye Yönetimi' },
   { to: '/admin/kara-liste',   icon: ShieldOff,       label: 'Kara Liste' },
@@ -40,11 +42,20 @@ export default function AdminLayout() {
   const [bekleyenSiparis, setBekleyenSiparis] = useState(0)
   const [yeniKayit, setYeniKayit] = useState(0)
   const [bekleyenBasvuru, setBekleyenBasvuru] = useState(0)
+  const [okunmamisMesaj, setOkunmamisMesaj] = useState(0)
+  const [bekleyenBelge, setBekleyenBelge] = useState(0)
   const navigate = useNavigate()
 
   const bildirimSayisiniGetir = useCallback(() => {
     axios.get(`${API}/api/admin/bildirimsayisi`, { withCredentials: true })
       .then(r => setYeniKayit(r.data.sayi || 0)).catch(() => {})
+  }, [])
+
+  const mesajBelgeSayisiniGetir = useCallback(() => {
+    axios.get(`${API}/api/admin/mesajlar/ozet`, { withCredentials: true })
+      .then(r => setOkunmamisMesaj(r.data.toplam_okunmamis || 0)).catch(() => {})
+    axios.get(`${API}/api/admin/belgeler/bekleyen`, { withCredentials: true })
+      .then(r => setBekleyenBelge(r.data.toplam || 0)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -59,6 +70,7 @@ export default function AdminLayout() {
           axios.get(`${API}/api/admin/saticilar/ozet`, { withCredentials: true })
             .then(r => setBekleyenBasvuru(r.data.bekleyen_basvuru || 0)).catch(() => {})
           bildirimSayisiniGetir()
+          mesajBelgeSayisiniGetir()
         }
       })
       .catch(() => navigate('/admin/login', { replace: true }))
@@ -67,9 +79,9 @@ export default function AdminLayout() {
       .catch(() => {})
 
     // Her 60 saniyede bir yeni kayıt sayısını güncelle
-    const interval = setInterval(bildirimSayisiniGetir, 60000)
+    const interval = setInterval(() => { bildirimSayisiniGetir(); mesajBelgeSayisiniGetir() }, 60000)
     return () => clearInterval(interval)
-  }, [navigate, bildirimSayisiniGetir])
+  }, [navigate, bildirimSayisiniGetir, mesajBelgeSayisiniGetir])
 
   const bildirimleriTemizle = () => {
     axios.post(`${API}/api/admin/bildirimler/goruldu`, {}, { withCredentials: true })
@@ -124,11 +136,15 @@ export default function AdminLayout() {
 
         {/* Navigasyon */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {menuItems.map(({ to, icon: Icon, label, siparisBadge, kayitBadge, saticiBasvuruBadge }) => (
+          {menuItems.map(({ to, icon: Icon, label, siparisBadge, kayitBadge, saticiBasvuruBadge, mesajBadge, belgeBadge }) => (
             <NavLink
               key={to}
               to={to}
-              onClick={() => { setAcik(false); if (kayitBadge && yeniKayit > 0) bildirimleriTemizle() }}
+              onClick={() => {
+                setAcik(false)
+                if (kayitBadge && yeniKayit > 0) bildirimleriTemizle()
+                if (mesajBadge) setOkunmamisMesaj(0)
+              }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
                   isActive
@@ -154,6 +170,16 @@ export default function AdminLayout() {
                   {saticiBasvuruBadge && bekleyenBasvuru > 0 && (
                     <span className="bg-blue-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
                       {bekleyenBasvuru}
+                    </span>
+                  )}
+                  {mesajBadge && okunmamisMesaj > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
+                      {okunmamisMesaj}
+                    </span>
+                  )}
+                  {belgeBadge && bekleyenBelge > 0 && (
+                    <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {bekleyenBelge}
                     </span>
                   )}
                 </>

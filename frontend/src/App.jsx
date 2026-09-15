@@ -72,6 +72,8 @@ const AdminUrunEkle = lazy(() => import('./pages/admin/AdminUrunEkle'))
 const AdminSiparisler = lazy(() => import('./pages/admin/AdminSiparisler'))
 const AdminMagazaSiparisler = lazy(() => import('./pages/admin/AdminMagazaSiparisler'))
 const AdminBildirimler = lazy(() => import('./pages/admin/AdminBildirimler'))
+const AdminMesajlar = lazy(() => import('./pages/admin/AdminMesajlar'))
+const AdminBelgeler = lazy(() => import('./pages/admin/AdminBelgeler'))
 const AdminSaticilar = lazy(() => import('./pages/admin/AdminSaticilar'))
 const AdminSaticilarFinans = lazy(() => import('./pages/admin/AdminSaticilarFinans'))
 const AdminFinans = lazy(() => import('./pages/admin/AdminFinans'))
@@ -83,6 +85,8 @@ const UstaPanelIsTalepleri = lazy(() => import('./pages/usta-panel/UstaPanelIsTa
 const UstaPanelMusteriler = lazy(() => import('./pages/usta-panel/UstaPanelMusteriler'))
 const UstaPanelIstatistik = lazy(() => import('./pages/usta-panel/UstaPanelIstatistik'))
 const UstaPanelYorumlar = lazy(() => import('./pages/usta-panel/UstaPanelYorumlar'))
+const UstaPanelMesajlar = lazy(() => import('./pages/usta-panel/UstaPanelMesajlar'))
+const UstaPanelBelgeler = lazy(() => import('./pages/usta-panel/UstaPanelBelgeler'))
 const UstaPanelProfil = lazy(() => import('./pages/usta-panel/UstaPanelProfil'))
 const UstaPanelMagaza = lazy(() => import('./pages/usta-panel/UstaPanelMagaza'))
 // Şirket Paneli
@@ -230,6 +234,8 @@ export default function App() {
         <Route path="siparisler" element={<AdminSiparisler />} />
         <Route path="magaza-siparisler" element={<AdminMagazaSiparisler />} />
         <Route path="bildirimler" element={<AdminBildirimler />} />
+        <Route path="mesajlar" element={<AdminMesajlar />} />
+        <Route path="belgeler" element={<AdminBelgeler />} />
         <Route path="saticilar" element={<AdminSaticilar />} />
         <Route path="saticilar-finans" element={<AdminSaticilarFinans />} />
         <Route path="finans" element={<AdminFinans />} />
@@ -245,6 +251,8 @@ export default function App() {
         <Route path="panel/musteriler" element={<UstaPanelMusteriler />} />
         <Route path="panel/istatistik" element={<UstaPanelIstatistik />} />
         <Route path="panel/yorumlar" element={<UstaPanelYorumlar />} />
+        <Route path="panel/mesajlar" element={<UstaPanelMesajlar />} />
+        <Route path="panel/belgeler" element={<UstaPanelBelgeler />} />
         <Route path="panel/magaza" element={<UstaPanelMagaza />} />
         <Route path="panel/profil" element={<UstaPanelProfil />} />
       </Route>

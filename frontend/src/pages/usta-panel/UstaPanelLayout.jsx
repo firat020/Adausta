@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, ClipboardList, User, BarChart2,
-  LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag
+  LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag,
+  MessageCircle, FileCheck2
 } from 'lucide-react'
-import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik } from '../../api'
+import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis } from '../../api'
 
 const menuItems = [
   { to: '/usta/panel',          icon: LayoutDashboard, label: 'Genel Bakış',    end: true },
@@ -12,6 +13,8 @@ const menuItems = [
   { to: '/usta/panel/musteriler', icon: Users,         label: 'Müşterilerim' },
   { to: '/usta/panel/istatistik', icon: BarChart2,     label: 'İstatistikler' },
   { to: '/usta/panel/yorumlar',  icon: Star,           label: 'Yorumlar' },
+  { to: '/usta/panel/mesajlar',  icon: MessageCircle,  label: 'Mesajlar', mesajBadge: true },
+  { to: '/usta/panel/belgeler',  icon: FileCheck2,     label: 'Belgelerim' },
   { to: '/usta/panel/magaza',    icon: ShoppingBag,    label: 'Mağaza' },
   { to: '/usta/panel/profil',    icon: User,           label: 'Profilim' },
 ]
@@ -21,6 +24,7 @@ export default function UstaPanelLayout() {
   const [kontrol, setKontrol] = useState(true)
   const [kullanici, setKullanici] = useState(null)
   const [musaitlik, setMusaitlik] = useState(true)
+  const [okunmamisMesaj, setOkunmamisMesaj] = useState(0)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -32,10 +36,18 @@ export default function UstaPanelLayout() {
         } else {
           setKullanici(k)
           setKontrol(false)
+          ustaPanelMesajOkunmamis().then(r => setOkunmamisMesaj(r.data.sayi || 0)).catch(() => {})
         }
       })
       .catch(() => navigate('/usta/giris', { replace: true }))
   }, [navigate])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      ustaPanelMesajOkunmamis().then(r => setOkunmamisMesaj(r.data.sayi || 0)).catch(() => {})
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleCikis = async () => {
     await apiCikis()
@@ -104,12 +116,12 @@ export default function UstaPanelLayout() {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {menuItems.map(({ to, icon: Icon, label, end }) => (
+          {menuItems.map(({ to, icon: Icon, label, end, mesajBadge }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
-              onClick={() => setAcik(false)}
+              onClick={() => { setAcik(false); if (mesajBadge) setOkunmamisMesaj(0) }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
@@ -121,7 +133,12 @@ export default function UstaPanelLayout() {
               {({ isActive }) => (
                 <>
                   <Icon size={17} strokeWidth={isActive ? 2.2 : 1.8} />
-                  <span>{label}</span>
+                  <span className="flex-1">{label}</span>
+                  {mesajBadge && okunmamisMesaj > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {okunmamisMesaj}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>

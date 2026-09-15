@@ -52,6 +52,12 @@ class _UstaPanelTaleplerState extends State<UstaPanelTalepler> {
     final durum = talep['durum'] as String? ?? 'bekliyor';
     final renk = _durumRenk[durum] ?? AppColors.textSecondary;
 
+    // Talep okundu işaretle (rozet güncellensin diye bekleme yok)
+    final talepId = talep['id'];
+    if (talepId is int) {
+      widget.api.ustaTalepOkundu(talepId).catchError((_) {});
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

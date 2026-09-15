@@ -1,9 +1,14 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
+import '../../services/fcm_service.dart';
 import 'usta_panel_dashboard.dart';
 import 'usta_panel_talepler.dart';
+import 'usta_panel_mesajlar.dart';
+import 'usta_panel_yorumlar.dart';
 import 'usta_panel_profil.dart';
+import 'usta_panel_abonelik.dart';
 import 'usta_giris_screen.dart';
 
 class UstaPanelScreen extends StatefulWidget {
@@ -18,10 +23,15 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
   int _tab = 0;
   Map<String, dynamic>? _kullanici;
   bool _musaitlik = true;
+  int _talepBadge = 0;
+  int _mesajBadge = 0;
+  Timer? _rozetTimer;
 
   static const _tabs = [
     _TabData(icon: Icons.dashboard_rounded,      label: 'Panel'),
     _TabData(icon: Icons.assignment_rounded,     label: 'Talepler'),
+    _TabData(icon: Icons.chat_bubble_rounded,    label: 'Mesajlar'),
+    _TabData(icon: Icons.star_rounded,           label: 'Yorumlar'),
     _TabData(icon: Icons.person_rounded,         label: 'Profilim'),
   ];
 
@@ -29,6 +39,13 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
   void initState() {
     super.initState();
     _kontrolEt();
+    _rozetTimer = Timer.periodic(const Duration(seconds: 60), (_) => _rozetleriYukle());
+  }
+
+  @override
+  void dispose() {
+    _rozetTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _kontrolEt() async {
@@ -44,6 +61,52 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
       final panel = await _api.ustaPanelDashboard();
       if (mounted) setState(() => _musaitlik = panel['usta']?['musaitlik'] ?? true);
     } catch (_) {}
+    _rozetleriYukle();
+    _pendingRotayiUygula();
+  }
+
+  Future<void> _rozetleriYukle() async {
+    try {
+      final t = await _api.ustaOkunmamisSayisi();
+      final m = await _api.ustaMesajOkunmamisSayisi();
+      if (mounted) setState(() { _talepBadge = t; _mesajBadge = m; });
+    } catch (_) {}
+  }
+
+  void _pendingRotayiUygula() {
+    final route = FCMService.instance.consumePendingRoute();
+    if (route == null) return;
+    final ekran = route['ekran'] as String?;
+    switch (ekran) {
+      case 'talepler':
+        setState(() => _tab = 1);
+        break;
+      case 'mesajlar':
+        setState(() { _tab = 2; _mesajBadge = 0; });
+        break;
+      case 'abonelik':
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => UstaPanelAbonelik(api: _api)));
+          }
+        });
+        break;
+      case 'profil':
+        setState(() => _tab = 4);
+        break;
+      case 'anasayfa':
+      default:
+        setState(() => _tab = 0);
+    }
+  }
+
+  void _tabSecildi(int i) {
+    setState(() => _tab = i);
+    if (i == 1) {
+      _rozetleriYukle();
+    } else if (i == 2) {
+      setState(() => _mesajBadge = 0);
+    }
   }
 
   Future<void> _cikis() async {
@@ -137,6 +200,8 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
         children: [
           UstaPanelDashboard(api: _api),
           UstaPanelTalepler(api: _api),
+          UstaPanelMesajlar(api: _api),
+          UstaPanelYorumlar(api: _api),
           UstaPanelProfil(api: _api),
         ],
       ),
@@ -152,21 +217,42 @@ class _UstaPanelScreenState extends State<UstaPanelScreen> {
               children: List.generate(_tabs.length, (i) {
                 final item = _tabs[i];
                 final isActive = i == _tab;
+                final rozet = i == 1 ? _talepBadge : (i == 2 ? _mesajBadge : 0);
                 return Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _tab = i),
+                    onTap: () => _tabSecildi(i),
                     behavior: HitTestBehavior.opaque,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(item.icon, size: 22, color: isActive ? AppColors.primary : Colors.grey.shade400),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(item.icon, size: 22, color: isActive ? AppColors.primary : Colors.grey.shade400),
+                            ),
+                            if (rozet > 0)
+                              Positioned(
+                                right: 6,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  constraints: const BoxConstraints(minWidth: 16),
+                                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(10)),
+                                  child: Text(
+                                    rozet > 9 ? '9+' : '$rozet',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 1),
                         Text(

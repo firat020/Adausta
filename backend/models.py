@@ -272,14 +272,19 @@ class Yorum(db.Model):
     yorum = db.Column(db.Text, default='')
     onaylanmis = db.Column(db.Boolean, default=False)
     tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    cevap = db.Column(db.Text, default='')            # Ustanın yoruma verdiği yanıt
+    cevap_tarih = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
             'id': self.id,
+            'usta_id': self.usta_id,
             'musteri_adi': self.musteri_adi,
             'puan': self.puan,
             'yorum': self.yorum,
-            'tarih': self.tarih.strftime('%d.%m.%Y')
+            'tarih': self.tarih.strftime('%d.%m.%Y'),
+            'cevap': self.cevap or '',
+            'cevap_tarih': self.cevap_tarih.strftime('%d.%m.%Y') if self.cevap_tarih else None,
         }
 
 
@@ -971,7 +976,8 @@ class BildirimGecmisi(db.Model):
 class AdminBildirim(db.Model):
     __tablename__ = 'admin_bildirimler'
     id = db.Column(db.Integer, primary_key=True)
-    tur = db.Column(db.String(50), nullable=False)   # yeni_usta / yeni_sirket
+    # yeni_usta / yeni_sirket / usta_mesaj / yeni_belge / bekleyen_talep
+    tur = db.Column(db.String(50), nullable=False)
     mesaj = db.Column(db.String(300), default='')
     goruldu = db.Column(db.Boolean, default=False)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
@@ -982,6 +988,50 @@ class AdminBildirim(db.Model):
             'tur': self.tur,
             'mesaj': self.mesaj,
             'goruldu': self.goruldu,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class Mesaj(db.Model):
+    """Admin ile bir usta arasındaki tek iş parçacıklı (thread) yazışma."""
+    __tablename__ = 'mesajlar'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    gonderen = db.Column(db.String(10), nullable=False)  # 'admin' / 'usta'
+    icerik = db.Column(db.Text, nullable=False)
+    okundu = db.Column(db.Boolean, default=False)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'gonderen': self.gonderen,
+            'icerik': self.icerik,
+            'okundu': self.okundu,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class UstaBelge(db.Model):
+    """Usta kimlik / ustalık belgesi doğrulama dosyaları."""
+    __tablename__ = 'usta_belgeler'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    tur = db.Column(db.String(30), default='kimlik')  # kimlik / ustalik_belgesi / diger
+    dosya = db.Column(db.String(256), nullable=False)
+    durum = db.Column(db.String(20), default='bekliyor')  # bekliyor / onaylandi / reddedildi
+    admin_notu = db.Column(db.String(300), default='')
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'tur': self.tur,
+            'url': f'/uploads/{self.dosya}',
+            'durum': self.durum,
+            'admin_notu': self.admin_notu or '',
             'olusturma': fmt(self.olusturma),
         }
 

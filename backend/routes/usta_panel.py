@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik, Mesaj, UstaBelge, AdminBildirim
 from datetime import datetime, timedelta
 from functools import wraps
 import uuid, os
@@ -369,3 +369,118 @@ def otomatik_yenileme_ayarla(usta):
     ab.otomatik_yenileme = acik
     db.session.commit()
     return jsonify({'mesaj': 'Otomatik yenileme açıldı' if acik else 'Otomatik yenileme kapatıldı, mevcut döneminiz sonuna kadar planınız aktif kalacak', 'otomatik_yenileme': ab.otomatik_yenileme})
+
+
+# ──────────────────────────────────────────────────────────
+# Mesajlaşma — usta ile admin arasında tek iş parçacıklı yazışma
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/mesajlar', methods=['GET'])
+@usta_gerekli
+def mesajlar_getir(usta):
+    liste = Mesaj.query.filter_by(usta_id=usta.id).order_by(Mesaj.olusturma.asc()).all()
+    # Usta paneli açılınca admin'den gelen okunmamış mesajlar okunmuş sayılır
+    Mesaj.query.filter_by(usta_id=usta.id, gonderen='admin', okundu=False).update({'okundu': True})
+    db.session.commit()
+    return jsonify({'mesajlar': [m.to_dict() for m in liste]})
+
+
+@usta_panel_bp.route('/mesajlar', methods=['POST'])
+@usta_gerekli
+def mesaj_gonder(usta):
+    data = request.get_json() or {}
+    icerik = (data.get('icerik') or '').strip()
+    if not icerik:
+        return jsonify({'hata': 'Mesaj içeriği boş olamaz'}), 400
+    if len(icerik) > 2000:
+        return jsonify({'hata': 'Mesaj çok uzun'}), 400
+
+    m = Mesaj(usta_id=usta.id, gonderen='usta', icerik=icerik)
+    db.session.add(m)
+
+    bildirim = AdminBildirim(
+        tur='usta_mesaj',
+        mesaj=f'{usta.ad} {usta.soyad}: {icerik[:120]}'
+    )
+    db.session.add(bildirim)
+    db.session.commit()
+    return jsonify({'mesaj': 'Gönderildi', 'kayit': m.to_dict()}), 201
+
+
+@usta_panel_bp.route('/mesajlar/okunmamis-sayisi', methods=['GET'])
+@usta_gerekli
+def mesaj_okunmamis_sayisi(usta):
+    sayi = Mesaj.query.filter_by(usta_id=usta.id, gonderen='admin', okundu=False).count()
+    return jsonify({'sayi': sayi})
+
+
+# ──────────────────────────────────────────────────────────
+# Belgeler — kimlik / ustalık belgesi doğrulama
+# ──────────────────────────────────────────────────────────
+IZIN_BELGE_UZANTILAR = {'png', 'jpg', 'jpeg', 'pdf'}
+
+
+@usta_panel_bp.route('/belgeler', methods=['GET'])
+@usta_gerekli
+def belgeler_getir(usta):
+    liste = UstaBelge.query.filter_by(usta_id=usta.id).order_by(UstaBelge.olusturma.desc()).all()
+    return jsonify({'belgeler': [b.to_dict() for b in liste]})
+
+
+@usta_panel_bp.route('/belgeler', methods=['POST'])
+@usta_gerekli
+def belge_yukle(usta):
+    if 'dosya' not in request.files:
+        return jsonify({'hata': 'Dosya seçilmedi'}), 400
+    f = request.files['dosya']
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in IZIN_BELGE_UZANTILAR:
+        return jsonify({'hata': 'Desteklenmeyen dosya türü (png, jpg, pdf)'}), 400
+    tur = request.form.get('tur', 'kimlik')
+    if tur not in ('kimlik', 'ustalik_belgesi', 'diger'):
+        tur = 'diger'
+
+    ad = f'{uuid.uuid4().hex}.{ext}'
+    f.save(os.path.join(UPLOAD_FOLDER, ad))
+    belge = UstaBelge(usta_id=usta.id, tur=tur, dosya=ad, durum='bekliyor')
+    db.session.add(belge)
+
+    bildirim = AdminBildirim(
+        tur='yeni_belge',
+        mesaj=f'{usta.ad} {usta.soyad} yeni belge yükledi ({tur})'
+    )
+    db.session.add(bildirim)
+    db.session.commit()
+    return jsonify({'mesaj': 'Belge yüklendi, onay bekliyor', 'belge': belge.to_dict()}), 201
+
+
+@usta_panel_bp.route('/belgeler/<int:bid>', methods=['DELETE'])
+@usta_gerekli
+def belge_sil(usta, bid):
+    belge = UstaBelge.query.filter_by(id=bid, usta_id=usta.id).first_or_404()
+    if belge.durum == 'onaylandi':
+        return jsonify({'hata': 'Onaylanmış belge silinemez'}), 400
+    yol = os.path.join(UPLOAD_FOLDER, belge.dosya)
+    if os.path.exists(yol):
+        os.remove(yol)
+    db.session.delete(belge)
+    db.session.commit()
+    return jsonify({'mesaj': 'Belge silindi'})
+
+
+# ──────────────────────────────────────────────────────────
+# Yorum yanıtlama — usta bir müşteri yorumuna tek seferlik yanıt verir
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/yorumlar/<int:yid>/cevap', methods=['POST'])
+@usta_gerekli
+def yorum_cevapla(usta, yid):
+    yorum = Yorum.query.filter_by(id=yid, usta_id=usta.id).first_or_404()
+    data = request.get_json() or {}
+    cevap = (data.get('cevap') or '').strip()
+    if not cevap:
+        return jsonify({'hata': 'Yanıt boş olamaz'}), 400
+    if len(cevap) > 1000:
+        return jsonify({'hata': 'Yanıt çok uzun'}), 400
+    yorum.cevap = cevap
+    yorum.cevap_tarih = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'mesaj': 'Yanıtınız kaydedildi', 'yorum': yorum.to_dict()})

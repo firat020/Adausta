@@ -26,6 +26,7 @@ export default function AdminAbonelikler() {
   const [waPanel, setWaPanel] = useState(false)
   const [waListe, setWaListe] = useState([])
   const [waYukleniyor, setWaYukleniyor] = useState(false)
+  const [waSiraIndex, setWaSiraIndex] = useState(0)
 
   const yukle = () => {
     const params = { filtre, arama }
@@ -66,17 +67,24 @@ export default function AdminAbonelikler() {
 
   const waPanelAc = () => {
     setWaPanel(true)
+    setWaSiraIndex(0)
     waListeYukle()
   }
 
-  const waGonder = (link) => { window.open(link, '_blank') }
+  const waGonder = async (u) => {
+    window.open(u.wa_link, '_blank')
+    await axios.post(`${API}/api/admin/whatsapp/bildirim-log`, { usta_idler: [u.id] }, { withCredentials: true }).catch(() => {})
+  }
 
-  const waHepsineGonder = async () => {
+  // Tarayıcılar, bir tık dışında art arda açılan pop-up'ları (window.open) genelde
+  // engeller — bu yüzden "hepsine otomatik gönder" güvenilir çalışmaz. Bunun yerine
+  // her tık gerçek bir kullanıcı hareketiyle SIRADAKİ ustanın WhatsApp sohbetini açar;
+  // mesajı gönderip göndermemek admin'in kendi WhatsApp'ında son adımdır.
+  const waSiradakineGonder = async () => {
     const linkler = waListe.filter(u => u.wa_link)
-    if (!linkler.length) { alert('WhatsApp numarası olan usta yok'); return }
-    const ids = linkler.map(u => u.id)
-    await axios.post(`${API}/api/admin/whatsapp/bildirim-log`, { usta_idler: ids }, { withCredentials: true }).catch(() => {})
-    linkler.forEach((u, i) => setTimeout(() => window.open(u.wa_link, '_blank'), i * 800))
+    if (waSiraIndex >= linkler.length) { alert('Sırada gönderilecek usta kalmadı'); return }
+    await waGonder(linkler[waSiraIndex])
+    setWaSiraIndex(i => i + 1)
   }
 
   const abonelikEkle = async (e) => {
@@ -244,13 +252,18 @@ export default function AdminAbonelikler() {
                 </button>
               </div>
             </div>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
               <span className="text-sm text-gray-600 font-semibold">{waListe.length} usta bildirim bekliyor</span>
-              <button onClick={waHepsineGonder} disabled={!waListe.filter(u => u.wa_link).length}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
-                <MessageCircle size={14} /> Hepsine Gönder
+              <button onClick={waSiradakineGonder} disabled={waSiraIndex >= waListe.filter(u => u.wa_link).length}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+                <MessageCircle size={14} /> Sıradakine Gönder ({Math.min(waSiraIndex, waListe.filter(u => u.wa_link).length)}/{waListe.filter(u => u.wa_link).length})
               </button>
             </div>
+            <p className="px-6 pb-2 text-[11px] text-gray-400 leading-relaxed">
+              Bu bir toplu otomatik gönderim değildir — her tık, WhatsApp sohbetini o ustanın numarasıyla
+              hazır mesajla açar; mesajı fiilen göndermek son adım olarak size aittir (tarayıcılar art arda
+              açılan pop-up'ları engellediği için tek tek göndermek gerekir).
+            </p>
             <div className="overflow-y-auto flex-1 p-4 space-y-2">
               {waYukleniyor ? (
                 <div className="text-center py-8 text-gray-400">Yükleniyor...</div>
@@ -264,7 +277,7 @@ export default function AdminAbonelikler() {
                     <p className="text-xs text-gray-400">{u.telefon}{u.whatsapp && u.whatsapp !== u.telefon ? ` · WA: ${u.whatsapp}` : ''}</p>
                   </div>
                   {u.wa_link ? (
-                    <button onClick={() => waGonder(u.wa_link)}
+                    <button onClick={() => waGonder(u)}
                       className="shrink-0 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 flex items-center gap-1">
                       <MessageCircle size={12} /> WhatsApp
                     </button>

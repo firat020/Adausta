@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
@@ -315,8 +315,33 @@ def is_talebi_gonder(id):
     )
     db.session.add(talep)
     db.session.commit()
+
+    # Ustaya yeni talep push bildirimi (usta uygulamayı açmadan da haberdar olsun)
+    _usta_bildirim_gonder(
+        usta,
+        baslik='Yeni iş talebi',
+        icerik=f'{data["musteri_ad"]}: {data["baslik"]}',
+        data={'ekran': 'talepler', 'talep_id': talep.id},
+    )
+
     return jsonify({'mesaj': 'Talebiniz iletildi! Usta en kısa sürede sizinle iletişime geçecek.',
                     'talep_id': talep.id}), 201
+
+
+def _usta_bildirim_gonder(usta, baslik, icerik, data=None):
+    """Bir ustanın kayıtlı cihazlarına FCM push bildirimi gönderir ve geçmişe kaydeder."""
+    if not usta.kullanici_id:
+        return
+    tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=usta.kullanici_id, aktif=True).all()]
+    gecmis = BildirimGecmisi(kullanici_id=usta.kullanici_id, baslik=baslik, icerik=icerik, tur='talep')
+    if tokenlar:
+        from fcm import toplu_bildirim_gonder
+        sonuc = toplu_bildirim_gonder(tokenlar, baslik, icerik, data)
+        gecmis.gonderildi = sonuc['basarili'] > 0
+        if sonuc['gecersiz']:
+            FCMToken.query.filter(FCMToken.token.in_(sonuc['gecersiz'])).delete(synchronize_session=False)
+    db.session.add(gecmis)
+    db.session.commit()
 
 
 @ustalar_bp.route('/en-yakin', methods=['GET'])

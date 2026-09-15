@@ -257,4 +257,157 @@ class ApiService {
     );
     return res.statusCode == 200 || res.statusCode == 204;
   }
+
+  // ── Usta Paneli — ek uçlar ─────────────────────────────────
+
+  String? _hataAl(http.Response res) {
+    try {
+      final data = jsonDecode(res.body);
+      if (data is Map && data['hata'] != null) return data['hata'].toString();
+    } catch (_) {}
+    return null;
+  }
+
+  // Profil fotoğrafı
+  Future<Map<String, dynamic>> ustaProfilFotoYukle(String dosyaYolu) async {
+    final req = http.MultipartRequest('POST', Uri.parse(ApiConfig.ustaProfilFoto));
+    final h = Map<String, String>.from(_authHeaders)..remove('Content-Type');
+    req.headers.addAll(h);
+    req.files.add(await http.MultipartFile.fromPath('dosya', dosyaYolu));
+    final streamed = await req.send();
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw Exception(_hataAl(res) ?? 'Fotoğraf yüklenemedi');
+  }
+
+  Future<void> ustaProfilFotoSil(int id) async {
+    final res = await http.delete(Uri.parse(ApiConfig.ustaProfilFotoSil(id)), headers: _authHeaders);
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception(_hataAl(res) ?? 'Fotoğraf silinemedi');
+    }
+  }
+
+  // Talep okundu / rozet
+  Future<void> ustaTalepOkundu(int id) async {
+    await http.post(Uri.parse(ApiConfig.ustaTalepOkundu(id)), headers: _authHeaders);
+  }
+
+  Future<int> ustaOkunmamisSayisi() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaOkunmamisSayisi), headers: _authHeaders);
+    if (res.statusCode == 200) return ((jsonDecode(res.body)['sayi']) as num?)?.toInt() ?? 0;
+    return 0;
+  }
+
+  // Müşteriler
+  Future<List<Map<String, dynamic>>> ustaMusteriler() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaMusteriler), headers: _authHeaders);
+    if (res.statusCode == 200) {
+      final list = jsonDecode(res.body)['musteriler'] as List;
+      return list.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Müşteriler yüklenemedi');
+  }
+
+  // İstatistikler
+  Future<Map<String, dynamic>> ustaIstatistikler({int aralik = 30}) async {
+    final uri = Uri.parse(ApiConfig.ustaIstatistikler).replace(queryParameters: {'aralik': aralik.toString()});
+    final res = await http.get(uri, headers: _authHeaders);
+    if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception('İstatistikler yüklenemedi');
+  }
+
+  // Yorumlar (usta paneli)
+  Future<List<Map<String, dynamic>>> ustaPanelYorumlar() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaYorumlarPanel), headers: _authHeaders);
+    if (res.statusCode == 200) {
+      final list = jsonDecode(res.body)['yorumlar'] as List;
+      return list.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Yorumlar yüklenemedi');
+  }
+
+  Future<void> ustaYorumCevapla(int id, String cevap) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.ustaYorumCevapla(id)),
+      headers: _authHeaders,
+      body: jsonEncode({'cevap': cevap}),
+    );
+    if (res.statusCode != 200) throw Exception(_hataAl(res) ?? 'Yanıt gönderilemedi');
+  }
+
+  // Abonelik
+  Future<Map<String, dynamic>> ustaAbonelik() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaAbonelik), headers: _authHeaders);
+    if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    throw Exception('Abonelik bilgisi yüklenemedi');
+  }
+
+  Future<void> ustaAbonelikOtomatikYenileme(bool acik) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.ustaAbonelikOtomatikYenileme),
+      headers: _authHeaders,
+      body: jsonEncode({'acik': acik}),
+    );
+    if (res.statusCode != 200) throw Exception(_hataAl(res) ?? 'Güncellenemedi');
+  }
+
+  // Mesajlar (admin ↔ usta)
+  Future<List<Map<String, dynamic>>> ustaMesajlar() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaMesajlar), headers: _authHeaders);
+    if (res.statusCode == 200) {
+      final list = jsonDecode(res.body)['mesajlar'] as List;
+      return list.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Mesajlar yüklenemedi');
+  }
+
+  Future<void> ustaMesajGonder(String icerik) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.ustaMesajlar),
+      headers: _authHeaders,
+      body: jsonEncode({'icerik': icerik}),
+    );
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception(_hataAl(res) ?? 'Mesaj gönderilemedi');
+    }
+  }
+
+  Future<int> ustaMesajOkunmamisSayisi() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaMesajlarOkunmamisSayisi), headers: _authHeaders);
+    if (res.statusCode == 200) return ((jsonDecode(res.body)['sayi']) as num?)?.toInt() ?? 0;
+    return 0;
+  }
+
+  // Belgeler (kimlik / ustalık belgesi doğrulama)
+  Future<List<Map<String, dynamic>>> ustaBelgeler() async {
+    final res = await http.get(Uri.parse(ApiConfig.ustaBelgeler), headers: _authHeaders);
+    if (res.statusCode == 200) {
+      final list = jsonDecode(res.body)['belgeler'] as List;
+      return list.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Belgeler yüklenemedi');
+  }
+
+  Future<Map<String, dynamic>> ustaBelgeYukle(String dosyaYolu, String tur) async {
+    final req = http.MultipartRequest('POST', Uri.parse(ApiConfig.ustaBelgeler));
+    final h = Map<String, String>.from(_authHeaders)..remove('Content-Type');
+    req.headers.addAll(h);
+    req.fields['tur'] = tur;
+    req.files.add(await http.MultipartFile.fromPath('dosya', dosyaYolu));
+    final streamed = await req.send();
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw Exception(_hataAl(res) ?? 'Belge yüklenemedi');
+  }
+
+  Future<void> ustaBelgeSil(int id) async {
+    final res = await http.delete(Uri.parse(ApiConfig.ustaBelgeSil(id)), headers: _authHeaders);
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception(_hataAl(res) ?? 'Belge silinemedi');
+    }
+  }
 }

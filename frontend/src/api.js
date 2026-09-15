@@ -68,6 +68,14 @@ export const ustaPanelTalepGuncelle = (id, data) => api.put(`/usta/is-talepleri/
 export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
 export const ustaPanelYorumlar = () => api.get('/usta/yorumlar');
+export const ustaPanelYorumCevapla = (id, cevap) => api.post(`/usta/yorumlar/${id}/cevap`, { cevap });
+export const ustaPanelMesajlar = () => api.get('/usta/mesajlar');
+export const ustaPanelMesajGonder = (icerik) => api.post('/usta/mesajlar', { icerik });
+export const ustaPanelMesajOkunmamis = () => api.get('/usta/mesajlar/okunmamis-sayisi');
+export const ustaPanelBelgeler = () => api.get('/usta/belgeler');
+export const ustaPanelBelgeYukle = (formData) =>
+  api.post('/usta/belgeler', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const ustaPanelBelgeSil = (id) => api.delete(`/usta/belgeler/${id}`);
 
 // ── Müşteri Paneli ───────────────────────────────────────
 export const musteriPanelDashboard = () => api.get('/musteri/panel');

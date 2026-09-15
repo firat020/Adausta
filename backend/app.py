@@ -288,6 +288,35 @@ def abonelik_uyari_bildirim():
     db.session.commit()
 
 
+def bekleyen_talep_uyari():
+    """48 saattir 'bekliyor' durumunda kalan ve okunmamış iş taleplerini admin'e bildirir.
+    Aynı talep için birden fazla bildirim düşmesin diye mesaj metnine talep id'si
+    gömülür ve önceden bildirilmiş mi diye buradan kontrol edilir."""
+    from models import IsTalebi, AdminBildirim
+    esik = datetime.utcnow() - timedelta(hours=48)
+    talepler = IsTalebi.query.filter(
+        IsTalebi.durum == 'bekliyor',
+        IsTalebi.okundu == False,
+        IsTalebi.olusturma <= esik,
+    ).all()
+
+    for t in talepler:
+        etiket = f'[talep#{t.id}]'
+        zaten = AdminBildirim.query.filter(
+            AdminBildirim.tur == 'bekleyen_talep',
+            AdminBildirim.mesaj.like(f'%{etiket}%'),
+        ).first()
+        if zaten:
+            continue
+        gun = (datetime.utcnow() - t.olusturma).days
+        bildirim = AdminBildirim(
+            tur='bekleyen_talep',
+            mesaj=f'{etiket} "{t.baslik}" talebi {gun} gündür ustaya ulaşılamadan bekliyor — {t.musteri_ad}',
+        )
+        db.session.add(bildirim)
+    db.session.commit()
+
+
 def fcm_token_temizle():
     """90 günden eski FCM tokenları temizle."""
     from models import FCMToken
@@ -313,6 +342,8 @@ def _baslat_scheduler():
                           trigger='interval', hours=24, id='abonelik_uyari')
         scheduler.add_job(func=_run_with_context(fcm_token_temizle),
                           trigger='interval', days=7, id='fcm_temizle')
+        scheduler.add_job(func=_run_with_context(bekleyen_talep_uyari),
+                          trigger='interval', hours=6, id='bekleyen_talep_uyari')
         scheduler.start()
     except Exception:
         pass  # APScheduler yoksa sessizce atla

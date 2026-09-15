@@ -324,6 +324,12 @@ export default function UstaDetay() {
                 </div>
                 <Yildizlar puan={y.puan} boyut={13} />
                 {y.yorum && <p className="text-gray-600 text-sm mt-2 leading-relaxed">{y.yorum}</p>}
+                {y.cevap && (
+                  <div className="mt-3 ml-4 pl-3 border-l-2 border-blue-200 bg-blue-50/60 rounded-r-lg py-2 pr-3">
+                    <p className="text-xs font-semibold text-blue-700">{usta.ad_soyad} yanıtladı</p>
+                    <p className="text-gray-600 text-sm mt-1 leading-relaxed">{y.cevap}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

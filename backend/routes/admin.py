@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket
+from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -203,6 +203,116 @@ def sil(id):
     db.session.commit()
     log_kaydet('USTA_SIL', f'Usta #{id} {ad} silindi')
     return jsonify({'mesaj': 'Silindi'})
+
+
+@admin_bp.route('/mesajlar/ozet', methods=['GET'])
+@admin_gerekli
+def mesajlar_ozet():
+    """Usta ile en az bir mesaj alışverişi olan tüm iş parçacıklarını, son mesaj ve
+    okunmamış sayısıyla listeler — admin gelen kutusu görünümü."""
+    usta_idler = [r[0] for r in db.session.query(Mesaj.usta_id).distinct().all()]
+    ozet = []
+    for uid in usta_idler:
+        u = Usta.query.get(uid)
+        if not u:
+            continue
+        son = Mesaj.query.filter_by(usta_id=uid).order_by(Mesaj.olusturma.desc()).first()
+        okunmamis = Mesaj.query.filter_by(usta_id=uid, gonderen='usta', okundu=False).count()
+        ozet.append({
+            'usta_id': uid,
+            'usta_ad': f'{u.ad} {u.soyad}'.strip(),
+            'usta_telefon': u.telefon,
+            'son_mesaj': son.icerik if son else '',
+            'son_mesaj_tarih': son.olusturma.isoformat() if son else None,
+            'son_gonderen': son.gonderen if son else None,
+            'okunmamis': okunmamis,
+        })
+    ozet.sort(key=lambda x: x['son_mesaj_tarih'] or '', reverse=True)
+    return jsonify({'threadler': ozet, 'toplam_okunmamis': sum(o['okunmamis'] for o in ozet)})
+
+
+@admin_bp.route('/ustalar/<int:id>/mesajlar', methods=['GET'])
+@admin_gerekli
+def usta_mesajlari(id):
+    Usta.query.get_or_404(id)
+    liste = Mesaj.query.filter_by(usta_id=id).order_by(Mesaj.olusturma.asc()).all()
+    Mesaj.query.filter_by(usta_id=id, gonderen='usta', okundu=False).update({'okundu': True})
+    db.session.commit()
+    return jsonify({'mesajlar': [m.to_dict() for m in liste]})
+
+
+@admin_bp.route('/ustalar/<int:id>/mesajlar', methods=['POST'])
+@admin_gerekli
+def usta_mesaj_gonder(id):
+    u = Usta.query.get_or_404(id)
+    data = request.get_json() or {}
+    icerik = (data.get('icerik') or '').strip()
+    if not icerik:
+        return jsonify({'hata': 'Mesaj içeriği boş olamaz'}), 400
+
+    m = Mesaj(usta_id=id, gonderen='admin', icerik=icerik, okundu=True)
+    db.session.add(m)
+    db.session.commit()
+    log_kaydet('USTA_MESAJ', f'Usta #{id} {u.ad} {u.soyad} adlı ustaya mesaj gönderildi')
+
+    # Ustaya push bildirimi
+    if u.kullanici_id:
+        tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=u.kullanici_id, aktif=True).all()]
+        if tokenlar:
+            from fcm import toplu_bildirim_gonder
+            sonuc = toplu_bildirim_gonder(tokenlar, 'Ada Usta\'dan yeni mesaj', icerik[:180], {'ekran': 'mesajlar'})
+            if sonuc['gecersiz']:
+                FCMToken.query.filter(FCMToken.token.in_(sonuc['gecersiz'])).delete(synchronize_session=False)
+            db.session.add(BildirimGecmisi(kullanici_id=u.kullanici_id, baslik='Ada Usta\'dan yeni mesaj', icerik=icerik[:180], tur='mesaj', gonderildi=sonuc['basarili'] > 0))
+            db.session.commit()
+
+    return jsonify({'mesaj': 'Gönderildi', 'kayit': m.to_dict()}), 201
+
+
+# ─── USTA BELGELERİ (kimlik / ustalık doğrulama) ──────────────
+
+@admin_bp.route('/belgeler/bekleyen', methods=['GET'])
+@admin_gerekli
+def belgeler_bekleyen():
+    liste = UstaBelge.query.filter_by(durum='bekliyor').order_by(UstaBelge.olusturma.asc()).all()
+    sonuc = []
+    for b in liste:
+        u = Usta.query.get(b.usta_id)
+        d = b.to_dict()
+        d['usta_ad'] = f'{u.ad} {u.soyad}'.strip() if u else ''
+        sonuc.append(d)
+    return jsonify({'belgeler': sonuc, 'toplam': len(sonuc)})
+
+
+@admin_bp.route('/ustalar/<int:id>/belgeler', methods=['GET'])
+@admin_gerekli
+def usta_belgeleri(id):
+    Usta.query.get_or_404(id)
+    liste = UstaBelge.query.filter_by(usta_id=id).order_by(UstaBelge.olusturma.desc()).all()
+    return jsonify({'belgeler': [b.to_dict() for b in liste]})
+
+
+@admin_bp.route('/belgeler/<int:bid>/onayla', methods=['POST'])
+@admin_gerekli
+def belge_onayla(bid):
+    b = UstaBelge.query.get_or_404(bid)
+    b.durum = 'onaylandi'
+    b.admin_notu = ''
+    db.session.commit()
+    log_kaydet('BELGE_ONAYLA', f'Usta #{b.usta_id} belge #{bid} onaylandı')
+    return jsonify({'mesaj': 'Belge onaylandı', 'belge': b.to_dict()})
+
+
+@admin_bp.route('/belgeler/<int:bid>/reddet', methods=['POST'])
+@admin_gerekli
+def belge_reddet(bid):
+    b = UstaBelge.query.get_or_404(bid)
+    data = request.get_json() or {}
+    b.durum = 'reddedildi'
+    b.admin_notu = (data.get('admin_notu') or '').strip()
+    db.session.commit()
+    log_kaydet('BELGE_REDDET', f'Usta #{b.usta_id} belge #{bid} reddedildi')
+    return jsonify({'mesaj': 'Belge reddedildi', 'belge': b.to_dict()})
 
 
 @admin_bp.route('/ustalar/<int:id>/kategoriler', methods=['GET'])

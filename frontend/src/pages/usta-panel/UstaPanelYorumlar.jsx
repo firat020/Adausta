@@ -1,16 +1,36 @@
 import { useState, useEffect } from 'react'
-import { Star, MessageSquare } from 'lucide-react'
-import { ustaPanelYorumlar } from '../../api'
+import { Star, MessageSquare, Reply } from 'lucide-react'
+import { ustaPanelYorumlar, ustaPanelYorumCevapla } from '../../api'
 
 export default function UstaPanelYorumlar() {
   const [yorumlar, setYorumlar] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [cevapAcik, setCevapAcik] = useState(null)
+  const [cevapMetin, setCevapMetin] = useState('')
+  const [gonderiliyor, setGonderiliyor] = useState(false)
 
-  useEffect(() => {
+  const yukle = () => {
     ustaPanelYorumlar()
       .then(r => setYorumlar(r.data.yorumlar))
       .finally(() => setYukleniyor(false))
-  }, [])
+  }
+
+  useEffect(() => { yukle() }, [])
+
+  const cevapGonder = async (id) => {
+    const metin = cevapMetin.trim()
+    if (!metin || gonderiliyor) return
+    setGonderiliyor(true)
+    try {
+      await ustaPanelYorumCevapla(id, metin)
+      setCevapAcik(null)
+      setCevapMetin('')
+      yukle()
+    } catch (err) {
+      alert(err.response?.data?.hata || 'Yanıt gönderilemedi')
+    }
+    setGonderiliyor(false)
+  }
 
   const onaylananlar = yorumlar.filter(y => y.onaylanmis !== false)
   const bekleyenler = yorumlar.filter(y => y.onaylanmis === false)
@@ -89,6 +109,48 @@ export default function UstaPanelYorumlar() {
                 <p className="text-sm text-gray-600 mt-3 leading-relaxed pl-13 ml-13">
                   {y.yorum}
                 </p>
+              )}
+
+              {y.cevap ? (
+                <div className="mt-3 ml-13 pl-13 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-blue-700">Yanıtınız · {y.cevap_tarih}</p>
+                  <p className="text-sm text-blue-900 mt-1">{y.cevap}</p>
+                </div>
+              ) : y.onaylanmis !== false && (
+                cevapAcik === y.id ? (
+                  <div className="mt-3 ml-13 pl-13 space-y-2">
+                    <textarea
+                      value={cevapMetin}
+                      onChange={e => setCevapMetin(e.target.value)}
+                      maxLength={1000}
+                      rows={2}
+                      placeholder="Müşteriye yanıtınızı yazın..."
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => cevapGonder(y.id)}
+                        disabled={!cevapMetin.trim() || gonderiliyor}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:opacity-40 hover:bg-blue-700 transition-colors"
+                      >
+                        Yanıtla
+                      </button>
+                      <button
+                        onClick={() => { setCevapAcik(null); setCevapMetin('') }}
+                        className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                      >
+                        Vazgeç
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setCevapAcik(y.id); setCevapMetin('') }}
+                    className="mt-3 ml-13 pl-13 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                  >
+                    <Reply size={13} /> Yanıtla
+                  </button>
+                )
               )}
             </div>
           ))}
