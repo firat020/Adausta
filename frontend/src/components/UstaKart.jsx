@@ -3,6 +3,7 @@ import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaSlugUrl } from '../data/hizmetler.js'
+import API from '../config.js'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
@@ -22,8 +23,12 @@ export default function UstaKart({ usta }) {
       <div className="p-5">
         {/* Başlık */}
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            {usta.ad.charAt(0).toUpperCase()}
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 overflow-hidden">
+            {usta.logo_url ? (
+              <img src={`${API}${usta.logo_url}`} alt={usta.ad_soyad} className="w-full h-full object-cover" />
+            ) : (
+              usta.ad.charAt(0).toUpperCase()
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">{usta.ad_soyad}</h3>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check } from 'lucide-react'
-import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload } from 'lucide-react'
+import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
 import axios from 'axios'
 
 import API from '../../config.js'
@@ -18,7 +18,9 @@ export default function UstaPanelProfil() {
   const [abonelikYukleniyor, setAbonelikYukleniyor] = useState(false)
   const [ilceler, setIlceler] = useState([])
   const [konumDurumu, setKonumDurumu] = useState('') // '' | 'yukleniyor' | 'basarili' | 'hata' | 'desteklenmiyor'
+  const [logoYukleniyor, setLogoYukleniyor] = useState(false)
   const fileRef = useRef()
+  const logoRef = useRef()
 
   const abonelikiYenile = () => {
     ustaAbonelikGetir().then(r => setAbonelik(r.data)).catch(() => {})
@@ -129,6 +131,32 @@ export default function UstaPanelProfil() {
     }
   }
 
+  const handleLogoYukle = async (e) => {
+    const dosya = e.target.files[0]
+    if (!dosya) return
+    const fd = new FormData()
+    fd.append('dosya', dosya)
+    setLogoYukleniyor(true)
+    try {
+      const r = await ustaPanelLogoYukle(fd)
+      setUsta(prev => ({ ...prev, logo: r.data.logo, logo_url: r.data.logo_url }))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Logo yüklenemedi.' })
+    }
+    setLogoYukleniyor(false)
+    if (logoRef.current) logoRef.current.value = ''
+  }
+
+  const handleLogoSil = async () => {
+    if (!window.confirm('Logoyu kaldırmak istediğinize emin misiniz?')) return
+    try {
+      await ustaPanelLogoSil()
+      setUsta(prev => ({ ...prev, logo: '', logo_url: null }))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Logo kaldırılamadı.' })
+    }
+  }
+
   if (yukleniyor) return (
     <div className="flex justify-center py-16">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -196,10 +224,42 @@ export default function UstaPanelProfil() {
         </div>
       )}
 
+      {/* Logo */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <Upload size={18} className="text-blue-600" /> Logo
+        </h2>
+        <p className="text-xs text-gray-400 mb-4">Profilinizde ve kartınızda görünecek işletme/kişisel logonuz</p>
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+            {usta?.logo_url ? (
+              <img src={`${API_URL}${usta.logo_url}`} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl font-bold text-gray-300">{(usta?.ad || '?').charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => logoRef.current.click()}
+              disabled={logoYukleniyor}
+              className="px-3.5 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 disabled:opacity-50"
+            >
+              {logoYukleniyor ? 'Yükleniyor...' : usta?.logo_url ? 'Logoyu Değiştir' : 'Logo Ekle'}
+            </button>
+            {usta?.logo_url && (
+              <button onClick={handleLogoSil} className="px-3.5 py-2 border border-red-200 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-50">
+                Kaldır
+              </button>
+            )}
+          </div>
+        </div>
+        <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoYukle} />
+      </div>
+
       {/* Fotoğraflar */}
       <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
         <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Camera size={18} className="text-blue-600" /> Profil Fotoğrafları
+          <Camera size={18} className="text-blue-600" /> İş Fotoğrafları
         </h2>
         <div className="flex flex-wrap gap-3">
           {(usta?.fotograflar || []).map(f => (

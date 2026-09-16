@@ -1,10 +1,16 @@
-from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi
+from flask import Blueprint, request, jsonify, session, current_app
+from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
+import os, uuid
 
 admin_bp = Blueprint('admin', __name__)
+
+IZIN_VERILEN_UZANTILAR = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def _izin_verilen(dosya_adi):
+    return '.' in dosya_adi and dosya_adi.rsplit('.', 1)[1].lower() in IZIN_VERILEN_UZANTILAR
 
 
 def admin_gerekli(f):
@@ -161,6 +167,76 @@ def guncelle(id):
         'sehir_id': u.sehir_id, 'sehir': u.sehir.ad if u.sehir else '',
         'plan': u.plan,
     }})
+
+
+@admin_bp.route('/ustalar/<int:id>/logo', methods=['POST'])
+@admin_gerekli
+def usta_logo_yukle(id):
+    u = Usta.query.get_or_404(id)
+    if 'dosya' not in request.files:
+        return jsonify({'hata': 'Dosya yok'}), 400
+    dosya = request.files['dosya']
+    if not _izin_verilen(dosya.filename):
+        return jsonify({'hata': 'Desteklenmeyen format'}), 400
+    uzanti = dosya.filename.rsplit('.', 1)[1].lower()
+    dosya_adi = f"logo_{uuid.uuid4().hex}.{uzanti}"
+    dosya.save(os.path.join(current_app.config['UPLOAD_FOLDER'], dosya_adi))
+    eski = u.logo
+    u.logo = dosya_adi
+    db.session.commit()
+    if eski:
+        eski_yol = os.path.join(current_app.config['UPLOAD_FOLDER'], eski)
+        if os.path.exists(eski_yol):
+            os.remove(eski_yol)
+    log_kaydet('USTA_LOGO_GUNCELLE', f'Usta #{id} {u.ad} {u.soyad} logosu güncellendi')
+    return jsonify({'mesaj': 'Logo yüklendi', 'logo': dosya_adi, 'logo_url': f'/uploads/{dosya_adi}'}), 201
+
+
+@admin_bp.route('/ustalar/<int:id>/logo', methods=['DELETE'])
+@admin_gerekli
+def usta_logo_sil(id):
+    u = Usta.query.get_or_404(id)
+    if u.logo:
+        eski_yol = os.path.join(current_app.config['UPLOAD_FOLDER'], u.logo)
+        if os.path.exists(eski_yol):
+            os.remove(eski_yol)
+        u.logo = ''
+        db.session.commit()
+    log_kaydet('USTA_LOGO_SIL', f'Usta #{id} {u.ad} {u.soyad} logosu kaldırıldı')
+    return jsonify({'mesaj': 'Logo kaldırıldı'})
+
+
+@admin_bp.route('/ustalar/<int:id>/fotograf', methods=['POST'])
+@admin_gerekli
+def usta_fotograf_yukle(id):
+    u = Usta.query.get_or_404(id)
+    if 'dosya' not in request.files:
+        return jsonify({'hata': 'Dosya yok'}), 400
+    dosya = request.files['dosya']
+    if not _izin_verilen(dosya.filename):
+        return jsonify({'hata': 'Desteklenmeyen format'}), 400
+    uzanti = dosya.filename.rsplit('.', 1)[1].lower()
+    dosya_adi = f"{uuid.uuid4().hex}.{uzanti}"
+    dosya.save(os.path.join(current_app.config['UPLOAD_FOLDER'], dosya_adi))
+    f = Fotograf(usta_id=u.id, dosya=dosya_adi)
+    db.session.add(f)
+    db.session.commit()
+    log_kaydet('USTA_FOTOGRAF_EKLE', f'Usta #{id} {u.ad} {u.soyad} icin fotograf eklendi')
+    return jsonify({'mesaj': 'Fotoğraf eklendi', 'fotograf': f.to_dict()}), 201
+
+
+@admin_bp.route('/ustalar/<int:id>/fotograf/<int:fid>', methods=['DELETE'])
+@admin_gerekli
+def usta_fotograf_sil(id, fid):
+    u = Usta.query.get_or_404(id)
+    f = Fotograf.query.filter_by(id=fid, usta_id=u.id).first_or_404()
+    yol = os.path.join(current_app.config['UPLOAD_FOLDER'], f.dosya)
+    if os.path.exists(yol):
+        os.remove(yol)
+    db.session.delete(f)
+    db.session.commit()
+    log_kaydet('USTA_FOTOGRAF_SIL', f'Usta #{id} {u.ad} {u.soyad} icin fotograf silindi')
+    return jsonify({'mesaj': 'Fotoğraf silindi'})
 
 
 @admin_bp.route('/ustalar/<int:id>/abonelik', methods=['POST'])

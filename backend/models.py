@@ -167,6 +167,7 @@ class Usta(db.Model):
     deneyim_yil = db.Column(db.Integer, default=0)
     lat = db.Column(db.Float, nullable=True)   # GPS konum
     lng = db.Column(db.Float, nullable=True)
+    logo = db.Column(db.String(256), default='')  # profil/işletme logosu — iş fotoğraflarından ayrı
     onaylanmis = db.Column(db.Boolean, default=False)
     aktif = db.Column(db.Boolean, default=True)
     musaitlik = db.Column(db.Boolean, default=True)   # Müsait mi?
@@ -234,6 +235,8 @@ class Usta(db.Model):
             'deneyim_yil': self.deneyim_yil,
             'puan': self.ortalama_puan(),
             'yorum_sayisi': len(self.yorumlar),
+            'logo': self.logo,
+            'logo_url': f'/uploads/{self.logo}' if self.logo else None,
             'fotograflar': [f.to_dict() for f in self.fotograflar],
             'mesafe': mesafe,
             'onaylanmis': self.onaylanmis,
