@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import axios from 'axios'
-import { Search, Check, X, Trash2, Eye, RefreshCw, Plus, Download, Tag, Pencil, Save } from 'lucide-react'
+import { Search, Check, X, Trash2, Eye, RefreshCw, Plus, Download, Tag, Pencil, Save, Image, Upload } from 'lucide-react'
 
 import API from '../../config.js'
 
@@ -153,6 +153,10 @@ export default function AdminUstalar() {
   const [tumKategoriler, setTumKategoriler] = useState([])
   const [seciliKategori, setSeciliKategori] = useState('')
   const [katTip, setKatTip] = useState('ek')
+  const [logoYukleniyor, setLogoYukleniyor] = useState(false)
+  const [fotoYukleniyor, setFotoYukleniyor] = useState(false)
+  const logoInputRef = useRef(null)
+  const fotoInputRef = useRef(null)
 
   const yukle = useCallback(async () => {
     setYukleniyor(true)
@@ -212,6 +216,54 @@ export default function AdminUstalar() {
       yukle()
     } catch (e) { alert(e.response?.data?.hata || 'Kayıt başarısız') }
     setKaydetYukleniyor(false)
+  }
+
+  const logoYukle = async (e) => {
+    const dosya = e.target.files[0]
+    if (!dosya) return
+    const fd = new FormData()
+    fd.append('dosya', dosya)
+    setLogoYukleniyor(true)
+    try {
+      const r = await axios.post(`${API}/api/admin/ustalar/${detay.id}/logo`, fd, { withCredentials: true })
+      setDetay(d => ({ ...d, logo: r.data.logo, logo_url: r.data.logo_url }))
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Logo yüklenemedi') }
+    setLogoYukleniyor(false)
+    if (logoInputRef.current) logoInputRef.current.value = ''
+  }
+
+  const logoSil = async () => {
+    if (!confirm('Logoyu kaldırmak istiyor musunuz?')) return
+    setLogoYukleniyor(true)
+    try {
+      await axios.delete(`${API}/api/admin/ustalar/${detay.id}/logo`, { withCredentials: true })
+      setDetay(d => ({ ...d, logo: '', logo_url: null }))
+      yukle()
+    } catch (e) { alert(e.response?.data?.hata || 'Logo kaldırılamadı') }
+    setLogoYukleniyor(false)
+  }
+
+  const fotoYukle = async (e) => {
+    const dosya = e.target.files[0]
+    if (!dosya) return
+    const fd = new FormData()
+    fd.append('dosya', dosya)
+    setFotoYukleniyor(true)
+    try {
+      const r = await axios.post(`${API}/api/admin/ustalar/${detay.id}/fotograf`, fd, { withCredentials: true })
+      setDetay(d => ({ ...d, fotograflar: [...(d.fotograflar || []), r.data.fotograf] }))
+    } catch (e) { alert(e.response?.data?.hata || 'Fotoğraf yüklenemedi') }
+    setFotoYukleniyor(false)
+    if (fotoInputRef.current) fotoInputRef.current.value = ''
+  }
+
+  const fotoSil = async (fid) => {
+    if (!confirm('Bu fotoğrafı silmek istiyor musunuz?')) return
+    try {
+      await axios.delete(`${API}/api/admin/ustalar/${detay.id}/fotograf/${fid}`, { withCredentials: true })
+      setDetay(d => ({ ...d, fotograflar: (d.fotograflar || []).filter(f => f.id !== fid) }))
+    } catch (e) { alert(e.response?.data?.hata || 'Fotoğraf silinemedi') }
   }
 
   const abonelikOlustur = async () => {
@@ -393,6 +445,61 @@ export default function AdminUstalar() {
               {duzenle ? (
                 /* ── EDIT MODE ── */
                 <div className="space-y-3">
+                  {/* Logo */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-[#E0E0E0]">
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {detay.logo_url ? (
+                        <img src={`${API}${detay.logo_url}`} alt="Logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-gray-300">{(detay.ad || '?').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-500 mb-1.5">Logo</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={logoYukleniyor}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EFF6FF] text-[#0052CC] border border-[#BFDBFE] rounded-lg text-xs font-semibold hover:bg-[#DBEAFE] disabled:opacity-50"
+                        >
+                          <Upload size={12} /> {logoYukleniyor ? 'Yukleniyor...' : detay.logo_url ? 'Degistir' : 'Logo Ekle'}
+                        </button>
+                        {detay.logo_url && (
+                          <button onClick={logoSil} disabled={logoYukleniyor} className="px-3 py-1.5 border border-red-200 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50">
+                            Kaldir
+                          </button>
+                        )}
+                        <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={logoYukle} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fotoğraflar */}
+                  <div className="pb-3 border-b border-[#E0E0E0]">
+                    <p className="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1"><Image size={12} /> Is Fotograflari</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(detay.fotograflar || []).map(f => (
+                        <div key={f.id} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
+                          <img src={`${API}${f.url}`} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => fotoSil(f.id)}
+                            className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => fotoInputRef.current?.click()}
+                        disabled={fotoYukleniyor}
+                        className="w-16 h-16 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition disabled:opacity-50"
+                      >
+                        <Plus size={16} />
+                      </button>
+                      <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={fotoYukle} />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     {[['Ad', 'ad'], ['Soyad', 'soyad']].map(([label, key]) => (
                       <div key={key}>

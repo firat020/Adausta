@@ -7,6 +7,7 @@ import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
 import { ustaSlugUrl } from '../data/hizmetler.js'
+import API from '../config.js'
 
 const HIZLI_KATEGORILER = [
   { key: 'tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
@@ -379,8 +380,12 @@ export default function Anasayfa() {
                 <div className="h-1.5 bg-gradient-to-r from-blue-600 to-yellow-400" />
                 <div className="p-6">
                   <div className="flex items-start gap-4 mb-5">
-                    <div className={`w-16 h-16 rounded-2xl ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-2xl flex-shrink-0`}>
-                      {u.ad.charAt(0).toUpperCase()}
+                    <div className={`w-16 h-16 rounded-2xl ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden`}>
+                      {u.logo_url ? (
+                        <img src={`${API}${u.logo_url}`} alt={u.ad_soyad} className="w-full h-full object-cover" />
+                      ) : (
+                        u.ad.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-base">{u.ad_soyad}</h3>

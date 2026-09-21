@@ -1,69 +1,30 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
+import { Mail, Lock, Eye, EyeOff, AlertCircle, ChevronRight, LayoutDashboard, Users, ShieldCheck, BarChart3, Users2, Zap } from 'lucide-react'
 
 import API from '../../config.js'
-// API
+
+const OZELLIKLER = [
+  { ikon: LayoutDashboard, renk: 'mavi',    baslik: 'Tek Ekrandan Yönetim', aciklama: 'Ustalar, şirketler ve üyeleri tek panelden yönet.' },
+  { ikon: Users,           renk: 'turuncu', baslik: 'Onay Kuyruğu',         aciklama: 'Usta ve şirket başvurularını hızlıca onayla.' },
+  { ikon: BarChart3,       renk: 'turuncu', baslik: 'Analitik & Rapor',     aciklama: 'Trafik, abonelik ve gelir verilerini anlık izle.' },
+  { ikon: ShieldCheck,     renk: 'mavi',    baslik: 'Güvenli Erişim',       aciklama: 'Rol bazlı yetkilendirme ile korunan yönetim alanı.' },
+]
+
+const GUVEN = [
+  { ikon: Users2,      satir1: 'Tüm veriler',   satir2: 'tek yerde' },
+  { ikon: ShieldCheck, satir1: 'Güvenli',        satir2: 'altyapı' },
+  { ikon: Zap,         satir1: 'Anlık',          satir2: 'bildirimler' },
+]
 
 export default function AdminLogin() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [sifre, setSifre] = useState('')
-  const [showSifre, setShowSifre] = useState(false)
-  const [hata, setHata] = useState('')
+  const [sifreGoster, setSifreGoster] = useState(false)
   const [yukleniyor, setYukleniyor] = useState(false)
-  const navigate = useNavigate()
-  const canvasRef = useRef(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    let W, H, animId
-    const pts = []
-
-    function resize() {
-      W = canvas.width = window.innerWidth
-      H = canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    // Gümüş + yeşil tonlarında parçacıklar (logo renkleri)
-    for (let i = 0; i < 85; i++) pts.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.4 + 0.2,
-      s: Math.random() * 0.3 + 0.07,
-      o: Math.random() * 0.4 + 0.06,
-      d: (Math.random() - 0.5) * 0.22,
-      // bazı parçacıklar yeşil, çoğu gümüş-mavi
-      g: Math.random() < 0.12,
-    })
-
-    function draw() {
-      ctx.clearRect(0, 0, W, H)
-      // Arka plan: logonun koyu lacivert tonu
-      ctx.fillStyle = '#040d1c'
-      ctx.fillRect(0, 0, W, H)
-      pts.forEach(p => {
-        p.y -= p.s; p.x += p.d
-        if (p.y < -5) { p.y = H + 5; p.x = Math.random() * W }
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        // yeşil (logo checkmark rengi) veya gümüş-mavi
-        ctx.fillStyle = p.g
-          ? `rgba(74,222,128,${p.o})`
-          : `rgba(148,175,220,${p.o})`
-        ctx.fill()
-      })
-      animId = requestAnimationFrame(draw)
-    }
-    draw()
-
-    return () => {
-      window.removeEventListener('resize', resize)
-      cancelAnimationFrame(animId)
-    }
-  }, [])
+  const [hata, setHata] = useState('')
 
   const giris = async (e) => {
     e.preventDefault()
@@ -83,463 +44,143 @@ export default function AdminLogin() {
   }
 
   return (
-    <>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      <style>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)' }}>
 
-        .au-scene { position: fixed; inset: 0; z-index: 0; }
-        .au-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .au-glow {
-          position: absolute; inset: 0;
-          background:
-            radial-gradient(ellipse 55% 50% at 18% 28%, rgba(14,40,90,0.55) 0%, transparent 60%),
-            radial-gradient(ellipse 40% 35% at 82% 72%, rgba(22,163,74,0.08) 0%, transparent 55%);
-        }
+      {/* Arka plan desen */}
+      <div className="fixed inset-0 opacity-[0.04] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+      <div className="fixed top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-20 right-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        .au-page {
-          position: relative; z-index: 1;
-          height: 100vh;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          font-family: 'Outfit', sans-serif;
-          color: #e8f0ff;
-        }
+      {/* Dev logo — sayfanın en arkasında, çok şeffaf filigran */}
+      <img src="/ada-usta-logo-new.png" alt=""
+        className="fixed -left-24 -top-24 w-[700px] h-[700px] object-contain opacity-[0.06] pointer-events-none select-none z-0" />
 
-        /* ═══ SOL ═══ */
-        .au-left {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: 60px 64px;
-          position: relative;
-        }
-        .au-left::after {
-          content: '';
-          position: absolute;
-          right: 0; top: 10%; bottom: 10%;
-          width: 1px;
-          background: linear-gradient(180deg,
-            transparent,
-            rgba(74,222,128,0.18) 25%,
-            rgba(30,58,95,0.4) 60%,
-            transparent
-          );
-        }
+      {/* ─── ANA İÇERİK ─────────────────────────────────────────────────── */}
+      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-stretch gap-10 lg:gap-8 px-6 lg:px-12 py-10 lg:py-14">
 
-        .au-logo-area {
-          margin-bottom: 48px;
-          animation: auRise .6s .05s both;
-        }
-        .au-logo-area img {
-          width: 140px;
-          height: 140px;
-          object-fit: contain;
-          border-radius: 22px;
-          /* hafif glow: logonun lacivert tonuna uygun */
-          filter: drop-shadow(0 0 18px rgba(30,58,95,0.6));
-        }
-
-        .au-tag {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(22,163,74,0.09);
-          border: 1px solid rgba(74,222,128,0.22);
-          border-radius: 100px;
-          padding: 6px 14px;
-          font-size: 11.5px; font-weight: 500;
-          color: rgba(134,239,172,0.85);
-          letter-spacing: 0.08em; text-transform: uppercase;
-          margin-bottom: 22px;
-          animation: auRise .6s .12s both;
-          width: fit-content;
-        }
-        .au-tag-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: #4ade80;
-          box-shadow: 0 0 7px #4ade80;
-          flex-shrink: 0;
-        }
-
-        .au-title {
-          font-size: clamp(28px, 2.8vw, 44px);
-          font-weight: 800;
-          line-height: 1.12;
-          letter-spacing: -1px;
-          margin-bottom: 18px;
-          animation: auRise .6s .18s both;
-        }
-        .au-title em {
-          font-style: normal;
-          background: linear-gradient(90deg, #4ade80, #86efac);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .au-desc {
-          font-size: 15px; font-weight: 300;
-          color: rgba(203,213,225,0.4);
-          line-height: 1.75;
-          max-width: 340px;
-          animation: auRise .6s .24s both;
-        }
-
-        .au-badges {
-          display: flex; gap: 10px;
-          margin-top: 40px;
-          animation: auRise .6s .30s both;
-          flex-wrap: wrap;
-        }
-        .au-badge {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 11px; font-weight: 500;
-          color: rgba(203,213,225,0.45);
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 8px;
-          padding: 5px 10px;
-        }
-        .au-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: #4ade80; }
-
-        .au-ver {
-          margin-top: 48px;
-          font-size: 10.5px;
-          color: rgba(203,213,225,0.14);
-          letter-spacing: 0.08em;
-          animation: auRise .6s .36s both;
-        }
-
-        /* ═══ SAĞ ═══ */
-        .au-right {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 40px;
-          position: relative;
-        }
-        .au-right-glow {
-          position: absolute; inset: 0; z-index: 0;
-          background:
-            radial-gradient(ellipse 55% 45% at 65% 25%, rgba(14,40,90,0.22) 0%, transparent 60%),
-            radial-gradient(ellipse 45% 35% at 35% 78%, rgba(22,163,74,0.05) 0%, transparent 55%);
-        }
-
-        .au-card {
-          position: relative; z-index: 1;
-          width: 100%; max-width: 424px;
-          background: rgba(5,12,26,0.93);
-          backdrop-filter: blur(28px);
-          -webkit-backdrop-filter: blur(28px);
-          border: 1px solid rgba(30,58,95,0.35);
-          border-radius: 28px;
-          padding: 48px 44px;
-          box-shadow:
-            0 0 0 1px rgba(255,255,255,0.025),
-            0 40px 100px rgba(0,0,0,0.75),
-            0 0 70px rgba(14,40,90,0.15);
-          animation: auCardIn .75s cubic-bezier(0.16,1,0.3,1) both;
-        }
-        /* Üst glow çizgisi: yeşil → lacivert */
-        .au-card::before {
-          content: '';
-          position: absolute;
-          top: -1px; left: 15%; right: 15%;
-          height: 2px;
-          background: linear-gradient(90deg, transparent, #4ade80 30%, #1e3a5f 70%, transparent);
-          border-radius: 0 0 4px 4px;
-          opacity: .7;
-        }
-        /* Köşe süsü */
-        .au-card::after {
-          content: '';
-          position: absolute;
-          top: 22px; right: 22px;
-          width: 34px; height: 34px;
-          border-top: 1px solid rgba(74,222,128,0.22);
-          border-right: 1px solid rgba(74,222,128,0.22);
-          border-radius: 0 8px 0 0;
-        }
-
-        .au-eyebrow {
-          font-size: 11px; font-weight: 500;
-          letter-spacing: 0.14em; text-transform: uppercase;
-          color: rgba(134,239,172,0.5);
-          margin-bottom: 8px;
-          animation: auRise .5s .22s both;
-        }
-        .au-card-title {
-          font-size: 30px; font-weight: 700;
-          letter-spacing: -0.5px;
-          margin-bottom: 6px;
-          animation: auRise .5s .27s both;
-        }
-        .au-card-sub {
-          font-size: 14px; font-weight: 300;
-          color: rgba(203,213,225,0.38);
-          margin-bottom: 36px;
-          animation: auRise .5s .32s both;
-        }
-
-        .au-field { margin-bottom: 18px; }
-        .au-field:nth-child(1) { animation: auRise .5s .36s both; }
-        .au-field:nth-child(2) { animation: auRise .5s .41s both; }
-
-        .au-label {
-          display: block;
-          font-size: 11px; font-weight: 600;
-          letter-spacing: 0.1em; text-transform: uppercase;
-          color: rgba(203,213,225,0.45);
-          margin-bottom: 8px;
-        }
-
-        .au-input-wrap { position: relative; }
-        .au-input {
-          width: 100%;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px;
-          padding: 15px 18px;
-          color: #e8f0ff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          outline: none;
-          transition: border-color .2s, background .2s, box-shadow .2s;
-          -webkit-appearance: none;
-        }
-        .au-input::placeholder { color: rgba(203,213,225,0.16); }
-        .au-input:focus {
-          border-color: rgba(74,222,128,0.35);
-          background: rgba(255,255,255,0.07);
-          box-shadow: 0 0 0 3px rgba(74,222,128,0.07);
-        }
-        .au-input-pw { padding-right: 50px; }
-        .au-input-err {
-          border-color: #f87171 !important;
-          box-shadow: 0 0 0 3px rgba(248,113,113,0.08) !important;
-        }
-
-        .au-eye-btn {
-          position: absolute; right: 14px; top: 50%;
-          transform: translateY(-50%);
-          background: none; border: none; cursor: pointer;
-          color: rgba(203,213,225,0.22);
-          display: flex; align-items: center; padding: 4px;
-          transition: color .2s;
-        }
-        .au-eye-btn:hover { color: rgba(203,213,225,0.65); }
-
-        .au-error-box {
-          display: flex; align-items: flex-start; gap: 8px;
-          background: rgba(239,68,68,0.07);
-          border: 1px solid rgba(239,68,68,0.22);
-          border-radius: 12px;
-          padding: 12px 14px;
-          margin-bottom: 4px;
-          animation: auRise .3s both;
-        }
-        .au-error-box span {
-          color: #fca5a5;
-          font-size: 13px;
-          line-height: 1.4;
-          font-family: 'Outfit', sans-serif;
-        }
-
-        .au-btn-wrap { margin-top: 26px; animation: auRise .5s .46s both; }
-        .au-btn {
-          width: 100%; padding: 16px;
-          /* logonun lacivert → biraz daha koyu gradient */
-          background: linear-gradient(135deg, #1e3a5f 0%, #0f2040 100%);
-          border: 1px solid rgba(74,222,128,0.2);
-          border-radius: 14px;
-          color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 15.5px; font-weight: 600;
-          letter-spacing: 0.02em;
-          cursor: pointer;
-          position: relative; overflow: hidden;
-          transition: transform .15s, box-shadow .2s, opacity .2s;
-          box-shadow:
-            0 8px 28px rgba(14,40,90,0.55),
-            0 1px 0 rgba(255,255,255,0.08) inset;
-        }
-        .au-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 14px 38px rgba(14,40,90,0.7), 0 0 20px rgba(74,222,128,0.1);
-        }
-        .au-btn:active:not(:disabled) { transform: translateY(0); }
-        .au-btn:disabled { opacity: .4; cursor: not-allowed; }
-        /* Shimmer */
-        .au-btn::after {
-          content: ''; position: absolute; top: 0; left: -80%;
-          width: 50%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.13), transparent);
-          transform: skewX(-20deg);
-        }
-        .au-btn:hover:not(:disabled)::after { animation: auShimmer .5s ease forwards; }
-        @keyframes auShimmer { from{left:-80%} to{left:140%} }
-
-        .au-spinner { animation: auSpin .7s linear infinite; }
-        @keyframes auSpin { to { transform: rotate(360deg); } }
-
-        .au-footer {
-          position: fixed; bottom: 20px; right: 26px;
-          font-size: 11px; font-weight: 300;
-          color: rgba(203,213,225,0.18);
-          letter-spacing: 0.07em;
-          font-family: 'Outfit', sans-serif;
-          z-index: 10;
-          animation: auRise .7s .65s both;
-        }
-
-        @keyframes auRise {
-          from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        @keyframes auCardIn {
-          from { opacity:0; transform:translateY(26px) scale(0.97); }
-          to   { opacity:1; transform:translateY(0) scale(1); }
-        }
-
-        /* ══ MOBİL ══ */
-        @media (max-width: 768px) {
-          html, body { overflow-y: auto; height: auto; }
-          .au-page { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
-          .au-left { display: none; }
-          .au-right { padding: 20px 16px 40px; align-items: flex-start; padding-top: 52px; }
-          .au-card { padding: 32px 24px 28px; border-radius: 22px; max-width: 100%; }
-          .au-mobile-logo { display: flex !important; }
-          .au-card-title { font-size: 24px; }
-          .au-card-sub { font-size: 13px; margin-bottom: 28px; }
-          .au-input { font-size: 16px; padding: 14px 16px; }
-          .au-input-pw { padding-right: 48px; }
-          .au-btn { font-size: 15px; padding: 15px; }
-        }
-        @media (max-width: 400px) {
-          .au-right { padding: 16px 12px 36px; padding-top: 40px; }
-          .au-card { padding: 28px 18px 24px; border-radius: 18px; }
-        }
-        .au-mobile-logo { display: none; }
-      `}</style>
-
-      {/* Arka plan canvas */}
-      <div className="au-scene">
-        <canvas ref={canvasRef} />
-        <div className="au-glow" />
-      </div>
-
-      <div className="au-page">
-
-        {/* SOL PANEL */}
-        <div className="au-left">
-          <div className="au-logo-area">
-            <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" style={{ width: 'auto', height: 64, objectFit: 'contain' }} />
-          </div>
-
-          <div className="au-tag">
-            <div className="au-tag-dot" />
-            Yönetim Paneli
-          </div>
-
-          <h1 className="au-title">
-            KKTC'nin Güvenilir<br />
-            <em>Usta Platformu</em>
+        {/* Sol: Pazarlama içeriği */}
+        <div className="w-full lg:w-[56%] order-2 lg:order-1 relative flex flex-col justify-center">
+          <p className="text-orange-400 font-extrabold text-xs tracking-[0.2em] uppercase mb-3">Yönetim Paneli</p>
+          <h1 className="text-4xl sm:text-5xl font-black text-white leading-[1.05] mb-4">
+            Platformun<br />
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, #fb923c, #facc15)' }}>
+              Tüm Kontrolü Sende.
+            </span>
           </h1>
-
-          <p className="au-desc">
-            Ada Usta yönetim paneli ile usta başvurularını, yorumları ve kategorileri tek ekrandan kolayca yönetin.
+          <p className="text-blue-200/70 text-sm sm:text-base leading-relaxed max-w-md mb-8">
+            Ustaları, şirketleri, üyeleri ve içerikleri tek panelden yönet.
+            Ada Usta yönetim paneli ile her şey kontrol altında.
           </p>
 
-          <div className="au-badges">
-            <div className="au-badge"><div className="au-badge-dot" /> Hızlı</div>
-            <div className="au-badge"><div className="au-badge-dot" /> Güvenli</div>
-            <div className="au-badge"><div className="au-badge-dot" /> KKTC</div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md mb-8">
+            {OZELLIKLER.map(({ ikon: Icon, renk, baslik, aciklama }) => (
+              <div key={baslik} className="rounded-2xl border border-white/10 p-4"
+                style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: renk === 'mavi' ? 'rgba(37,99,235,0.25)' : 'rgba(234,88,12,0.25)' }}>
+                  <Icon size={18} className={renk === 'mavi' ? 'text-blue-300' : 'text-orange-300'} />
+                </div>
+                <p className="text-white text-sm font-bold mb-0.5">{baslik}</p>
+                <p className="text-blue-300/60 text-xs leading-snug">{aciklama}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="au-ver">ADA USTA · YÖNETİM PANELİ · YETKİSİZ ERİŞİM YASAKTIR</div>
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-6 border-t border-white/10 max-w-md">
+            {GUVEN.map(({ ikon: Icon, satir1, satir2 }) => (
+              <div key={satir1} className="flex items-center gap-2.5">
+                <Icon size={20} className="text-blue-300/70 shrink-0" />
+                <p className="text-blue-200/70 text-xs leading-tight">{satir1}<br />{satir2}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* SAĞ PANEL */}
-        <div className="au-right">
-          <div className="au-right-glow" />
+        {/* Sağ: Giriş kartı */}
+        <div className="w-full max-w-sm lg:max-w-none lg:w-[42%] order-1 lg:order-2 relative z-20 flex flex-col">
 
-          <div className="au-card">
-            {/* Mobilde logo */}
-            <div className="au-mobile-logo" style={{ justifyContent: 'center', marginBottom: 28 }}>
-              <img src="/ada-usta-logo-transparent.webp" alt="Ada Usta" style={{ width: 'auto', height: 56, objectFit: 'contain' }} />
+          <p className="lg:hidden text-center text-blue-300/60 text-xs font-semibold tracking-widest uppercase mb-3">
+            Yönetim Paneli
+          </p>
+
+          <div className="w-full flex-1 flex flex-col justify-center rounded-3xl border border-white/10 p-7 sm:p-8 shadow-2xl shadow-black/40"
+            style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(20px)' }}>
+
+            <div className="mb-7">
+              <h2 className="text-2xl font-black text-white">Hoş Geldiniz</h2>
+              <p className="text-blue-300/70 text-sm mt-1">Admin hesabınızla giriş yapın</p>
             </div>
 
-            <div className="au-eyebrow">Hoş Geldiniz</div>
-            <div className="au-card-title">Giriş Yap</div>
-            <div className="au-card-sub">Admin hesabınıza erişmek için bilgilerinizi girin</div>
+            <form onSubmit={giris} className="space-y-4">
 
-            <form onSubmit={giris}>
-              <div className="au-field">
-                <label className="au-label">E-posta</label>
-                <div className="au-input-wrap">
+              <div>
+                <label className="text-xs font-bold text-blue-300 uppercase tracking-wide mb-1.5 block">E-posta</label>
+                <div className="relative">
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-400/60" />
                   <input
-                    type="email"
-                    placeholder="admin@adausta.com"
-                    className={`au-input${hata ? ' au-input-err' : ''}`}
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    autoComplete="email"
-                    autoFocus
-                    required
+                    type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="admin@adausta.com" required autoFocus autoComplete="email"
+                    className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm outline-none transition text-white placeholder-blue-400/40 border border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                    style={{ background: 'rgba(255,255,255,0.07)' }}
                   />
                 </div>
               </div>
 
-              <div className="au-field">
-                <label className="au-label">Şifre</label>
-                <div className="au-input-wrap">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-blue-300 uppercase tracking-wide block">Şifre</label>
+                  <Link to="/sifremi-unuttum" className="text-xs text-blue-400/70 font-semibold hover:text-blue-300 transition">Şifremi unuttum?</Link>
+                </div>
+                <div className="relative">
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-400/60" />
                   <input
-                    type={showSifre ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className={`au-input au-input-pw${hata ? ' au-input-err' : ''}`}
-                    value={sifre}
+                    type={sifreGoster ? 'text' : 'password'} value={sifre}
                     onChange={e => setSifre(e.target.value)}
-                    autoComplete="current-password"
-                    required
+                    placeholder="••••••••" required minLength={6} autoComplete="current-password"
+                    className="w-full pl-10 pr-11 py-3.5 rounded-xl text-sm outline-none transition text-white placeholder-blue-400/40 border border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                    style={{ background: 'rgba(255,255,255,0.07)' }}
                   />
-                  <button type="button" className="au-eye-btn" onClick={() => setShowSifre(!showSifre)}>
-                    {showSifre
-                      ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    }
+                  <button type="button" onClick={() => setSifreGoster(!sifreGoster)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-blue-400/60 hover:text-blue-300 transition">
+                    {sifreGoster ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
               {hata && (
-                <div className="au-error-box">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  <span>{hata}</span>
+                <div className="flex items-start gap-2 rounded-xl px-4 py-3 text-sm text-red-300 border border-red-500/20"
+                  style={{ background: 'rgba(239,68,68,0.1)' }}>
+                  <AlertCircle size={15} className="shrink-0 mt-0.5" /> {hata}
                 </div>
               )}
 
-              <div className="au-btn-wrap">
-                <button
-                  type="submit"
-                  className="au-btn"
-                  disabled={yukleniyor || !email || !sifre}
-                >
-                  {yukleniyor
-                    ? <svg className="au-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                      </svg>
-                    : 'Giriş Yap'
-                  }
-                </button>
-              </div>
+              <button type="submit" disabled={yukleniyor || !email || !sifre}
+                className="w-full font-bold py-3.5 rounded-xl transition text-sm text-white shadow-lg shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-1.5"
+                style={{ background: yukleniyor ? '#1d4ed8' : 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}>
+                {yukleniyor ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Giriş yapılıyor...
+                  </span>
+                ) : (
+                  <>Giriş Yap <ChevronRight size={16} /></>
+                )}
+              </button>
             </form>
+
+            <p className="text-center text-xs text-blue-400/50 mt-6">
+              <Link to="/" className="text-blue-400/70 font-semibold hover:text-blue-300 transition">← Siteye dön</Link>
+            </p>
           </div>
         </div>
-
       </div>
 
-      <div className="au-footer">Ada Usta Admin · KKTC</div>
-    </>
+      {/* ─── ALT BİLGİ ÇUBUĞU ───────────────────────────────────────────── */}
+      <footer className="relative z-10 border-t border-white/10 px-6 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-blue-300/40">
+        <p>© {new Date().getFullYear()} Ada Usta. Tüm hakları saklıdır.</p>
+        <p className="tracking-widest uppercase text-blue-300/25">Yönetim Paneli · Yetkisiz Erişim Yasaktır</p>
+      </footer>
+    </div>
   )
 }

@@ -150,6 +150,39 @@ def fotograf_sil(usta, fid):
     return jsonify({'mesaj': 'Fotoğraf silindi'})
 
 
+@usta_panel_bp.route('/profil/logo', methods=['POST'])
+@usta_gerekli
+def logo_yukle(usta):
+    if 'dosya' not in request.files:
+        return jsonify({'hata': 'Dosya seçilmedi'}), 400
+    f = request.files['dosya']
+    ext = f.filename.rsplit('.', 1)[-1].lower()
+    if ext not in IZIN_UZANTILAR:
+        return jsonify({'hata': 'Desteklenmeyen dosya türü'}), 400
+    ad = f'logo_{uuid.uuid4().hex}.{ext}'
+    f.save(os.path.join(UPLOAD_FOLDER, ad))
+    eski = usta.logo
+    usta.logo = ad
+    db.session.commit()
+    if eski:
+        eski_yol = os.path.join(UPLOAD_FOLDER, eski)
+        if os.path.exists(eski_yol):
+            os.remove(eski_yol)
+    return jsonify({'mesaj': 'Logo yüklendi', 'logo': ad, 'logo_url': f'/uploads/{ad}'}), 201
+
+
+@usta_panel_bp.route('/profil/logo', methods=['DELETE'])
+@usta_gerekli
+def logo_sil(usta):
+    if usta.logo:
+        yol = os.path.join(UPLOAD_FOLDER, usta.logo)
+        if os.path.exists(yol):
+            os.remove(yol)
+        usta.logo = ''
+        db.session.commit()
+    return jsonify({'mesaj': 'Logo silindi'})
+
+
 # ──────────────────────────────────────────────────────────
 # Müsaitlik toggle
 # ──────────────────────────────────────────────────────────

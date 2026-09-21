@@ -219,8 +219,12 @@ export default function UstaDetay() {
         <div className="p-7">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-3xl flex-shrink-0">
-              {usta.ad.charAt(0).toUpperCase()}
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-3xl flex-shrink-0 overflow-hidden">
+              {usta.logo_url ? (
+                <img src={`${API}${usta.logo_url}`} alt={usta.ad_soyad} className="w-full h-full object-cover" />
+              ) : (
+                usta.ad.charAt(0).toUpperCase()
+              )}
             </div>
 
             {/* Bilgiler */}
