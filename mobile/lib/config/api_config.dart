@@ -8,7 +8,10 @@ class ApiConfig {
   static const String uploads = '$baseUrl/uploads';
 
   static String ustaDetay(int id) => '$baseUrl/api/ustalar/$id';
-  static String ustaYorumlar(int id) => '$baseUrl/api/ustalar/$id/yorumlar';
+  // Yorumlar ayrı bir uç değil; /api/ustalar/<id> yanıtındaki 'yorumlar' alanı
+  static String ustaYorumEkle(int id) => '$baseUrl/api/ustalar/$id/yorum';
+  static const String ustaKayit = '$baseUrl/api/ustalar/kayit';
+  static String ustaIsTalebi(int id) => '$baseUrl/api/ustalar/$id/is-talebi';
 
   // Auth
   static const String giris        = '$baseUrl/api/auth/giris';
@@ -37,9 +40,9 @@ class ApiConfig {
   static const String ustaBelgeler        = '$baseUrl/api/usta/belgeler';
   static String ustaBelgeSil(int id)      => '$baseUrl/api/usta/belgeler/$id';
 
-  // Müşteri Talep
-  static const String musteriTalepler = '$baseUrl/api/musteri/talepler';
-  static String musteriTalepDetay(int id) => '$baseUrl/api/musteri/talepler/$id';
+  // Müşteri Talep (backend: routes/musteri_panel.py)
+  static const String musteriTaleplerim = '$baseUrl/api/musteri/taleplerim';
+  static String musteriTalepIptal(int id) => '$baseUrl/api/musteri/taleplerim/$id/iptal';
 
   // FCM
   static const String fcmToken = '$baseUrl/api/fcm/token';

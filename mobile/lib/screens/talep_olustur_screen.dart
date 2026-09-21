@@ -127,8 +127,12 @@ class _TalepOlusturScreenState extends State<TalepOlusturScreen> {
       } else {
         _hataMesaji('Talep gönderilemedi. Tekrar deneyin.');
       }
-    } catch (_) {
-      _hataMesaji('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');
+    } catch (e) {
+      // ApiService backend'in 'hata' mesajıyla Exception fırlatır; ağ hatalarında genel mesaj göster
+      final m = e.toString();
+      _hataMesaji(m.startsWith('Exception: ')
+          ? m.substring('Exception: '.length)
+          : 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');
     } finally {
       if (mounted) setState(() => _gonderiyor = false);
     }

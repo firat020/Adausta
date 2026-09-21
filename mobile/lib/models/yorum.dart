@@ -16,7 +16,7 @@ class Yorum {
   factory Yorum.fromJson(Map<String, dynamic> json) {
     return Yorum(
       id: json['id'],
-      mustadAd: json['musteri_ad'] ?? json['ad'] ?? 'Anonim',
+      mustadAd: json['musteri_adi'] ?? json['musteri_ad'] ?? json['ad'] ?? 'Anonim',
       puan: (json['puan'] as num).toDouble(),
       yorum: json['yorum'],
       tarih: json['tarih'],

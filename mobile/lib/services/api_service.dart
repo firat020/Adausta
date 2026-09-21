@@ -55,11 +55,13 @@ class ApiService {
     throw Exception('Usta bulunamadı');
   }
 
+  // Backend'de ayrı bir yorum listeleme ucu yok; onaylı yorumlar
+  // GET /api/ustalar/{id} yanıtında 'yorumlar' alanı olarak gelir.
   Future<List<Yorum>> getYorumlar(int ustaId) async {
-    final res = await http.get(Uri.parse(ApiConfig.ustaYorumlar(ustaId)), headers: _headers);
+    final res = await http.get(Uri.parse(ApiConfig.ustaDetay(ustaId)), headers: _headers);
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      final list = data is List ? data : (data['yorumlar'] ?? []);
+      final list = data is Map ? (data['yorumlar'] ?? []) : [];
       return (list as List).map((e) => Yorum.fromJson(e)).toList();
     }
     return [];
@@ -88,13 +90,24 @@ class ApiService {
     throw Exception('Yakın ustalar bulunamadı');
   }
 
+  /// POST /api/ustalar/kayit — backend zorunlu alanlar:
+  /// ad, telefon, kategori_id, sehir_id, email, sifre (>= 8 karakter).
+  /// Başarısız olursa backend'in 'hata' mesajıyla Exception fırlatır.
   Future<bool> kayitOl(Map<String, dynamic> formData) async {
     final res = await http.post(
-      Uri.parse(ApiConfig.ustalar),
+      Uri.parse(ApiConfig.ustaKayit),
       headers: _headers,
       body: jsonEncode(formData),
     );
-    return res.statusCode == 201 || res.statusCode == 200;
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      _saveCookie(res); // backend kayıt sonrası otomatik oturum açar
+      if (_sessionCookie != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('session_cookie', _sessionCookie!);
+      }
+      return true;
+    }
+    throw Exception(_hataAl(res) ?? 'Kayıt yapılamadı');
   }
 
   Future<List<Sehir>> getSehirler() async {
@@ -107,11 +120,16 @@ class ApiService {
     return [];
   }
 
+  // POST /api/ustalar/{id}/yorum — backend 'musteri_adi' ve 1-5 arası tamsayı 'puan' bekler.
   Future<bool> yorumEkle(int ustaId, String ad, double puan, String yorum) async {
     final res = await http.post(
-      Uri.parse(ApiConfig.ustaYorumlar(ustaId)),
+      Uri.parse(ApiConfig.ustaYorumEkle(ustaId)),
       headers: _headers,
-      body: jsonEncode({'ad': ad, 'puan': puan, 'yorum': yorum}),
+      body: jsonEncode({
+        'musteri_adi': ad.trim(),
+        'puan': puan.round().clamp(1, 5),
+        'yorum': yorum.trim(),
+      }),
     );
     return res.statusCode == 201 || res.statusCode == 200;
   }
@@ -231,28 +249,55 @@ class ApiService {
     );
   }
 
+  // POST /api/ustalar/{usta_id}/is-talebi — backend alanları:
+  // musteri_ad, musteri_telefon, baslik (zorunlu), aciklama, tercih_tarih.
+  // Oturum çerezi gönderilirse talep müşteri hesabına bağlanır ("Taleplerim"de görünür).
   Future<bool> musteriTalepOlustur(Map<String, dynamic> data) async {
+    final ustaId = data['usta_id'] as int;
+    final aciklama = (data['aciklama'] ?? '').toString().trim();
+    final iletisim = (data['iletisim_tercihi'] ?? '').toString();
+
+    // Backend 'baslik' ister; mobil form başlık almıyor → açıklamanın ilk satırı
+    final ilkSatir = aciklama.split('\n').first.trim();
+    final baslik = (data['baslik'] ?? (ilkSatir.isNotEmpty
+            ? (ilkSatir.length > 80 ? '${ilkSatir.substring(0, 77)}...' : ilkSatir)
+            : 'Mobil uygulamadan iş talebi'))
+        .toString();
+
+    final body = <String, dynamic>{
+      'musteri_ad': (data['ad'] ?? '').toString().trim(),
+      'musteri_telefon': (data['telefon'] ?? '').toString().trim(),
+      'baslik': baslik,
+      'aciklama': iletisim.isNotEmpty
+          ? '$aciklama\n\nİletişim tercihi: ${iletisim == 'whatsapp' ? 'WhatsApp' : 'Telefon'}'
+          : aciklama,
+      if (data['tercih_tarih'] != null) 'tercih_tarih': data['tercih_tarih'],
+    };
+
     final res = await http.post(
-      Uri.parse(ApiConfig.musteriTalepler),
+      Uri.parse(ApiConfig.ustaIsTalebi(ustaId)),
       headers: _authHeaders,
-      body: jsonEncode(data),
+      body: jsonEncode(body),
     );
-    return res.statusCode == 201 || res.statusCode == 200;
+    if (res.statusCode == 201 || res.statusCode == 200) return true;
+    throw Exception(_hataAl(res) ?? 'Talep gönderilemedi');
   }
 
+  /// GET /api/musteri/taleplerim → {'talepler': [...]} (müşteri oturumu gerekli)
   Future<List<Map<String, dynamic>>> musteriTalepListesi() async {
-    final res = await http.get(Uri.parse(ApiConfig.musteriTalepler), headers: _authHeaders);
+    final res = await http.get(Uri.parse(ApiConfig.musteriTaleplerim), headers: _authHeaders);
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       final list = data is List ? data : (data['talepler'] ?? []);
       return (list as List).cast<Map<String, dynamic>>();
     }
-    throw Exception('Talepler yüklenemedi');
+    throw Exception(_hataAl(res) ?? 'Talepler yüklenemedi');
   }
 
+  // PUT /api/musteri/taleplerim/{id}/iptal — yalnızca 'bekliyor' durumundaki talepler
   Future<bool> musteriTalepIptal(int id) async {
-    final res = await http.delete(
-      Uri.parse(ApiConfig.musteriTalepDetay(id)),
+    final res = await http.put(
+      Uri.parse(ApiConfig.musteriTalepIptal(id)),
       headers: _authHeaders,
     );
     return res.statusCode == 200 || res.statusCode == 204;

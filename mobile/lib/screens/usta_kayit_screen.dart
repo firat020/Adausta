@@ -23,6 +23,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
   final _soyadCtrl = TextEditingController();
   final _telefonCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _sifreCtrl = TextEditingController();
   final _aciklamaCtrl = TextEditingController();
 
   Kategori? _secilenKategori;
@@ -44,6 +45,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
     _soyadCtrl.dispose();
     _telefonCtrl.dispose();
     _emailCtrl.dispose();
+    _sifreCtrl.dispose();
     _aciklamaCtrl.dispose();
     super.dispose();
   }
@@ -74,13 +76,33 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
 
   Future<void> _kaydet() async {
     if (!_formKey.currentState!.validate()) return;
+    // Form.validate() yalnızca ekranda olan adımı doğrular; backend'in zorunlu
+    // tuttuğu 1. adım alanlarını (e-posta, şifre >= 8) burada ayrıca kontrol et.
+    final email = _emailCtrl.text.trim();
+    final sifre = _sifreCtrl.text;
+    String? onHata;
+    if (_adCtrl.text.trim().isEmpty || _telefonCtrl.text.trim().isEmpty) {
+      onHata = 'Ad ve telefon zorunludur';
+    } else if (email.isEmpty || !email.contains('@')) {
+      onHata = 'Geçerli bir e-posta adresi girin';
+    } else if (sifre.length < 8) {
+      onHata = 'Şifre en az 8 karakter olmalı';
+    }
+    if (onHata != null) {
+      setState(() => _adim = 0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(onHata), backgroundColor: AppColors.error),
+      );
+      return;
+    }
     setState(() => _yukleniyor = true);
     try {
       final ok = await _api.kayitOl({
         'ad': _adCtrl.text.trim(),
         'soyad': _soyadCtrl.text.trim(),
         'telefon': _telefonCtrl.text.trim(),
-        'email': _emailCtrl.text.trim(),
+        'email': email,
+        'sifre': sifre,
         'aciklama': _aciklamaCtrl.text.trim(),
         'sehir': _secilenSehir?.ad ?? '',
         'sehir_id': _secilenSehir?.id,
@@ -358,8 +380,13 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
               _alan(_telefonCtrl, 'Telefon', Icons.phone_outlined,
                   zorunlu: true,
                   keyboard: TextInputType.phone),
-              _alan(_emailCtrl, 'E-posta (isteğe bağlı)', Icons.email_outlined,
+              _alan(_emailCtrl, 'E-posta', Icons.email_outlined,
+                  zorunlu: true,
                   keyboard: TextInputType.emailAddress),
+              _alan(_sifreCtrl, 'Şifre (en az 8 karakter)', Icons.lock_outline,
+                  zorunlu: true,
+                  gizli: true,
+                  keyboard: TextInputType.visiblePassword),
             ],
           ),
         ],
@@ -640,6 +667,7 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
     String label,
     IconData ikon, {
     bool zorunlu = false,
+    bool gizli = false,
     TextInputType? keyboard,
   }) {
     return Padding(
@@ -647,6 +675,9 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
       child: TextFormField(
         controller: ctrl,
         keyboardType: keyboard,
+        obscureText: gizli,
+        autocorrect: !gizli,
+        enableSuggestions: !gizli,
         decoration: _inputDeco(label, ikon),
         validator: zorunlu
             ? (v) => (v == null || v.trim().isEmpty) ? '$label zorunlu' : null
