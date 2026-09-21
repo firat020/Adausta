@@ -4,11 +4,19 @@ from datetime import datetime, timedelta
 from extensions import limiter
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
+import os
 import requests as http_requests
 import random
 import hashlib
 
 auth_bp = Blueprint('auth', __name__)
+
+# Frontend'in kullandığı Google OAuth Client ID (VITE_GOOGLE_CLIENT_ID ile aynı değer).
+# Tanımlıysa id_token'ın "aud" alanı bununla karşılaştırılır (audience confusion /
+# başka bir siteden alınmış token'ın burada replay edilmesini engeller).
+# Tanımlı değilse mevcut davranış korunur — üretimde bu değişken eklenene kadar
+# Google ile giriş bozulmaz, sadece bu ek kontrol atlanır.
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 
 MAX_DENEME = 5
 KILIT_SURE_DK = 15
@@ -188,6 +196,8 @@ def google_giris():
             if r.status_code != 200:
                 return jsonify({'hata': 'Google doğrulama başarısız'}), 401
             info = r.json()
+            if GOOGLE_CLIENT_ID and info.get('aud') != GOOGLE_CLIENT_ID:
+                return jsonify({'hata': 'Google doğrulama başarısız'}), 401
             email = info.get('email')
         elif access_token:
             r = http_requests.get(

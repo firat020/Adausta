@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import hmac
 import html as _html
 import os
 import secrets
@@ -286,7 +287,7 @@ def _bul_ve_dogrula(params: dict):
         return None, False
 
     received_hash = params.get('HASH', '') or params.get('hash', '')
-    hash_ok = bool(received_hash) and _hash_ver3(params, STORE_KEY) == received_hash
+    hash_ok = bool(received_hash) and hmac.compare_digest(_hash_ver3(params, STORE_KEY), received_hash)
     return odeme, hash_ok
 
 

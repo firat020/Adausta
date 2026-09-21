@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import hashlib
+import hmac
 import math
 
 db = SQLAlchemy()
@@ -67,7 +68,7 @@ class TelefonOtp(db.Model):
     deneme_sayisi = db.Column(db.Integer, default=0)
 
     def kod_kontrol(self, kod):
-        return self.kod_hash == hashlib.sha256(kod.encode()).hexdigest()
+        return hmac.compare_digest(self.kod_hash, hashlib.sha256(kod.encode()).hexdigest())
 
     def suresi_gecti_mi(self):
         return datetime.utcnow() > self.son_kullanma
