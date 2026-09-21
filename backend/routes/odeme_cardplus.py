@@ -123,6 +123,8 @@ def cardplus_baslat():
     usta = Usta.query.get(usta_id) if usta_id else None
     if not usta:
         return jsonify({'hata': 'Geçersiz usta'}), 400
+    if session.get('rol') != 'admin' and usta.kullanici_id != session.get('kullanici_id'):
+        return jsonify({'hata': 'Bu usta için ödeme başlatma yetkiniz yok'}), 403
 
     plan = Plan.query.get(plan_id) if plan_id else None
     if not plan:

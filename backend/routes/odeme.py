@@ -51,6 +51,13 @@ def havale_bildir():
     if not all([ad_soyad, email, tutar]):
         return jsonify({'hata': 'Ad soyad, e-posta ve tutar zorunlu'}), 400
 
+    if usta_id:
+        usta = Usta.query.get(usta_id)
+        if not usta:
+            return jsonify({'hata': 'Geçersiz usta'}), 400
+        if session.get('rol') != 'admin' and usta.kullanici_id != session.get('kullanici_id'):
+            return jsonify({'hata': 'Bu usta için havale bildirimi yapma yetkiniz yok'}), 403
+
     order_id = 'HAV' + uuid.uuid4().hex[:16].upper()
 
     odeme = Odeme(
