@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
-import 'musteri_giris_screen.dart';
+import 'main_navigation.dart';
 import 'usta_panel/usta_giris_screen.dart';
 
 class KarsilamaScreen extends StatefulWidget {
@@ -136,11 +136,11 @@ class _KarsilamaScreenState extends State<KarsilamaScreen>
                           // Usta Bul
                           _SecimiButon(
                             label: 'Usta Bul',
-                            subtitle: 'Giriş yap veya ücretsiz kayıt ol',
+                            subtitle: 'Üyelik gerekmez, doğrudan ulaşın',
                             gradient: AppColors.heroGradient,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const MusteriGirisScreen()),
+                            onTap: () => Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const MainNavigation()),
+                              (_) => false,
                             ),
                           ),
 

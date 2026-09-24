@@ -255,9 +255,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Giriş Yap', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                      Text('Üye Girişi', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
                       SizedBox(height: 2),
-                      Text('Hesabınıza giriş yapın', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                      Text('Mevcut üye hesabınızla giriş yapın', style: TextStyle(color: Colors.white60, fontSize: 12)),
                     ],
                   ),
                 ),

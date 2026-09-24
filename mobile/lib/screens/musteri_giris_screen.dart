@@ -14,40 +14,21 @@ class MusteriGirisScreen extends StatefulWidget {
   State<MusteriGirisScreen> createState() => _MusteriGirisScreenState();
 }
 
-class _MusteriGirisScreenState extends State<MusteriGirisScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+class _MusteriGirisScreenState extends State<MusteriGirisScreen> {
   final _api = ApiService();
 
   // Giriş
   final _girisEmailCtrl = TextEditingController();
   final _girisSifreCtrl = TextEditingController();
 
-  // Kayıt
-  final _kayitAdCtrl = TextEditingController();
-  final _kayitEmailCtrl = TextEditingController();
-  final _kayitSifreCtrl = TextEditingController();
-
   bool _sifreGoster1 = false;
-  bool _sifreGoster2 = false;
   bool _yukleniyor = false;
   String? _hata;
 
   @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-    _tabCtrl.addListener(() => setState(() => _hata = null));
-  }
-
-  @override
   void dispose() {
-    _tabCtrl.dispose();
     _girisEmailCtrl.dispose();
     _girisSifreCtrl.dispose();
-    _kayitAdCtrl.dispose();
-    _kayitEmailCtrl.dispose();
-    _kayitSifreCtrl.dispose();
     super.dispose();
   }
 
@@ -81,33 +62,6 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
     }
   }
 
-  Future<void> _kayit() async {
-    if (_kayitAdCtrl.text.isEmpty || _kayitEmailCtrl.text.isEmpty || _kayitSifreCtrl.text.isEmpty) {
-      setState(() => _hata = 'Tüm alanlar zorunlu');
-      return;
-    }
-    if (_kayitSifreCtrl.text.length < 8) {
-      setState(() => _hata = 'Şifre en az 8 karakter olmalı');
-      return;
-    }
-    setState(() { _yukleniyor = true; _hata = null; });
-    try {
-      final k = await _api.musteriKayit(
-        _kayitEmailCtrl.text.trim(),
-        _kayitSifreCtrl.text,
-        _kayitAdCtrl.text.trim(),
-      );
-      if (!mounted) return;
-      if (k == null) {
-        setState(() { _hata = 'Kayıt başarısız'; _yukleniyor = false; });
-        return;
-      }
-      _devamEt();
-    } catch (e) {
-      if (mounted) setState(() { _hata = e.toString().replaceAll('Exception: ', ''); _yukleniyor = false; });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,7 +82,7 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
               // Başlık
               const SizedBox(height: 8),
               const Text(
-                'Hoş Geldiniz',
+                'Üye Girişi',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -137,7 +91,7 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'Usta bulmak için giriş yapın veya kayıt olun',
+                'Mevcut üye hesabınızla giriş yapın',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
               ),
               const SizedBox(height: 24),
@@ -159,32 +113,6 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
                   ),
                   child: Column(
                     children: [
-                      // Tab bar
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: TabBar(
-                          controller: _tabCtrl,
-                          labelColor: Colors.white,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                          indicator: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          dividerColor: Colors.transparent,
-                          tabs: const [
-                            Tab(text: 'Giriş Yap'),
-                            Tab(text: 'Kayıt Ol'),
-                          ],
-                        ),
-                      ),
-
                       // Hata
                       if (_hata != null)
                         Container(
@@ -204,29 +132,14 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
                           ),
                         ),
 
-                      // Tab içerikleri
                       Expanded(
-                        child: TabBarView(
-                          controller: _tabCtrl,
-                          children: [
-                            _GirisTab(
-                              emailCtrl: _girisEmailCtrl,
-                              sifreCtrl: _girisSifreCtrl,
-                              sifreGoster: _sifreGoster1,
-                              onSifreToggle: () => setState(() => _sifreGoster1 = !_sifreGoster1),
-                              yukleniyor: _yukleniyor,
-                              onGiris: _giris,
-                            ),
-                            _KayitTab(
-                              adCtrl: _kayitAdCtrl,
-                              emailCtrl: _kayitEmailCtrl,
-                              sifreCtrl: _kayitSifreCtrl,
-                              sifreGoster: _sifreGoster2,
-                              onSifreToggle: () => setState(() => _sifreGoster2 = !_sifreGoster2),
-                              yukleniyor: _yukleniyor,
-                              onKayit: _kayit,
-                            ),
-                          ],
+                        child: _GirisTab(
+                          emailCtrl: _girisEmailCtrl,
+                          sifreCtrl: _girisSifreCtrl,
+                          sifreGoster: _sifreGoster1,
+                          onSifreToggle: () => setState(() => _sifreGoster1 = !_sifreGoster1),
+                          yukleniyor: _yukleniyor,
+                          onGiris: _giris,
                         ),
                       ),
 
@@ -238,7 +151,7 @@ class _MusteriGirisScreenState extends State<MusteriGirisScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Kayıt olmadan devam et  ', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                              Text('Üye olmadan devam et  ', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
                             ],
                           ),
@@ -321,94 +234,6 @@ class _GirisTab extends StatelessWidget {
               child: yukleniyor
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Text('Giriş Yap', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KayitTab extends StatelessWidget {
-  final TextEditingController adCtrl;
-  final TextEditingController emailCtrl;
-  final TextEditingController sifreCtrl;
-  final bool sifreGoster;
-  final VoidCallback onSifreToggle;
-  final bool yukleniyor;
-  final VoidCallback onKayit;
-
-  const _KayitTab({
-    required this.adCtrl,
-    required this.emailCtrl,
-    required this.sifreCtrl,
-    required this.sifreGoster,
-    required this.onSifreToggle,
-    required this.yukleniyor,
-    required this.onKayit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Label('Ad Soyad'),
-          const SizedBox(height: 8),
-          TextField(
-            controller: adCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              hintText: 'Adınız Soyadınız',
-              prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _Label('E-posta'),
-          const SizedBox(height: 8),
-          TextField(
-            controller: emailCtrl,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              hintText: 'ornek@email.com',
-              prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _Label('Şifre'),
-          const SizedBox(height: 8),
-          TextField(
-            controller: sifreCtrl,
-            obscureText: !sifreGoster,
-            decoration: InputDecoration(
-              hintText: 'En az 8 karakter',
-              prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
-              suffixIcon: IconButton(
-                icon: Icon(sifreGoster ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 20, color: AppColors.textSecondary),
-                onPressed: onSifreToggle,
-              ),
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: yukleniyor ? null : onKayit,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              child: yukleniyor
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Kayıt Ol', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ),
           ),
         ],
