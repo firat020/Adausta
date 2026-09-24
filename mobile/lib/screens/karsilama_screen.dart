@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import 'main_navigation.dart';
+import 'magaza_giris_screen.dart';
 import 'usta_panel/usta_giris_screen.dart';
 
 class KarsilamaScreen extends StatefulWidget {
@@ -158,6 +159,23 @@ class _KarsilamaScreenState extends State<KarsilamaScreen>
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(builder: (_) => const UstaGirisScreen()),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Mağaza Girişi / Kayıt
+                          _SecimiButon(
+                            label: 'Mağaza Girişi',
+                            subtitle: 'Giriş yapın veya mağaza kaydı oluşturun',
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF7c3aed), Color(0xFF5b21b6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const MagazaGirisScreen()),
                             ),
                           ),
                         ],

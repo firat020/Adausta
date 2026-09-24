@@ -136,6 +136,24 @@ class ApiService {
 
   // ── Auth ─────────────────────────────────────────────────
 
+  /// Mağaza (satıcı) hesabı oluşturur; sunucu bu uçta yalnızca amac=satici kabul eder.
+  Future<Map<String, dynamic>?> magazaKayit(String email, String sifre) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.kayit),
+      headers: _headers,
+      body: jsonEncode({'email': email, 'sifre': sifre, 'amac': 'satici'}),
+    );
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      _saveCookie(res);
+      final data = jsonDecode(res.body);
+      final prefs = await SharedPreferences.getInstance();
+      if (_sessionCookie != null) await prefs.setString('session_cookie', _sessionCookie!);
+      return data['kullanici'] as Map<String, dynamic>?;
+    }
+    final hata = jsonDecode(res.body)['hata'] ?? 'Kayıt başarısız';
+    throw Exception(hata);
+  }
+
   Future<Map<String, dynamic>?> giris(String email, String sifre) async {
     final res = await http.post(
       Uri.parse(ApiConfig.giris),

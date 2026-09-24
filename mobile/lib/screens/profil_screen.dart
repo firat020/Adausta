@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import 'usta_kayit_screen.dart';
+import 'magaza_giris_screen.dart';
 import 'usta_panel/usta_giris_screen.dart';
 import 'musteri_taleplerim_screen.dart';
 
@@ -249,6 +250,30 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text('Usta Girişi', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MagazaGirisScreen())),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.storefront_rounded, color: AppColors.primary, size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text('Mağaza Girişi / Kayıt', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
                 ),
                 Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppColors.textSecondary),
               ],
