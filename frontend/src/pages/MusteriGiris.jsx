@@ -128,8 +128,8 @@ export default function MusteriGiris() {
             <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <User size={26} className="text-white" />
             </div>
-            <h1 className="text-xl font-extrabold text-gray-900">{t('musteriGiris.baslik')}</h1>
-            <p className="text-sm text-gray-500 mt-1">{t('musteriGiris.altBaslik')}</p>
+            <h1 className="text-xl font-extrabold text-gray-900">Mağaza Girişi</h1>
+            <p className="text-sm text-gray-500 mt-1">Mağaza hesabınızla giriş yapın</p>
           </div>
 
           {/* Tab */}

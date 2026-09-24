@@ -4,7 +4,6 @@ import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import 'usta_kayit_screen.dart';
 import 'usta_panel/usta_giris_screen.dart';
-import 'musteri_giris_screen.dart';
 import 'musteri_taleplerim_screen.dart';
 
 class ProfilScreen extends StatefulWidget {
@@ -230,43 +229,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
   Widget _buildMisafirView() {
     return Column(
       children: [
-        // Giriş yap
-        GestureDetector(
-          onTap: () async {
-            final girisOldu = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(builder: (_) => const MusteriGirisScreen(pushReplace: false)),
-            );
-            if (girisOldu == true) _kontrol();
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 5))],
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.login_rounded, color: Colors.white, size: 24),
-                SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Üye Girişi', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
-                      SizedBox(height: 2),
-                      Text('Mevcut üye hesabınızla giriş yapın', style: TextStyle(color: Colors.white60, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 14),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
         _buildUstaOlKarti(),
         const SizedBox(height: 12),
         // Usta Girişi
