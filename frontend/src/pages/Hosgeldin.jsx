@@ -28,10 +28,10 @@ export default function Hosgeldin() {
         </button>
 
         <button
-          onClick={() => navigate('/giris')}
+          onClick={() => navigate('/satici/giris')}
           className="w-full py-4 bg-blue-500 text-white font-bold text-lg rounded-2xl shadow-lg border border-blue-400 active:scale-95 transition-transform"
         >
-          Musteri Girisi
+          Magaza Girisi
         </button>
 
         <div className="flex items-center gap-3 my-1">

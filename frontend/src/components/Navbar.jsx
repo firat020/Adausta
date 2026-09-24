@@ -190,17 +190,7 @@ export default function Navbar() {
                           <div className="text-xs text-gray-400">Kurumsal hesap</div>
                         </div>
                       </Link>
-                      <Link to="/giris" onClick={() => setGirisAcik(false)}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
-                        <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <User size={13} className="text-green-600" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs">Üye Girişi</div>
-                          <div className="text-xs text-gray-400">Hizmet arayanlar</div>
-                        </div>
-                      </Link>
-                      <Link to="/satici/giris" onClick={() => setGirisAcik(false)}
+                                            <Link to="/satici/giris" onClick={() => setGirisAcik(false)}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors">
                         <div className="w-7 h-7 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Store size={13} className="text-purple-600" />
@@ -283,10 +273,7 @@ export default function Navbar() {
                 <Link to="/sirket/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50">
                   <Building2 size={14} /> Şirket Girişi
                 </Link>
-                <Link to="/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-green-600 hover:bg-green-50">
-                  <User size={14} /> Üye Girişi
-                </Link>
-                <Link to="/satici/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50">
+                                <Link to="/satici/giris" onClick={() => setMenuAcik(false)} className="flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50">
                   <Store size={14} /> Mağaza Girişi
                 </Link>
                 <Link to="/usta-kayit" onClick={() => setMenuAcik(false)} className="mt-1 bg-blue-600 text-white text-sm font-semibold px-3 py-3 rounded-lg text-center">Kayıt Ol</Link>

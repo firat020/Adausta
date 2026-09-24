@@ -75,7 +75,11 @@ def giris():
 @auth_bp.route('/kayit', methods=['POST'])
 @limiter.limit('5 per minute; 20 per hour')
 def kayit():
-    data = request.get_json()
+    data = request.get_json() or {}
+    # Herkese açık müşteri üyeliği kapalı: hesap yalnızca mağaza (satıcı) başvuru akışı için açılabilir.
+    # (Usta ve şirket kayıtları kendi uçlarından — /ustalar/kayit, /sirketler/kayit — hesap oluşturur.)
+    if data.get('amac') != 'satici':
+        return jsonify({'hata': 'Üyelik yalnızca usta, şirket ve mağaza kayıtları için açıktır.'}), 403
     sifre = data.get('sifre', '')
     if len(sifre) < 8:
         return jsonify({'hata': 'Şifre en az 8 karakter olmalı'}), 400
@@ -218,6 +222,8 @@ def google_giris():
 
     kullanici = Kullanici.query.filter_by(email=email).first()
     if not kullanici:
+        if (request.get_json(silent=True) or {}).get('amac') != 'satici':
+            return jsonify({'hata': 'Bu Google hesabıyla kayıtlı bir hesap yok. Üyelik yalnızca usta, şirket ve mağaza kayıtları için açıktır.'}), 403
         kullanici = Kullanici(email=email, rol='musteri')
         kullanici.sifre_hash = None  # OAuth kullanıcısı — şifre yok
         db.session.add(kullanici)

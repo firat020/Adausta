@@ -13,8 +13,10 @@ export default function MusteriGiris() {
   const location = useLocation()
   const from = location.state?.from || '/musteri/panel'
   const googleBtnRef = useRef(null)
+  // Kayıt yalnızca mağaza (satıcı) başvuru akışından açılır; müşteri üyeliği yok.
+  const kayitAcik = location.state?.amac === 'satici'
 
-  const [tab, setTab] = useState(location.state?.tab === 'kayit' ? 'kayit' : 'giris')
+  const [tab, setTab] = useState(kayitAcik && location.state?.tab === 'kayit' ? 'kayit' : 'giris')
   const [email, setEmail] = useState('')
   const [sifre, setSifre] = useState('')
   const [sifreGoster, setSifreGoster] = useState(false)
@@ -64,7 +66,7 @@ export default function MusteriGiris() {
     setHata('')
     setYukleniyor(true)
     try {
-      await api.post('/auth/google', { credential: credentialResponse.credential })
+      await api.post('/auth/google', { credential: credentialResponse.credential, ...(kayitAcik ? { amac: 'satici' } : {}) })
       setBasarili(t('musteriGiris.basariliGiris'))
       setTimeout(() => navigate(from, { replace: true }), 900)
     } catch (err) {
@@ -96,7 +98,7 @@ export default function MusteriGiris() {
     temizle()
     setYukleniyor(true)
     try {
-      await kayit({ email, sifre })
+      await kayit({ email, sifre, amac: 'satici' })
       // Google Ads dönüşüm — Kaydolma işlemi
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'conversion', {
@@ -252,13 +254,13 @@ export default function MusteriGiris() {
             </form>
 
             {/* Tab geçiş */}
-            <p className="text-center text-sm text-gray-500 mt-5">
+            {kayitAcik && <p className="text-center text-sm text-gray-500 mt-5">
               {tab === 'giris' ? t('musteriGiris.hesapYok') : t('musteriGiris.hesapVar')}{' '}
               <button onClick={() => { setTab(tab === 'giris' ? 'kayit' : 'giris'); temizle() }}
                 className="text-blue-600 font-semibold hover:underline">
                 {tab === 'giris' ? t('musteriGiris.kayitOl') : t('musteriGiris.girisYap')}
               </button>
-            </p>
+            </p>}
           </div>
         </div>
 

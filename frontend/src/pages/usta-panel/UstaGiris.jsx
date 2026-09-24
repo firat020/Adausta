@@ -206,10 +206,7 @@ export default function UstaGiris() {
               <UserPlus size={16} /> Usta Olarak Kayıt Ol
             </Link>
 
-            <p className="text-center text-xs text-blue-400/50 mt-5">
-              Müşteri girişi için{' '}
-              <Link to="/giris" className="text-blue-400/70 font-semibold hover:text-blue-300 transition">buraya tıklayın</Link>
-            </p>
+
           </div>
         </div>
       </div>

@@ -92,7 +92,20 @@ def ustalar():
     kategori_id = request.args.get('kategori_id', type=int)
 
     q = Usta.query
-    if filtre == 'bekleyen':
+    # Başarılı ödemesi olan ustalar (usta_id başına toplam / adet / son tarih)
+    odeme_ozet = {
+        r.usta_id: r for r in db.session.query(
+            Odeme.usta_id,
+            func.count(Odeme.id).label('adet'),
+            func.sum(Odeme.tutar).label('toplam'),
+            func.max(Odeme.tarih).label('son'),
+        ).filter(Odeme.durum == 'basarili', Odeme.usta_id.isnot(None)).group_by(Odeme.usta_id).all()
+    }
+    if filtre == 'odeme_yapan':
+        q = q.filter(Usta.id.in_(list(odeme_ozet.keys()) or [-1]))
+    elif filtre == 'odeme_yapmayan':
+        q = q.filter(~Usta.id.in_(list(odeme_ozet.keys()) or [-1]))
+    elif filtre == 'bekleyen':
         q = q.filter_by(onaylanmis=False, aktif=True)
     elif filtre == 'onaylandi':
         q = q.filter_by(onaylanmis=True, aktif=True)
@@ -114,7 +127,15 @@ def ustalar():
                 Usta.telefon.ilike(f'%{kelime}%')
             )
 
-    return jsonify({'ustalar': [u.to_dict() for u in q.order_by(Usta.olusturma.desc()).all()]})
+    sonuc = []
+    for u in q.order_by(Usta.olusturma.desc()).all():
+        d = u.to_dict()
+        o = odeme_ozet.get(u.id)
+        d['odeme_adet'] = o.adet if o else 0
+        d['odeme_toplam'] = round(o.toplam or 0, 2) if o else 0
+        d['odeme_son_tarih'] = fmt(o.son) if o and o.son else ''
+        sonuc.append(d)
+    return jsonify({'ustalar': sonuc})
 
 
 @admin_bp.route('/ustalar/<int:id>/onayla', methods=['POST'])

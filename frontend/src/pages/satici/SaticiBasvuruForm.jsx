@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Building2, CreditCard, FileText, Eye, ChevronRight, ChevronLeft, Plus, Trash2, Upload, AlertCircle, CheckCircle, Store } from 'lucide-react'
@@ -67,6 +67,17 @@ const Select = ({ hata, children, ...props }) => (
 
 export default function SaticiBasvuruForm() {
   const navigate = useNavigate()
+
+  // Başvuru için hesap gerekir; giriş yoksa mağaza hesabı oluşturma/giriş ekranına yönlendir.
+  useEffect(() => {
+    const yonlendir = () => navigate('/giris', {
+      replace: true,
+      state: { tab: 'kayit', amac: 'satici', from: '/satici-basvuru/basvur' },
+    })
+    axios.get(`${API}/api/auth/ben`, { withCredentials: true })
+      .then(r => { if (!r.data?.kullanici) yonlendir() })
+      .catch(yonlendir)
+  }, [])
 
   const [adim, setAdim] = useState(1)
   const [basvuruId, setBasvuruId] = useState(null)

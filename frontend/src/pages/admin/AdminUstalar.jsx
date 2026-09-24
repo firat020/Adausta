@@ -9,6 +9,8 @@ const FILTRELER = [
   { key: 'bekleyen', label: 'Bekleyen' },
   { key: 'onaylandi', label: 'Onaylı' },
   { key: 'pasif', label: 'Yasaklı' },
+  { key: 'odeme_yapan', label: '💳 Ödeme Yapanlar' },
+  { key: 'odeme_yapmayan', label: 'Ödeme Yapmayanlar' },
 ]
 
 function Rozet({ onaylanmis, aktif }) {
@@ -377,7 +379,7 @@ export default function AdminUstalar() {
                   <th className="px-4 py-3 text-left">
                     <input type="checkbox" onChange={hepsiniSec} checked={secili.length === ustalar.length && ustalar.length > 0} className="rounded border-gray-300" />
                   </th>
-                  {['Ad Soyad', 'Kategori', 'Şehir', 'Telefon', 'Puan', 'Durum', 'Tarih', 'İşlem'].map(h => (
+                  {['Ad Soyad', 'Kategori', 'Şehir', 'Telefon', 'Puan', ...(filtre === 'odeme_yapan' ? ['Ödeme', 'Son Ödeme'] : []), 'Durum', 'Tarih', 'İşlem'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -400,6 +402,14 @@ export default function AdminUstalar() {
                     <td className="px-4 py-3">
                       {u.puan > 0 ? <span className="flex items-center gap-1 text-amber-600 font-semibold"><span>★</span>{u.puan}</span> : <span className="text-gray-300">—</span>}
                     </td>
+                    {filtre === 'odeme_yapan' && (
+                      <>
+                        <td className="px-4 py-3 text-green-700 font-semibold whitespace-nowrap">
+                          {(u.odeme_toplam || 0).toLocaleString('tr-TR')} ₺ <span className="text-xs text-gray-400 font-normal">({u.odeme_adet}x)</span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{u.odeme_son_tarih || '—'}</td>
+                      </>
+                    )}
                     <td className="px-4 py-3"><Rozet onaylanmis={u.onaylanmis} aktif={u.aktif} /></td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {u.olusturma ? new Date(u.olusturma).toLocaleDateString('tr-TR') : '—'}
