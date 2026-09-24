@@ -11,10 +11,10 @@ export default function MusteriGiris() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || '/musteri/panel'
+  const from = location.state?.from || '/satici/giris'
   const googleBtnRef = useRef(null)
-  // Kayıt yalnızca mağaza (satıcı) başvuru akışından açılır; müşteri üyeliği yok.
-  const kayitAcik = location.state?.amac === 'satici'
+  // Bu sayfa mağaza (satıcı) girişi ve kaydıdır; müşteri üyeliği yok.
+  const kayitAcik = true
 
   const [tab, setTab] = useState(kayitAcik && location.state?.tab === 'kayit' ? 'kayit' : 'giris')
   const [email, setEmail] = useState('')

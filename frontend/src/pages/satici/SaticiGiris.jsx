@@ -45,7 +45,15 @@ export default function SaticiGiris() {
               state={{ from: '/satici/giris' }}
               className="flex items-center justify-center gap-2 w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors mb-3"
             >
-              <LogIn size={16} /> Giriş Yap
+              <LogIn size={16} /> Mağaza Girişi
+            </Link>
+
+            <Link
+              to="/giris"
+              state={{ tab: 'kayit', amac: 'satici', from: '/satici-basvuru/basvur' }}
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors mb-3"
+            >
+              <Store size={16} /> Mağaza Kayıt Ol
             </Link>
 
             <div className="flex items-center gap-3 my-4">
@@ -72,13 +80,6 @@ export default function SaticiGiris() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Müşteri girişi için{' '}
-          <Link to="/giris" className="text-blue-600 font-semibold hover:underline">
-            ana giriş sayfasını
-          </Link>{' '}
-          kullanabilirsiniz.
-        </p>
       </div>
     </div>
   )
