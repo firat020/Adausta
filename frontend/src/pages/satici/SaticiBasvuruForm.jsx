@@ -67,6 +67,7 @@ const Select = ({ hata, children, ...props }) => (
 
 export default function SaticiBasvuruForm() {
   const navigate = useNavigate()
+  const [hesapEmail, setHesapEmail] = useState('')
 
   // Başvuru için hesap gerekir; giriş yoksa mağaza hesabı oluşturma/giriş ekranına yönlendir.
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function SaticiBasvuruForm() {
       state: { tab: 'kayit', amac: 'satici', from: '/satici-basvuru/basvur' },
     })
     axios.get(`${API}/api/auth/ben`, { withCredentials: true })
-      .then(r => { if (!r.data?.kullanici) yonlendir() })
+      .then(r => { if (!r.data?.kullanici) yonlendir(); else setHesapEmail(r.data.kullanici.email || '') })
       .catch(yonlendir)
   }, [])
 
@@ -340,8 +341,14 @@ export default function SaticiBasvuruForm() {
                 <Input value={adim1.yetkili_telefon} onChange={e => degistir1('yetkili_telefon', e.target.value)} placeholder="+90 5XX XXX XX XX" hata={hatalar.yetkili_telefon} />
               </Alan>
             </div>
+            {hesapEmail && (
+              <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800">
+                <span className="font-semibold">Giriş E-postası:</span> {hesapEmail}
+                <p className="text-xs text-blue-600 mt-0.5">Mağaza paneline bu e-posta ve hesap şifreniz ile giriş yapacaksınız.</p>
+              </div>
+            )}
             <div className="mt-4">
-              <Alan label="E-posta" zorunlu hata={hatalar.yetkili_email}>
+              <Alan label="Yetkili E-posta" zorunlu hata={hatalar.yetkili_email}>
                 <Input type="email" value={adim1.yetkili_email} onChange={e => degistir1('yetkili_email', e.target.value)} placeholder="yetkili@sirket.com" hata={hatalar.yetkili_email} />
               </Alan>
             </div>

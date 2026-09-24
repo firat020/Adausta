@@ -598,6 +598,13 @@ export default function UstaKayit() {
             <h3 className="font-semibold text-gray-900 text-sm">Giriş Şifresi</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Giriş E-postası *</label>
+              <input type="email" required value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                className={inputCls} placeholder="ornek@email.com" />
+              <p className="text-xs text-gray-400 mt-1">Usta paneline bu e-posta ve aşağıdaki şifre ile giriş yapacaksınız.</p>
+            </div>
             <div>
               <label className={labelCls}>Şifre *</label>
               <div className="relative">
@@ -620,7 +627,7 @@ export default function UstaKayit() {
           {sifreHata && (
             <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><span>⚠</span> {sifreHata}</p>
           )}
-          <p className="text-xs text-gray-400 mt-2">Bu şifre ile usta panelinize giriş yapacaksınız.</p>
+          <p className="text-xs text-gray-400 mt-2">Bu e-posta ve şifre ile usta panelinize giriş yapacaksınız.</p>
         </div>
 
         <div className="p-6 flex gap-3">
