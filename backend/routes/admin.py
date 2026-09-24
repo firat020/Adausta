@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi
+from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi, fmt
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -1335,8 +1335,21 @@ def odemeler_listele():
         q = q.filter_by(durum=filtre)
     liste = q.order_by(Odeme.tarih.desc()).all()
     if arama:
-        liste = [o for o in liste if arama.lower() in (o.usta.ad + ' ' + o.usta.soyad).lower()]
-    return jsonify({'odemeler': [o.to_dict() for o in liste]})
+        liste = [o for o in liste if o.usta and arama.lower() in (o.usta.ad + ' ' + o.usta.soyad).lower()]
+    sonuc = []
+    for o in liste:
+        d = o.to_dict()
+        u = o.usta
+        d['usta_telefon'] = u.telefon if u else ''
+        d['usta_whatsapp'] = u.whatsapp if u else ''
+        d['usta_email'] = u.email if u else ''
+        d['usta_sehir'] = u.sehir.ad if u and u.sehir else ''
+        d['usta_ilce'] = u.ilce.ad if u and u.ilce else ''
+        d['usta_plan'] = u.plan if u else ''
+        d['usta_plan_bitis'] = fmt(u.plan_bitis) if u and u.plan_bitis else ''
+        d['abonelik_plan_ad'] = o.abonelik.plan.ad if o.abonelik and o.abonelik.plan else ''
+        sonuc.append(d)
+    return jsonify({'odemeler': sonuc})
 
 
 @admin_bp.route('/odemeler', methods=['POST'])

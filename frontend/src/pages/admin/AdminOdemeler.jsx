@@ -20,6 +20,7 @@ export default function AdminOdemeler() {
   const [yeniForm, setYeniForm] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(false)
   const [kur, setKur] = useState(null)
+  const [detay, setDetay] = useState(null)
 
   const yukle = () =>
     axios.get(`${API}/api/admin/odemeler?filtre=${filtre}`, { withCredentials: true })
@@ -123,20 +124,25 @@ export default function AdminOdemeler() {
           <table className="w-full text-sm">
             <thead className="bg-[#F8F9FA] border-b border-[#E0E0E0]">
               <tr>
-                {['#', 'Usta', 'Tutar (USD)', 'TL Karşılığı', 'Durum', 'Açıklama', 'Tarih', 'İşlem'].map(h => (
+                {['#', 'Usta', 'Telefon', 'Plan', 'Tutar (USD)', 'TL Karşılığı', 'Durum', 'Tarih', 'İşlem'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtreli.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">Ödeme kaydı bulunamadı</td></tr>
+                <tr><td colSpan={9} className="text-center py-10 text-gray-400">Ödeme kaydı bulunamadı</td></tr>
               ) : filtreli.map(o => {
                 const usd = kur ? (o.tutar / kur).toFixed(2) : null
                 return (
                   <tr key={o.id} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-3 text-gray-400 text-xs">#{o.id}</td>
-                    <td className="px-4 py-3 font-medium text-[#1e293b]">{o.usta_ad}</td>
+                    <td className="px-4 py-3 font-medium text-[#1e293b]">
+                      <button onClick={() => setDetay(o)} className="text-left text-[#0052CC] hover:underline">{o.usta_ad || '—'}</button>
+                      {o.usta_sehir && <div className="text-xs text-gray-400 font-normal">{o.usta_sehir}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">{o.usta_telefon || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs">{o.abonelik_plan_ad || o.usta_plan || '—'}</td>
                     <td className="px-4 py-3 font-bold text-[#0052CC]">
                       {usd ? `$${usd}` : `${o.tutar.toLocaleString('tr-TR')} ₺`}
                     </td>
@@ -148,7 +154,6 @@ export default function AdminOdemeler() {
                         {o.durum === 'basarili' ? 'Başarılı' : o.durum === 'bekliyor' ? 'Bekleyen' : 'Başarısız'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{o.aciklama || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{o.tarih}</td>
                     <td className="px-4 py-3">
                       {o.durum === 'bekliyor' && (
@@ -167,6 +172,43 @@ export default function AdminOdemeler() {
           </table>
         </div>
       </div>
+
+      {/* Usta / Ödeme Detayı */}
+      {detay && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setDetay(null)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-[#1e293b]">Ödeme #{detay.id} — {detay.usta_ad}</h3>
+              <button onClick={() => setDetay(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            <dl className="p-6 space-y-2 text-sm">
+              {[
+                ['Telefon', detay.usta_telefon],
+                ['WhatsApp', detay.usta_whatsapp],
+                ['E-posta', detay.usta_email],
+                ['Şehir / İlçe', [detay.usta_sehir, detay.usta_ilce].filter(Boolean).join(' / ')],
+                ['Usta Planı', detay.usta_plan],
+                ['Plan Bitişi', detay.usta_plan_bitis],
+                ['Ödenen Plan', detay.abonelik_plan_ad],
+                ['Tutar', `${detay.tutar.toLocaleString('tr-TR')} ${detay.para_birimi || '₺'}`],
+                ['Durum', detay.durum],
+                ['Tahsilat Türü', detay.otomatik_tahsilat ? 'Otomatik yenileme' : 'Manuel / tek seferlik'],
+                ['Kart Son 4', detay.kart_son4 ? `**** ${detay.kart_son4}` : ''],
+                ['Sipariş No', detay.siparis_no],
+                ['İşlem ID', detay.provider_transaction_id],
+                ['Tarih', detay.tarih],
+                ['Açıklama', detay.aciklama],
+                ['Hata', detay.error_message],
+              ].filter(([, v]) => v).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4 border-b border-gray-50 pb-1.5">
+                  <dt className="text-gray-500">{k}</dt>
+                  <dd className="text-[#1e293b] font-medium text-right break-all">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      )}
 
       {/* Manuel Ödeme Modal */}
       {yeniForm && (
