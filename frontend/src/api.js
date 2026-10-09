@@ -65,6 +65,9 @@ export const ustaPanelFotografSil = (fid) => api.delete(`/usta/profil/fotograf/$
 export const ustaPanelLogoYukle = (formData) =>
   api.post('/usta/profil/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const ustaPanelLogoSil = () => api.delete('/usta/profil/logo');
+export const ustaPanelKapakYukle = (formData) =>
+  api.post('/usta/profil/kapak', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const ustaPanelKapakSil = () => api.delete('/usta/profil/kapak');
 export const ustaPanelMusaitlik = (musaitlik) => api.put('/usta/musaitlik', { musaitlik });
 export const ustaPanelIsTalepleri = (params) => api.get('/usta/is-talepleri', { params });
 export const ustaPanelTalepGuncelle = (id, data) => api.put(`/usta/is-talepleri/${id}`, data);

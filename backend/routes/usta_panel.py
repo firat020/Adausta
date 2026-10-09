@@ -117,6 +117,37 @@ def profil_guncelle(usta):
     for alan in alanlar:
         if alan in data:
             setattr(usta, alan, data[alan])
+
+    # Zengin profil alanları (profil_ekstra JSON) — doğrulanarak kaydedilir
+    ekstra = {}
+    if 'diller' in data:
+        ekstra['diller'] = [d for d in (data['diller'] or []) if d in Usta.EKSTRA_DILLER][:8]
+    if 'odeme_yontemleri' in data:
+        ekstra['odeme_yontemleri'] = [o for o in (data['odeme_yontemleri'] or []) if o in Usta.EKSTRA_ODEME]
+    if 'yedi_yirmi_dort' in data:
+        ekstra['yedi_yirmi_dort'] = bool(data['yedi_yirmi_dort'])
+    if 'web_sitesi' in data:
+        site = str(data['web_sitesi'] or '').strip()[:200]
+        if site and not site.lower().startswith(('http://', 'https://')):
+            site = 'https://' + site
+        ekstra['web_sitesi'] = site
+    if 'calisma_saatleri' in data:
+        saatler = {}
+        gelen = data['calisma_saatleri'] or {}
+        for gun in '0123456':
+            g = gelen.get(gun)
+            if not isinstance(g, dict):
+                continue
+            bas, bit = str(g.get('bas', ''))[:5], str(g.get('bit', ''))[:5]
+            saat_ok = lambda x: len(x) == 5 and x[2] == ':' and x[:2].isdigit() and x[3:].isdigit()
+            if g.get('kapali'):
+                saatler[gun] = {'kapali': True}
+            elif saat_ok(bas) and saat_ok(bit):
+                saatler[gun] = {'kapali': False, 'bas': bas, 'bit': bit}
+        ekstra['calisma_saatleri'] = saatler
+    if ekstra:
+        usta.ekstra_guncelle(**ekstra)
+
     db.session.commit()
     return jsonify({'mesaj': 'Profil güncellendi', 'usta': usta.to_dict()})
 
@@ -181,6 +212,40 @@ def logo_sil(usta):
         usta.logo = ''
         db.session.commit()
     return jsonify({'mesaj': 'Logo silindi'})
+
+
+@usta_panel_bp.route('/profil/kapak', methods=['POST'])
+@usta_gerekli
+def kapak_yukle(usta):
+    if 'dosya' not in request.files:
+        return jsonify({'hata': 'Dosya seçilmedi'}), 400
+    f = request.files['dosya']
+    ext = f.filename.rsplit('.', 1)[-1].lower()
+    if ext not in IZIN_UZANTILAR:
+        return jsonify({'hata': 'Desteklenmeyen dosya türü'}), 400
+    ad = f'kapak_{uuid.uuid4().hex}.{ext}'
+    f.save(os.path.join(UPLOAD_FOLDER, ad))
+    eski = usta.ekstra().get('kapak')
+    usta.ekstra_guncelle(kapak=ad)
+    db.session.commit()
+    if eski:
+        eski_yol = os.path.join(UPLOAD_FOLDER, eski)
+        if os.path.exists(eski_yol):
+            os.remove(eski_yol)
+    return jsonify({'mesaj': 'Kapak görseli yüklendi', 'kapak_url': f'/uploads/{ad}'}), 201
+
+
+@usta_panel_bp.route('/profil/kapak', methods=['DELETE'])
+@usta_gerekli
+def kapak_sil(usta):
+    eski = usta.ekstra().get('kapak')
+    if eski:
+        yol = os.path.join(UPLOAD_FOLDER, eski)
+        if os.path.exists(yol):
+            os.remove(yol)
+        usta.ekstra_guncelle(kapak='')
+        db.session.commit()
+    return jsonify({'mesaj': 'Kapak görseli silindi'})
 
 
 # ──────────────────────────────────────────────────────────

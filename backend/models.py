@@ -169,6 +169,7 @@ class Usta(db.Model):
     lat = db.Column(db.Float, nullable=True)   # GPS konum
     lng = db.Column(db.Float, nullable=True)
     logo = db.Column(db.String(256), default='')  # profil/işletme logosu — iş fotoğraflarından ayrı
+    profil_ekstra = db.Column(db.Text, default='')  # JSON: kapak, diller, calisma_saatleri, odeme_yontemleri, web_sitesi
     onaylanmis = db.Column(db.Boolean, default=False)
     aktif = db.Column(db.Boolean, default=True)
     musaitlik = db.Column(db.Boolean, default=True)   # Müsait mi?
@@ -183,7 +184,26 @@ class Usta(db.Model):
     ilce = db.relationship('Ilce', foreign_keys=[ilce_id])
     ek_kategoriler = db.relationship('Kategori', secondary=usta_kategoriler, lazy=True)
 
+    EKSTRA_DILLER = ('tr', 'en', 'ru', 'el', 'de', 'fa', 'ar', 'ur')
+    EKSTRA_ODEME = ('nakit', 'kart', 'havale', 'cek')
+
+    def ekstra(self):
+        """profil_ekstra JSON'unu güvenli şekilde sözlüğe çevirir (bozuk/boş ise {})."""
+        import json
+        try:
+            veri = json.loads(self.profil_ekstra) if self.profil_ekstra else {}
+            return veri if isinstance(veri, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+
+    def ekstra_guncelle(self, **alanlar):
+        import json
+        veri = self.ekstra()
+        veri.update(alanlar)
+        self.profil_ekstra = json.dumps(veri, ensure_ascii=False)
+
     def profil_tamamlama(self):
+        ek = self.ekstra()
         maddeler = [
             {'anahtar': 'foto', 'baslik': 'Profil fotoğrafı ekleyin', 'tamam': len(self.fotograflar) > 0},
             {'anahtar': 'aciklama', 'baslik': 'Hakkınızda açıklama yazın (en az 20 karakter)', 'tamam': bool(self.aciklama and len(self.aciklama.strip()) >= 20)},
@@ -191,6 +211,9 @@ class Usta(db.Model):
             {'anahtar': 'whatsapp', 'baslik': 'WhatsApp numarası ekleyin', 'tamam': bool(self.whatsapp)},
             {'anahtar': 'ilce', 'baslik': 'İlçe/bölge bilginizi ekleyin', 'tamam': self.ilce_id is not None},
             {'anahtar': 'konum', 'baslik': 'Haritada konumunuzu işaretleyin', 'tamam': self.lat is not None and self.lng is not None},
+            {'anahtar': 'logo', 'baslik': 'Logo veya profil görseli ekleyin', 'tamam': bool(self.logo)},
+            {'anahtar': 'diller', 'baslik': 'Konuştuğunuz dilleri seçin', 'tamam': bool(ek.get('diller'))},
+            {'anahtar': 'saatler', 'baslik': 'Çalışma saatlerinizi girin', 'tamam': bool(ek.get('calisma_saatleri') or ek.get('yedi_yirmi_dort'))},
         ]
         tamam_sayisi = sum(1 for m in maddeler if m['tamam'])
         yuzde = round(tamam_sayisi / len(maddeler) * 100)
@@ -238,6 +261,12 @@ class Usta(db.Model):
             'yorum_sayisi': len(self.yorumlar),
             'logo': self.logo,
             'logo_url': f'/uploads/{self.logo}' if self.logo else None,
+            'kapak_url': (f"/uploads/{self.ekstra().get('kapak')}" if self.ekstra().get('kapak') else None),
+            'diller': self.ekstra().get('diller', []),
+            'calisma_saatleri': self.ekstra().get('calisma_saatleri', {}),
+            'yedi_yirmi_dort': bool(self.ekstra().get('yedi_yirmi_dort', False)),
+            'odeme_yontemleri': self.ekstra().get('odeme_yontemleri', []),
+            'web_sitesi': self.ekstra().get('web_sitesi', ''),
             'fotograflar': [f.to_dict() for f in self.fotograflar],
             'mesafe': mesafe,
             'onaylanmis': self.onaylanmis,

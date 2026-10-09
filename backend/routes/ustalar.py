@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
@@ -89,6 +89,9 @@ def detay(id):
     lng = request.args.get('lng', type=float)
     veri = u.to_dict(lat, lng)
     veri['yorumlar'] = [y.to_dict() for y in u.yorumlar if y.onaylanmis]
+    # Yalnızca admin onaylı ustalık belgesi varsa herkese açık "Belgeli" rozeti gösterilir
+    veri['onayli_belge'] = UstaBelge.query.filter_by(
+        usta_id=u.id, tur='ustalik_belgesi', durum='onaylandi').count() > 0
     return jsonify(veri)
 
 @ustalar_bp.route('/kayit', methods=['POST'])

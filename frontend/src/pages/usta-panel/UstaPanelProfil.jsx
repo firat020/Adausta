@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload } from 'lucide-react'
-import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload, Globe, Clock, Wallet, Image as ImageIcon } from 'lucide-react'
+import { DILLER, ODEME_YONTEMLERI, GUNLER, VARSAYILAN_SAATLER } from '../../data/profilSecenekleri.js'
+import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, ustaPanelKapakYukle, ustaPanelKapakSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
 import axios from 'axios'
 
 import API from '../../config.js'
@@ -19,6 +20,8 @@ export default function UstaPanelProfil() {
   const [ilceler, setIlceler] = useState([])
   const [konumDurumu, setKonumDurumu] = useState('') // '' | 'yukleniyor' | 'basarili' | 'hata' | 'desteklenmiyor'
   const [logoYukleniyor, setLogoYukleniyor] = useState(false)
+  const [kapakYukleniyor, setKapakYukleniyor] = useState(false)
+  const kapakRef = useRef()
   const fileRef = useRef()
   const logoRef = useRef()
 
@@ -45,6 +48,12 @@ export default function UstaPanelProfil() {
           ilce_id: r.data.usta.ilce_id || '',
           lat: r.data.usta.lat ?? null,
           lng: r.data.usta.lng ?? null,
+          diller: r.data.usta.diller || [],
+          odeme_yontemleri: r.data.usta.odeme_yontemleri || [],
+          yedi_yirmi_dort: !!r.data.usta.yedi_yirmi_dort,
+          web_sitesi: r.data.usta.web_sitesi || '',
+          calisma_saatleri: Object.keys(r.data.usta.calisma_saatleri || {}).length
+            ? r.data.usta.calisma_saatleri : VARSAYILAN_SAATLER,
         })
         const sehirListesi = s.data.sehirler || []
         setSehirler(sehirListesi)
@@ -157,6 +166,42 @@ export default function UstaPanelProfil() {
     }
   }
 
+  const handleKapakYukle = async (e) => {
+    const dosya = e.target.files[0]
+    if (!dosya) return
+    const fd = new FormData()
+    fd.append('dosya', dosya)
+    setKapakYukleniyor(true)
+    try {
+      const r = await ustaPanelKapakYukle(fd)
+      setUsta(prev => ({ ...prev, kapak_url: r.data.kapak_url }))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Kapak görseli yüklenemedi.' })
+    }
+    setKapakYukleniyor(false)
+    if (kapakRef.current) kapakRef.current.value = ''
+  }
+
+  const handleKapakSil = async () => {
+    if (!window.confirm('Kapak görselini kaldırmak istediğinize emin misiniz?')) return
+    try {
+      await ustaPanelKapakSil()
+      setUsta(prev => ({ ...prev, kapak_url: null }))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Kapak görseli kaldırılamadı.' })
+    }
+  }
+
+  const listeToggle = (alan, kod) => setForm(p => ({
+    ...p, [alan]: (p[alan] || []).includes(kod) ? p[alan].filter(x => x !== kod) : [...(p[alan] || []), kod]
+  }))
+
+  const saatDegis = (gun, alan, deger) => setForm(p => ({
+    ...p, calisma_saatleri: { ...p.calisma_saatleri, [gun]: { ...(p.calisma_saatleri?.[gun] || {}), [alan]: deger } }
+  }))
+
+  const tamamlama = usta?.profil_tamamlama
+
   if (yukleniyor) return (
     <div className="flex justify-center py-16">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -223,6 +268,48 @@ export default function UstaPanelProfil() {
           )}
         </div>
       )}
+
+      {/* Profil tamamlanma */}
+      {tamamlama && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-gray-800">Profil Tamamlanma</h2>
+            <span className="text-lg font-extrabold text-orange-600">%{tamamlama.yuzde}</span>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
+            <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all" style={{ width: `${tamamlama.yuzde}%` }} />
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+            {tamamlama.maddeler.map(m => (
+              <li key={m.anahtar} className={`text-xs flex items-center gap-1.5 ${m.tamam ? 'text-green-600' : 'text-gray-500'}`}>
+                {m.tamam ? <CheckCircle size={13} /> : <span className="w-[13px] h-[13px] rounded-full border border-gray-300 inline-block" />}
+                <span className={m.tamam ? 'line-through opacity-70' : ''}>{m.baslik}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Kapak görseli */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <ImageIcon size={18} className="text-blue-600" /> Kapak Görseli
+        </h2>
+        <p className="text-xs text-gray-400 mb-4">Profilinizin üstünde geniş görünür. Yatay (örn. 1600×500) bir iş veya işyeri fotoğrafı önerilir.</p>
+        <div className="h-28 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 overflow-hidden mb-3">
+          {usta?.kapak_url && <img src={`${API_URL}${usta.kapak_url}`} alt="Kapak" className="w-full h-full object-cover" />}
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => kapakRef.current.click()} disabled={kapakYukleniyor}
+            className="px-3.5 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 disabled:opacity-50">
+            {kapakYukleniyor ? 'Yükleniyor...' : usta?.kapak_url ? 'Kapağı Değiştir' : 'Kapak Ekle'}
+          </button>
+          {usta?.kapak_url && (
+            <button type="button" onClick={handleKapakSil} className="px-3.5 py-2 border border-red-200 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-50">Kaldır</button>
+          )}
+        </div>
+        <input ref={kapakRef} type="file" accept="image/*" className="hidden" onChange={handleKapakYukle} />
+      </div>
 
       {/* Logo */}
       <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -412,6 +499,78 @@ export default function UstaPanelProfil() {
             placeholder="Kendinizi ve sunduğunuz hizmetleri kısaca tanıtın..."
             rows={4}
             className="w-full px-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+        </div>
+
+        {/* Diller */}
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5"><Globe size={14} className="text-gray-500" /> Konuştuğum Diller</label>
+          <div className="flex flex-wrap gap-2">
+            {DILLER.map(d => {
+              const secili = (form.diller || []).includes(d.kod)
+              return (
+                <button type="button" key={d.kod} onClick={() => listeToggle('diller', d.kod)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${secili ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}>
+                  {d.bayrak} {d.ad}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">Yabancı müşteriler dile göre usta arar; seçtiğiniz diller profilinizde görünür.</p>
+        </div>
+
+        {/* Çalışma saatleri */}
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5"><Clock size={14} className="text-gray-500" /> Çalışma Saatleri</label>
+          <label className="flex items-center gap-2 text-sm text-gray-700 mb-3 cursor-pointer">
+            <input type="checkbox" checked={!!form.yedi_yirmi_dort} onChange={e => setForm(p => ({ ...p, yedi_yirmi_dort: e.target.checked }))} className="w-4 h-4 accent-blue-600" />
+            7/24 hizmet veriyorum
+          </label>
+          {!form.yedi_yirmi_dort && (
+            <div className="space-y-2">
+              {GUNLER.map(g => {
+                const gun = form.calisma_saatleri?.[g.kod] || {}
+                return (
+                  <div key={g.kod} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="w-24 text-gray-700 font-medium">{g.ad}</span>
+                    <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
+                      <input type="checkbox" checked={!!gun.kapali} onChange={e => saatDegis(g.kod, 'kapali', e.target.checked)} className="accent-blue-600" /> Kapalı
+                    </label>
+                    {!gun.kapali && (
+                      <>
+                        <input type="time" value={gun.bas || '08:00'} onChange={e => saatDegis(g.kod, 'bas', e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1 text-xs" />
+                        <span className="text-gray-400">–</span>
+                        <input type="time" value={gun.bit || '18:00'} onChange={e => saatDegis(g.kod, 'bit', e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1 text-xs" />
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Ödeme yöntemleri */}
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5"><Wallet size={14} className="text-gray-500" /> Kabul Ettiğim Ödeme Yöntemleri</label>
+          <div className="flex flex-wrap gap-2">
+            {ODEME_YONTEMLERI.map(o => {
+              const secili = (form.odeme_yontemleri || []).includes(o.kod)
+              return (
+                <button type="button" key={o.kod} onClick={() => listeToggle('odeme_yontemleri', o.kod)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${secili ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}>
+                  {o.ad}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Web sitesi */}
+        <div>
+          <label className="text-sm font-bold text-gray-800 mb-1.5 block">Web Sitesi</label>
+          <input value={form.web_sitesi || ''} onChange={e => setForm(p => ({ ...p, web_sitesi: e.target.value }))}
+            placeholder="www.siteniz.com"
+            className="w-full px-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
         <button type="submit" disabled={kayıtYukleniyor}
