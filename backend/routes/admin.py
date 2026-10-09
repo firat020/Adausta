@@ -352,8 +352,8 @@ def usta_mesaj_gonder(id):
     db.session.commit()
     log_kaydet('USTA_MESAJ', f'Usta #{id} {u.ad} {u.soyad} adlı ustaya mesaj gönderildi')
 
-    # Ustaya push bildirimi
-    if u.kullanici_id:
+    # Ustaya push bildirimi (ustanın Ayarlar'daki tercihi açıksa)
+    if u.kullanici_id and u.bildirim_tercihi()['mesaj_push']:
         tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=u.kullanici_id, aktif=True).all()]
         if tokenlar:
             from fcm import toplu_bildirim_gonder

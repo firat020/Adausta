@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, ClipboardList, User, BarChart2,
   LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag,
-  MessageCircle, FileCheck2
+  MessageCircle, FileCheck2, Crown, Settings
 } from 'lucide-react'
 import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis } from '../../api'
 
@@ -14,9 +14,11 @@ const menuItems = [
   { to: '/usta/panel/istatistik', icon: BarChart2,     label: 'İstatistikler' },
   { to: '/usta/panel/yorumlar',  icon: Star,           label: 'Yorumlar' },
   { to: '/usta/panel/mesajlar',  icon: MessageCircle,  label: 'Mesajlar', mesajBadge: true },
+  { to: '/usta/panel/abonelik',  icon: Crown,          label: 'Abonelik ve Öne Çıkarma' },
   { to: '/usta/panel/belgeler',  icon: FileCheck2,     label: 'Belgelerim' },
   { to: '/usta/panel/magaza',    icon: ShoppingBag,    label: 'Mağaza' },
   { to: '/usta/panel/profil',    icon: User,           label: 'Profilim' },
+  { to: '/usta/panel/ayarlar',   icon: Settings,       label: 'Ayarlar' },
 ]
 
 export default function UstaPanelLayout() {

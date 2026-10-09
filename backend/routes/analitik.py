@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Usta, Kategori, Abone, IletisimLog, KategoriGoruntuleme
+from datetime import date
+from models import db, Usta, Kategori, Abone, IletisimLog, KategoriGoruntuleme, AnalitikGosterim
+from extensions import limiter
 
 analitik_bp = Blueprint('analitik', __name__)
 
@@ -10,7 +12,7 @@ def iletisim_log():
     data = request.get_json(silent=True) or {}
     usta_id = data.get('usta_id')
     tur = data.get('tur', 'goruntule')
-    if tur not in ('ara', 'whatsapp', 'goruntule', 'teklif'):
+    if tur not in ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas'):
         tur = 'goruntule'
 
     if not usta_id:
@@ -30,6 +32,30 @@ def iletisim_log():
     db.session.add(log)
     db.session.commit()
     return jsonify({'durum': 'ok'})
+
+
+@analitik_bp.route('/gosterim', methods=['POST'])
+@limiter.limit('120 per minute')
+def gosterim_kaydet():
+    """Liste sayfalarında görünen ustaların toplu gösterim kaydı. Body: { usta_ids: [1,2,...] }
+    Günlük sayaç artırılır; aynı tarayıcı oturumunda aynı ustayı saatte bir kez gönderme işi frontend'dedir."""
+    ids = (request.get_json(silent=True) or {}).get('usta_ids') or []
+    try:
+        ids = list({int(i) for i in ids})[:40]
+    except (TypeError, ValueError):
+        return jsonify({'hata': 'Geçersiz liste'}), 400
+    if not ids:
+        return jsonify({'durum': 'ok', 'kaydedilen': 0})
+    gecerli = {u.id for u in Usta.query.filter(Usta.id.in_(ids), Usta.onaylanmis == True, Usta.aktif == True).all()}  # noqa: E712
+    bugun = date.today()
+    mevcut = {g.usta_id: g for g in AnalitikGosterim.query.filter(AnalitikGosterim.usta_id.in_(gecerli), AnalitikGosterim.gun == bugun).all()}
+    for uid in gecerli:
+        if uid in mevcut:
+            mevcut[uid].adet = (mevcut[uid].adet or 0) + 1
+        else:
+            db.session.add(AnalitikGosterim(usta_id=uid, gun=bugun, adet=1))
+    db.session.commit()
+    return jsonify({'durum': 'ok', 'kaydedilen': len(gecerli)})
 
 
 @analitik_bp.route('/kategori-goruntule', methods=['POST'])

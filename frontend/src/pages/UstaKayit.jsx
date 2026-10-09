@@ -152,6 +152,14 @@ function HavaleKopyala({ metin }) {
 
 export default function UstaKayit() {
   const navigate = useNavigate()
+  // Davet bağlantısıyla (?ref=KOD) gelindiyse kod oturum boyunca hatırlanır ve kayıtla birlikte gönderilir
+  const [refKodu] = useState(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('ref')
+      if (q) sessionStorage.setItem('adausta_ref', q.slice(0, 20))
+      return (q || sessionStorage.getItem('adausta_ref') || '').slice(0, 20)
+    } catch { return '' }
+  })
 
   const [adim, setAdim] = useState(1)
   const [secilenPlan, setSecilenPlan] = useState('yillik')
@@ -236,6 +244,7 @@ export default function UstaKayit() {
         ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
         plan: secilenPlan,
+        referans_kodu: refKodu,
       })
       const ustaId = kayitResp?.data?.usta_id
       await fetch('/api/odeme/havale', {
@@ -284,6 +293,7 @@ export default function UstaKayit() {
         ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
         deneyim_yil: parseInt(form.deneyim_yil) || 0,
         plan: secilenPlan,
+        referans_kodu: refKodu,
       })
       const ustaId = kayitResp?.data?.usta_id
       const planDb = planlarDB.find(p => p.sure_tip === secilenPlan)

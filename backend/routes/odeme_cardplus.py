@@ -8,7 +8,8 @@ import uuid
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify, session
-from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog, AdminBildirim
+from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog, AdminBildirim, PromosyonSatis
+from promosyon import PROMO_FIYATLARI, PROMO_ACIKLAMA, promosyon_gecerli_mi, promosyon_aktif_et, referans_odul_kontrol
 from routes.odeme import _usd_try_kur
 from whatsapp import admin_whatsapp_gonder
 
@@ -146,6 +147,8 @@ def cardplus_baslat():
         durum='bekliyor',
         aciklama=f'CardPlus (Aktifbank) — ${tutar_usd} x {kur} TRY kuru',
         safekey_talep_edildi=otomatik_yenileme,
+        reference_type='abonelik_plan',
+        reference_id=plan.id,
     )
     db.session.add(odeme)
     db.session.commit()
@@ -281,6 +284,91 @@ def cardplus_magaza_baslat():
     return jsonify({'form_html': form_html, 'siparis_no': order_id})
 
 
+# ---------------------------------------------------------------------------
+# POST /api/odeme/cardplus/promosyon/baslat
+# Body: { tur: profil|hizmet|vitrin, sure_gun: 7|14|30, kategori_id? (tur=hizmet) }
+# Giriş yapmış ustanın kendi profili için öne çıkarma ürünü satın alır (3D hosted ödeme).
+# ---------------------------------------------------------------------------
+@odeme_cardplus_bp.route('/promosyon/baslat', methods=['POST'])
+def cardplus_promosyon_baslat():
+    if not session.get('kullanici_id') or session.get('rol') != 'usta':
+        return jsonify({'hata': 'Usta girişi gerekli'}), 401
+    if not CLIENT_ID or not STORE_KEY:
+        return jsonify({'hata': 'CardPlus yapılandırması eksik (CLIENTID/STOREKEY)'}), 500
+    if not GATEWAY_URL:
+        return jsonify({'hata': 'CardPlus gateway adresi henüz tanımlanmadı'}), 500
+
+    usta = Usta.query.filter_by(kullanici_id=session['kullanici_id']).first()
+    if not usta:
+        return jsonify({'hata': 'Usta profili bulunamadı'}), 404
+
+    data = request.get_json() or {}
+    tur = data.get('tur')
+    try:
+        sure_gun = int(data.get('sure_gun'))
+        kategori_id = int(data['kategori_id']) if data.get('kategori_id') else None
+    except (TypeError, ValueError):
+        return jsonify({'hata': 'Geçersiz istek'}), 400
+
+    ok, hata = promosyon_gecerli_mi(usta, tur, sure_gun, kategori_id)
+    if not ok:
+        return jsonify({'hata': hata}), 400
+
+    tutar_usd = PROMO_FIYATLARI[tur][sure_gun]
+    kur = _usd_try_kur()
+    tutar = round(tutar_usd * kur, 2)
+
+    satis = PromosyonSatis(usta_id=usta.id, tur=tur, sure_gun=sure_gun,
+                           kategori_id=kategori_id if tur == 'hizmet' else None,
+                           tutar_usd=tutar_usd, durum='bekliyor')
+    db.session.add(satis)
+    db.session.flush()
+
+    order_id = 'CPP' + uuid.uuid4().hex[:16].upper()
+    odeme = Odeme(
+        usta_id=usta.id, tutar=float(tutar), para_birimi='TRY', siparis_no=order_id, durum='bekliyor',
+        aciklama=f'CardPlus (Aktifbank) — {PROMO_ACIKLAMA[tur]} {sure_gun} gün — ${tutar_usd} x {kur} TRY kuru',
+        payment_source='promotion', reference_type='promosyon', reference_id=satis.id,
+    )
+    db.session.add(odeme)
+    db.session.commit()
+
+    params = {
+        'clientid':      CLIENT_ID,
+        'amount':        f'{float(tutar):.2f}',
+        'okurl':         f'{BASE_URL}/api/odeme/cardplus/donus',
+        'failUrl':       f'{BASE_URL}/api/odeme/cardplus/donus',
+        'TranType':      'Auth',
+        'Instalment':    '',
+        'callbackUrl':   f'{BASE_URL}/api/odeme/cardplus/callback',
+        'currency':      CURRENCY_CODES['TRY'],
+        'oid':           order_id,
+        'rnd':           secrets.token_hex(16),
+        'storetype':     '3D_PAY_HOSTING',
+        'hashAlgorithm': 'ver3',
+        'lang':          'tr',
+        'BillToName':    f'{usta.ad} {usta.soyad}'.strip(),
+        'BillToCompany': '',
+        'refreshtime':   '5',
+    }
+    params['HASH'] = _hash_ver3(params, STORE_KEY)
+    inputs = ''.join(
+        f'<input type="hidden" name="{_html.escape(k)}" value="{_html.escape(str(v))}">\n'
+        for k, v in params.items()
+    )
+    form_html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Ödeme Yönlendiriliyor...</title></head>
+<body onload="document.getElementById('cpform').submit()">
+<p>Güvenli ödeme sayfasına yönlendiriliyorsunuz, lütfen bekleyin...</p>
+<form id="cpform" method="POST" action="{GATEWAY_URL}">
+{inputs}
+</form>
+</body>
+</html>"""
+    return jsonify({'form_html': form_html, 'siparis_no': order_id})
+
+
 def _bul_ve_dogrula(params: dict):
     """Callback/donus ortak: HASH doğrula + siparis_no ile Odeme kaydını bul."""
     order_id = params.get('oid', '') or params.get('rnd', '')
@@ -317,22 +405,38 @@ def _safekey_kaydet(odeme: Odeme, abonelik: Abonelik, params: dict):
 
 
 def _aktiflestir_abonelik(odeme: Odeme, params: dict):
+    """Abonelik ödemesi başarılı olunca aboneliği açar/uzatır.
+    - Satın alınan plan, ödeme başlatılırken kaydedilen plandır (reference_type='abonelik_plan').
+      Eski kayıtlarda bu bilgi yoksa askıdaki aboneliğin planı, o da yoksa ilk aktif plan kullanılır.
+    - Süresi dolmamış aktif abonelik varsa kalan gün kaybolmaz: yeni süre mevcut bitişin üstüne eklenir."""
     usta = Usta.query.get(odeme.usta_id)
     if not usta:
         return
-    mevcut = Abonelik.query.filter_by(usta_id=usta.id, durum='askida').first()
+    simdi = datetime.utcnow()
+    secilen = Plan.query.get(odeme.reference_id) if (odeme.reference_type == 'abonelik_plan' and odeme.reference_id) else None
+
+    mevcut = Abonelik.query.filter_by(usta_id=usta.id, durum='askida').order_by(Abonelik.id.desc()).first()
+    uzatma = False
+    if not mevcut:
+        aktif = Abonelik.query.filter_by(usta_id=usta.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+        if aktif and aktif.bitis and aktif.bitis > simdi:
+            mevcut, uzatma = aktif, True
+
+    plan = secilen or (mevcut.plan if mevcut and mevcut.plan else Plan.query.filter_by(aktif=True).first())
+    gun = plan.sure_gun() if plan else 30
+
     if mevcut:
+        temel = mevcut.bitis if uzatma else simdi
         mevcut.durum = 'aktif'
-        mevcut.baslangic = datetime.utcnow()
-        mevcut.bitis = datetime.utcnow() + timedelta(days=mevcut.plan.sure_gun() if mevcut.plan else 30)
+        if not uzatma:
+            mevcut.baslangic = simdi
+        if plan:
+            mevcut.plan_id = plan.id
+        mevcut.bitis = temel + timedelta(days=gun)
         mevcut.yenileme_tarihi = mevcut.bitis
-        usta.plan = mevcut.plan.ad if mevcut.plan else 'aylik'
-        usta.plan_bitis = mevcut.bitis
-        odeme.abonelik_id = mevcut.id
-        _safekey_kaydet(odeme, mevcut, params)
+        ab = mevcut
     else:
-        plan = Plan.query.filter_by(aktif=True).first()
-        bitis = datetime.utcnow() + timedelta(days=plan.sure_gun() if plan else 30)
+        bitis = simdi + timedelta(days=gun)
         ab = Abonelik(
             usta_id=usta.id,
             plan_id=plan.id if plan else None,
@@ -342,10 +446,11 @@ def _aktiflestir_abonelik(odeme: Odeme, params: dict):
         )
         db.session.add(ab)
         db.session.flush()
-        odeme.abonelik_id = ab.id
-        usta.plan = plan.ad if plan else 'aylik'
-        usta.plan_bitis = bitis
-        _safekey_kaydet(odeme, ab, params)
+
+    odeme.abonelik_id = ab.id
+    usta.plan = plan.ad if plan else 'aylik'
+    usta.plan_bitis = ab.bitis
+    _safekey_kaydet(odeme, ab, params)
 
 
 def _odeme_basarili_isle(odeme: Odeme, params: dict):
@@ -365,8 +470,18 @@ def _odeme_basarili_isle(odeme: Odeme, params: dict):
             ))
         db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'Magaza siparisi #{siparis.id if siparis else "?"} - {odeme.tutar} TL kredi kartiyla odendi'))
         admin_whatsapp_gonder(f'Odeme alindi (magaza siparisi): {odeme.tutar} TL kredi karti ile.')
+    elif odeme.reference_type == 'promosyon' and odeme.reference_id:
+        satis = PromosyonSatis.query.get(odeme.reference_id)
+        if satis:
+            promosyon_aktif_et(satis)
+        usta_ad = f'{odeme.usta.ad} {odeme.usta.soyad}'.strip() if odeme.usta else '-'
+        urun = PROMO_ACIKLAMA.get(satis.tur, 'Öne çıkarma') if satis else 'Öne çıkarma'
+        db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'{usta_ad} - {odeme.tutar} TL kredi kartiyla odedi ({urun})'))
+        admin_whatsapp_gonder(f'Odeme alindi: {usta_ad} - {odeme.tutar} TL ({urun}).')
     else:
         _aktiflestir_abonelik(odeme, params)
+        if odeme.usta:
+            referans_odul_kontrol(odeme.usta)
         usta_ad = f'{odeme.usta.ad} {odeme.usta.soyad}'.strip() if odeme.usta else '-'
         db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'{usta_ad} - {odeme.tutar} TL kredi kartiyla odedi (abonelik)'))
         admin_whatsapp_gonder(f'Odeme alindi: {usta_ad} - {odeme.tutar} TL kredi karti ile abonelik odedi.')

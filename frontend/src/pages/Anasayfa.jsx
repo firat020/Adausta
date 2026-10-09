@@ -8,6 +8,7 @@ import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
 import { ustaSlugUrl } from '../data/hizmetler.js'
 import API from '../config.js'
+import { gosterimEkle } from '../utils/gosterim.js'
 
 const HIZLI_KATEGORILER = [
   { key: 'tadilat',   ikon: <Hammer size={15} />,      arama: 'Anahtar Teslim Tadilat' },
@@ -59,6 +60,7 @@ export default function Anasayfa() {
       setKategoriler(katRes.data.kategoriler || [])
       setSehirler(sehRes.data.sehirler || [])
       setEnIyiUstalar(ustaRes.data.ustalar || [])
+      ;(ustaRes.data.ustalar || []).forEach(u => gosterimEkle(u.id))
     }).catch(() => {})
       .finally(() => setYukleniyor(false))
     sonYorumlariGetir(3).then(r => setYorumlar(r.data.yorumlar || [])).catch(() => {})

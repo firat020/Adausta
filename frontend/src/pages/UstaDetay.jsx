@@ -16,7 +16,7 @@ const LABELS = {
     hakkinda: 'Hakkında', hizmetler: 'Hizmetler', vitrin: 'Vitrin', yorumlar: 'Yorumlar', bolge: 'Hizmet Bölgesi', bilgiler: 'İşletme Bilgileri',
     kimdir: 'kimdir?', aciklamaYok: 'Usta henüz bir tanıtım yazısı eklemedi.', anaUzmanlik: 'Ana uzmanlık', ekHizmet: 'Ek hizmet',
     fiyatNotu: 'Fiyat için “Hemen Teklif Al” ile iş detayını gönderin; usta size özel fiyat verir.',
-    onayli: 'Onaylı', belgeli: 'Belgeli', yeni: 'Yeni', uyeSince: 'yılından beri üye', simdiAcik: 'Şu an açık', simdiKapali: 'Şu an kapalı',
+    onayli: 'Onaylı', belgeli: 'Belgeli', yeni: 'Yeni', oneCikan: 'Öne Çıkan', uyeSince: 'yılından beri üye', simdiAcik: 'Şu an açık', simdiKapali: 'Şu an kapalı',
     webSitesi: 'Web Sitesi', paylas: 'Paylaş', kopyalandi: 'Kopyalandı!', favori: 'Favori', favoride: 'Favoride',
     haritadaAc: 'Haritada aç', saatler: 'Çalışma Saatleri', yediYirmiDort: '7/24 hizmet veriyor', kapali: 'Kapalı',
     belirtilmedi: 'Belirtilmedi', odeme: 'Ödeme Yöntemleri', diller: 'Konuşulan Diller', ara: 'Ara',
@@ -25,7 +25,7 @@ const LABELS = {
     hakkinda: 'About', hizmetler: 'Services', vitrin: 'Gallery', yorumlar: 'Reviews', bolge: 'Service Area', bilgiler: 'Business Info',
     kimdir: '— who we are', aciklamaYok: 'This professional has not added a description yet.', anaUzmanlik: 'Main expertise', ekHizmet: 'Additional service',
     fiyatNotu: 'For a price, send your job details with “Get a Quote”; the professional will quote you.',
-    onayli: 'Verified', belgeli: 'Certified', yeni: 'New', uyeSince: 'member since', simdiAcik: 'Open now', simdiKapali: 'Closed now',
+    onayli: 'Verified', belgeli: 'Certified', yeni: 'New', oneCikan: 'Featured', uyeSince: 'member since', simdiAcik: 'Open now', simdiKapali: 'Closed now',
     webSitesi: 'Website', paylas: 'Share', kopyalandi: 'Copied!', favori: 'Favourite', favoride: 'Saved',
     haritadaAc: 'Open in map', saatler: 'Opening Hours', yediYirmiDort: 'Available 24/7', kapali: 'Closed',
     belirtilmedi: 'Not specified', odeme: 'Payment Methods', diller: 'Languages Spoken', ara: 'Call',
@@ -94,11 +94,13 @@ export default function UstaDetay() {
       const yeni = liste.includes(numericId) ? liste.filter(x => x !== numericId) : [...liste, numericId]
       localStorage.setItem(FAVORI_ANAHTAR, JSON.stringify(yeni))
       setFavori(yeni.includes(numericId))
+      if (!liste.includes(numericId)) logIletisim('favori')
     } catch { /* localStorage kapalıysa sessizce geç */ }
   }
 
   const paylas = async () => {
     const url = window.location.href
+    logIletisim('paylas')
     try {
       if (navigator.share) {
         await navigator.share({ title: usta?.ad_soyad, text: `${usta?.ad_soyad} — ${usta?.kategori}`, url })
@@ -124,13 +126,20 @@ export default function UstaDetay() {
         // sessizce güncel SEO'lu URL'ye çevir (Google'a tek doğru URL sinyali).
         const dogruYol = ustaSlugUrl(r.data)
         if (location.pathname !== dogruYol) {
-          navigate(dogruYol, { replace: true })
+          navigate(dogruYol + location.search, { replace: true })
         }
       })
       .catch(() => {})
       .finally(() => setYukleniyor(false))
     benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
   }, [numericId])
+
+  // Ustanın paylaştığı yorum bağlantısı (?yorum=1): yorum formuna kaydır
+  useEffect(() => {
+    if (!usta || !new URLSearchParams(location.search).has('yorum')) return
+    const t = setTimeout(() => document.getElementById('profil-yorum-formu')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
+    return () => clearTimeout(t)
+  }, [usta, location.search])
 
   const teklifAlTikla = () => {
     logIletisim('teklif')
@@ -360,6 +369,11 @@ export default function UstaDetay() {
                     <GraduationCap size={14} /> {L.belgeli}
                   </span>
                 )}
+                {usta.one_cikan && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2 py-1 rounded-full">
+                    <Star size={12} className="fill-violet-500 text-violet-500" /> {L.oneCikan}
+                  </span>
+                )}
                 {usta.yedi_yirmi_dort && (
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full">7/24</span>
                 )}
@@ -570,7 +584,7 @@ export default function UstaDetay() {
           </section>
 
           {/* Yorum formu */}
-          <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
+          <div id="profil-yorum-formu" className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 scroll-mt-20">
             <h2 className="font-bold text-gray-900 mb-5">{t('ustaDetay.yorumYap')}</h2>
             {yorumGonderildi ? (
               <div className="text-center py-8">

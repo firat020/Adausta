@@ -219,19 +219,55 @@ class Usta(db.Model):
         yuzde = round(tamam_sayisi / len(maddeler) * 100)
         return {'yuzde': yuzde, 'maddeler': maddeler}
 
-    def siralama_puani(self):
+    @staticmethod
+    def _gelecekte(iso):
+        """ISO tarih metni şu andan sonra mı? (bozuk/boş ise False)"""
+        if not iso:
+            return False
+        try:
+            return datetime.fromisoformat(iso) > datetime.utcnow()
+        except (ValueError, TypeError):
+            return False
+
+    def aktif_promosyonlar(self):
+        """Süresi dolmamış öne çıkarma ürünleri: [{'tur', 'kategori_id', 'bitis'}]"""
+        ek = self.ekstra()
+        liste = []
+        if self._gelecekte(ek.get('one_cikma_bitis')):
+            liste.append({'tur': 'profil', 'kategori_id': None, 'bitis': ek['one_cikma_bitis']})
+        if self._gelecekte(ek.get('vitrin_bitis')):
+            liste.append({'tur': 'vitrin', 'kategori_id': None, 'bitis': ek['vitrin_bitis']})
+        for kid, bitis in (ek.get('hizmet_one_cikma') or {}).items():
+            if self._gelecekte(bitis):
+                liste.append({'tur': 'hizmet', 'kategori_id': int(kid), 'bitis': bitis})
+        return liste
+
+    VARSAYILAN_BILDIRIM = {'talep_push': True, 'talep_sms': False, 'mesaj_push': True}
+
+    def bildirim_tercihi(self):
+        """Ayarlar sayfasındaki bildirim tercihleri (kaydedilmemişse varsayılanlar)."""
+        kayitli = self.ekstra().get('bildirim')
+        sonuc = dict(self.VARSAYILAN_BILDIRIM)
+        if isinstance(kayitli, dict):
+            for k in sonuc:
+                if isinstance(kayitli.get(k), bool):
+                    sonuc[k] = kayitli[k]
+        return sonuc
+
+    def siralama_puani(self, kategori_id=None, vitrin=False):
         """Listelerde 'en iyi' sıralaması: öne çıkarma > ücretli plan > yorum > profil doluluğu.
-        Ağır sorgu yapmaz (liste başına yüzlerce usta için çağrılır)."""
+        Ağır sorgu yapmaz (liste başına yüzlerce usta için çağrılır).
+        kategori_id: o kategori için hizmet-öne-çıkarma satın alanlar ek puan alır.
+        vitrin: ana sayfa vitrin ürünü alanlar en üste çıkar."""
         puan = 0.0
         simdi = datetime.utcnow()
         ek = self.ekstra()
-        one_cikma = ek.get('one_cikma_bitis')
-        if one_cikma:
-            try:
-                if datetime.fromisoformat(one_cikma) > simdi:
-                    puan += 1000
-            except ValueError:
-                pass
+        if self._gelecekte(ek.get('one_cikma_bitis')):
+            puan += 1000
+        if kategori_id and self._gelecekte((ek.get('hizmet_one_cikma') or {}).get(str(kategori_id))):
+            puan += 800
+        if vitrin and self._gelecekte(ek.get('vitrin_bitis')):
+            puan += 5000
         if self.plan and self.plan != 'ucretsiz' and (not self.plan_bitis or self.plan_bitis > simdi):
             puan += 100
         yorum_sayisi = len(self.yorumlar)
@@ -265,6 +301,7 @@ class Usta(db.Model):
         mesafe = None
         if kullanici_lat and kullanici_lng:
             mesafe = self.mesafe_hesapla(kullanici_lat, kullanici_lng)
+        ek = self.ekstra()
         return {
             'id': self.id,
             'ad': self.ad,
@@ -288,12 +325,13 @@ class Usta(db.Model):
             'yorum_sayisi': len(self.yorumlar),
             'logo': self.logo,
             'logo_url': f'/uploads/{self.logo}' if self.logo else None,
-            'kapak_url': (f"/uploads/{self.ekstra().get('kapak')}" if self.ekstra().get('kapak') else None),
-            'diller': self.ekstra().get('diller', []),
-            'calisma_saatleri': self.ekstra().get('calisma_saatleri', {}),
-            'yedi_yirmi_dort': bool(self.ekstra().get('yedi_yirmi_dort', False)),
-            'odeme_yontemleri': self.ekstra().get('odeme_yontemleri', []),
-            'web_sitesi': self.ekstra().get('web_sitesi', ''),
+            'kapak_url': (f"/uploads/{ek.get('kapak')}" if ek.get('kapak') else None),
+            'diller': ek.get('diller', []),
+            'calisma_saatleri': ek.get('calisma_saatleri', {}),
+            'yedi_yirmi_dort': bool(ek.get('yedi_yirmi_dort', False)),
+            'odeme_yontemleri': ek.get('odeme_yontemleri', []),
+            'web_sitesi': ek.get('web_sitesi', ''),
+            'one_cikan': self._gelecekte(ek.get('one_cikma_bitis')) or self._gelecekte(ek.get('vitrin_bitis')),
             'fotograflar': [f.to_dict() for f in self.fotograflar],
             'mesafe': mesafe,
             'onaylanmis': self.onaylanmis,
@@ -387,6 +425,17 @@ class IletisimLog(db.Model):
             'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
             'sehir': self.sehir,
         }
+
+
+class AnalitikGosterim(db.Model):
+    """Usta kartının listelerde (arama, kategori, ana sayfa) görünme sayısı — günlük toplam.
+    Her gösterim için satır tutmak yerine (gün, usta) başına tek sayaç satırı kullanılır."""
+    __tablename__ = 'analitik_gosterim'
+    __table_args__ = (db.UniqueConstraint('usta_id', 'gun', name='uq_gosterim_usta_gun'),)
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False, index=True)
+    gun = db.Column(db.Date, nullable=False)
+    adet = db.Column(db.Integer, default=0)
 
 
 class KategoriGoruntuleme(db.Model):
@@ -724,6 +773,46 @@ class Reklam(db.Model):
             'goruntuleme': self.goruntuleme,
             'olusturma': fmt(self.olusturma),
         }
+
+
+class PromosyonSatis(db.Model):
+    """Ustanın satın aldığı öne çıkarma ürünü: profil / hizmet (kategori bazlı) / vitrin (ana sayfa)."""
+    __tablename__ = 'promosyon_satislari'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    tur = db.Column(db.String(20), nullable=False)  # profil / hizmet / vitrin
+    sure_gun = db.Column(db.Integer, nullable=False)
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategoriler.id'), nullable=True)  # sadece tur=hizmet
+    tutar_usd = db.Column(db.Float, nullable=False)
+    durum = db.Column(db.String(20), default='bekliyor')  # bekliyor / aktif / iptal
+    baslangic = db.Column(db.DateTime, nullable=True)
+    bitis = db.Column(db.DateTime, nullable=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+    kategori = db.relationship('Kategori', foreign_keys=[kategori_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'tur': self.tur, 'sure_gun': self.sure_gun,
+            'kategori_id': self.kategori_id, 'kategori_ad': self.kategori.ad if self.kategori else None,
+            'tutar_usd': self.tutar_usd, 'durum': self.durum,
+            'baslangic': fmt(self.baslangic), 'bitis': fmt(self.bitis), 'olusturma': fmt(self.olusturma),
+        }
+
+
+class Referans(db.Model):
+    """Usta daveti: davet edilen usta kayıt olurken kodu kullanırsa kaydedilir.
+    İki taraf da ücretli abonelik satın aldığında her ikisine bonus gün verilir."""
+    __tablename__ = 'referanslar'
+    id = db.Column(db.Integer, primary_key=True)
+    davet_eden_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    davet_edilen_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False, unique=True)
+    durum = db.Column(db.String(20), default='bekliyor')  # bekliyor / hak_kazandi
+    bonus_gun = db.Column(db.Integer, default=0)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    hak_tarihi = db.Column(db.DateTime, nullable=True)
+    davet_eden = db.relationship('Usta', foreign_keys=[davet_eden_id])
+    davet_edilen = db.relationship('Usta', foreign_keys=[davet_edilen_id])
 
 
 # ──────────────────────────────────────────────────────────

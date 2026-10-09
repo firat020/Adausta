@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
 from extensions import limiter
+from promosyon import referans_kaydet
 from datetime import datetime, timedelta
 import os, uuid, random, hashlib
 
@@ -165,6 +166,10 @@ def kayit():
         kat = Kategori.query.get(kid)
         if kat and kat not in u.ek_kategoriler:
             u.ek_kategoriler.append(kat)
+
+    # Davet kodu ile gelindiyse kaydet (geçersiz kod kaydı engellemez)
+    if data.get('referans_kodu'):
+        referans_kaydet(u, data['referans_kodu'])
 
     # Admin bildirimi
     bildirim = AdminBildirim(
@@ -360,7 +365,11 @@ def _usta_bildirim_gonder(usta, baslik, icerik, data=None):
     """Bir ustanın kayıtlı cihazlarına FCM push bildirimi gönderir ve geçmişe kaydeder."""
     if not usta.kullanici_id:
         return
-    tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=usta.kullanici_id, aktif=True).all()]
+    tercih = usta.bildirim_tercihi()
+    # İsteğe bağlı SMS (varsayılan kapalı; ustanın Ayarlar sayfasından açtığı)
+    if tercih['talep_sms'] and usta.telefon:
+        sms_gonder(usta.telefon, f'Ada Usta - {baslik}: {icerik[:100]}. Detay için usta panelinizi açın.')
+    tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=usta.kullanici_id, aktif=True).all()] if tercih['talep_push'] else []
     gecmis = BildirimGecmisi(kullanici_id=usta.kullanici_id, baslik=baslik, icerik=icerik, tur='talep')
     if tokenlar:
         from fcm import toplu_bildirim_gonder

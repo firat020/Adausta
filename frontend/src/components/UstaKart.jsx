@@ -1,9 +1,11 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaSlugUrl } from '../data/hizmetler.js'
 import API from '../config.js'
+import { gosterimEkle } from '../utils/gosterim.js'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
@@ -12,13 +14,27 @@ export default function UstaKart({ usta }) {
               : i18n.language === 'ru' ? (KAT_RU[usta.kategori] || usta.kategori)
               : usta.kategori
 
+  // Kart ekranda (en az %50) görününce analitik için "gösterim" olarak sayılır
+  const kartRef = useRef(null)
+  useEffect(() => {
+    const el = kartRef.current
+    if (!el || !usta?.id) return
+    if (typeof IntersectionObserver === 'undefined') { gosterimEkle(usta.id); return }
+    const obs = new IntersectionObserver((girdiler) => {
+      if (girdiler.some(g => g.isIntersecting)) { gosterimEkle(usta.id); obs.disconnect() }
+    }, { threshold: 0.5 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [usta?.id])
+
   return (
     <div
+      ref={kartRef}
       onClick={() => navigate(ustaSlugUrl(usta))}
       className="bg-white rounded-xl border border-blue-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group"
     >
       {/* Üst şerit */}
-      <div className="h-1.5 bg-gradient-to-r from-blue-600 to-cyan-400" />
+      <div className={`h-1.5 bg-gradient-to-r ${usta.one_cikan ? 'from-violet-600 to-fuchsia-400' : 'from-blue-600 to-cyan-400'}`} />
 
       <div className="p-5">
         {/* Başlık */}
@@ -32,6 +48,11 @@ export default function UstaKart({ usta }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">{usta.ad_soyad}</h3>
+            {usta.one_cikan && (
+              <span className="inline-flex items-center gap-1 mr-1 mt-0.5 text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-md">
+                <Star size={9} className="fill-violet-500 text-violet-500" /> {i18n.language === 'en' ? 'Featured' : 'Öne Çıkan'}
+              </span>
+            )}
             <span className="inline-block mt-0.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
               {katAd}
             </span>

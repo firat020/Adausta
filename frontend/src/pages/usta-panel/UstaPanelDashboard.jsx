@@ -6,6 +6,7 @@ import {
   Info, CircleCheck, Circle
 } from 'lucide-react'
 import { ustaPanelDashboard } from '../../api'
+import PaylasimKartlariYukleyici from '../../components/PaylasimKartlari'
 
 const DURUM_RENK = {
   bekliyor:    'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -270,6 +271,8 @@ export default function UstaPanelDashboard() {
           <StatKart key={i} {...k} onClick={() => setPopup({ ...k.popup, ikon: k.ikon, renk: k.renk })} />
         ))}
       </div>
+
+      <PaylasimKartlariYukleyici />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Günlük talep grafiği */}

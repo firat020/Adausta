@@ -30,6 +30,8 @@ export const sehirleriGetir = () => api.get('/kategoriler/sehirler');
 // Ödeme
 export const planlariGetir = () => api.get('/odeme/planlar');
 export const cardplusBaslat = (data) => api.post('/odeme/cardplus/baslat', data);
+export const promosyonBaslat = (data) => api.post('/odeme/cardplus/promosyon/baslat', data);
+export const ustaAbonelikOzet = () => api.get('/usta/abonelik/ozet');
 
 // Ustalar
 export const ustaListele = (params) => api.get('/ustalar/', { params });
@@ -74,6 +76,10 @@ export const ustaPanelIsTalepleri = (params) => api.get('/usta/is-talepleri', { 
 export const ustaPanelTalepGuncelle = (id, data) => api.put(`/usta/is-talepleri/${id}`, data);
 export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
+export const ustaAyarlarGetir = () => api.get('/usta/ayarlar');
+export const ustaAyarlarKaydet = (bildirim) => api.put('/usta/ayarlar', { bildirim });
+export const ustaSifreDegistir = (data) => api.post('/usta/sifre-degistir', data);
+export const ustaHesapKapat = (sifre) => api.post('/usta/hesap-kapat', { sifre });
 export const ustaPanelYorumlar = () => api.get('/usta/yorumlar');
 export const ustaPanelYorumCevapla = (id, cevap) => api.post(`/usta/yorumlar/${id}/cevap`, { cevap });
 export const ustaPanelMesajlar = () => api.get('/usta/mesajlar');

@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik, Mesaj, UstaBelge, AdminBildirim
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken
+from extensions import limiter
 from datetime import datetime, timedelta
 from functools import wraps
 import uuid, os
+from promosyon import PROMO_FIYATLARI, PROMO_ACIKLAMA, REFERANS_BONUS_GUN, referans_kodu
 from werkzeug.utils import secure_filename
 
 usta_panel_bp = Blueprint('usta_panel', __name__)
@@ -327,56 +329,157 @@ def musteriler(usta):
 @usta_panel_bp.route('/istatistikler', methods=['GET'])
 @usta_gerekli
 def istatistikler(usta):
-    aralik = int(request.args.get('aralik', 30))
-    simdi = datetime.utcnow()
-    bas = simdi - timedelta(days=aralik)
+    """Analitik: gösterim -> profil görüntüleme -> iletişim hunisi, önceki dönemle karşılaştırma,
+    gün/hafta bazlı seri. Tek gruplu sorgu kullanır (eski sürüm gün sayısı x 3 sorgu çalıştırıyordu)."""
+    from sqlalchemy import func
+    from models import AnalitikGosterim
+    try:
+        aralik = int(request.args.get('aralik', 30))
+    except ValueError:
+        aralik = 30
+    aralik = aralik if aralik in (7, 30, 90, 365) else 30
 
-    # Günlük iletişim trendi
-    gunluk_iletisim = []
-    for i in range(aralik - 1, -1, -1):
-        gun = simdi - timedelta(days=i)
-        gun_bas = gun.replace(hour=0, minute=0, second=0, microsecond=0)
-        gun_bit = gun_bas + timedelta(days=1)
-        ara = IletisimLog.query.filter(
-            IletisimLog.usta_id == usta.id, IletisimLog.tur == 'ara',
-            IletisimLog.tarih >= gun_bas, IletisimLog.tarih < gun_bit
-        ).count()
-        wp = IletisimLog.query.filter(
-            IletisimLog.usta_id == usta.id, IletisimLog.tur == 'whatsapp',
-            IletisimLog.tarih >= gun_bas, IletisimLog.tarih < gun_bit
-        ).count()
-        goruntule = IletisimLog.query.filter(
-            IletisimLog.usta_id == usta.id, IletisimLog.tur == 'goruntule',
-            IletisimLog.tarih >= gun_bas, IletisimLog.tarih < gun_bit
-        ).count()
-        gunluk_iletisim.append({
-            'gun': gun_bas.strftime('%d.%m'),
-            'ara': ara, 'whatsapp': wp, 'goruntule': goruntule
-        })
+    bugun = datetime.utcnow().date()
+    bas_gun = bugun - timedelta(days=aralik - 1)
+    onceki_bas = bas_gun - timedelta(days=aralik)
+    bas_dt = datetime.combine(onceki_bas, datetime.min.time())
 
-    # Talep durum dağılımı
-    durum_dagilim = {}
-    for durum in ['bekliyor', 'kabul', 'red', 'tamamlandi']:
-        durum_dagilim[durum] = IsTalebi.query.filter(
-            IsTalebi.usta_id == usta.id,
-            IsTalebi.olusturma >= bas
-        ).filter_by(durum=durum).count()
+    # İletişim kayıtları: (gün, tür) -> adet — hem bu hem önceki dönem için tek sorgu
+    satirlar = db.session.query(func.date(IletisimLog.tarih), IletisimLog.tur, func.count(IletisimLog.id)) \
+        .filter(IletisimLog.usta_id == usta.id, IletisimLog.tarih >= bas_dt) \
+        .group_by(func.date(IletisimLog.tarih), IletisimLog.tur).all()
+    gosterim_satirlar = db.session.query(AnalitikGosterim.gun, AnalitikGosterim.adet) \
+        .filter(AnalitikGosterim.usta_id == usta.id, AnalitikGosterim.gun >= onceki_bas).all()
+
+    TURLER = ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas', 'gosterim')
+    gunluk = {}  # 'YYYY-MM-DD' -> {tur: adet}
+    for gun, tur, adet in satirlar:
+        gunluk.setdefault(str(gun), {})[tur] = adet
+    for gun, adet in gosterim_satirlar:
+        gunluk.setdefault(str(gun), {})['gosterim'] = adet
+
+    def topla(baslangic, bitis):
+        t = {k: 0 for k in TURLER}
+        gun = baslangic
+        while gun <= bitis:
+            for k, v in gunluk.get(gun.isoformat(), {}).items():
+                t[k] = t.get(k, 0) + v
+            gun += timedelta(days=1)
+        t['iletisim'] = t['ara'] + t['whatsapp'] + t['teklif']
+        return t
+
+    ozet = topla(bas_gun, bugun)
+    onceki = topla(onceki_bas, bas_gun - timedelta(days=1))
+
+    # Seri: 365 günde haftalık, diğerlerinde günlük
+    kova = 7 if aralik == 365 else 1
+    seri = []
+    gun = bas_gun
+    while gun <= bugun:
+        son = min(gun + timedelta(days=kova - 1), bugun)
+        t = topla(gun, son)
+        seri.append({'gun': gun.strftime('%d.%m'), 'gosterim': t['gosterim'], 'goruntule': t['goruntule'],
+                     'ara': t['ara'], 'whatsapp': t['whatsapp'], 'teklif': t['teklif'], 'iletisim': t['iletisim']})
+        gun = son + timedelta(days=1)
+
+    def oran(pay, payda):
+        return round(min(pay / payda * 100, 100), 1) if payda else 0
+
+    huni = {
+        'gosterim': ozet['gosterim'], 'goruntule': ozet['goruntule'], 'iletisim': ozet['iletisim'],
+        'goruntule_orani': oran(ozet['goruntule'], ozet['gosterim']),
+        'iletisim_orani': oran(ozet['iletisim'], ozet['goruntule']),
+    }
+
+    # Talep durum dağılımı (seçilen aralık)
+    bas_talep = datetime.combine(bas_gun, datetime.min.time())
+    durum_dagilim = {d: IsTalebi.query.filter(IsTalebi.usta_id == usta.id, IsTalebi.olusturma >= bas_talep).filter_by(durum=d).count()
+                     for d in ['bekliyor', 'kabul', 'red', 'tamamlandi']}
 
     # Yorumlar
-    yorumlar = Yorum.query.filter_by(usta_id=usta.id, onaylanmis=True)\
-        .order_by(Yorum.tarih.desc()).all()
+    yorumlar = Yorum.query.filter_by(usta_id=usta.id, onaylanmis=True).order_by(Yorum.tarih.desc()).all()
     puan_dagilim = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
     for y in yorumlar:
         puan_dagilim[y.puan] = puan_dagilim.get(y.puan, 0) + 1
 
     return jsonify({
-        'gunluk_iletisim': gunluk_iletisim,
+        'aralik': aralik,
+        'ozet': ozet, 'onceki': onceki, 'huni': huni, 'seri': seri,
+        'gunluk_iletisim': seri,   # eski alan adı (geriye dönük uyumluluk)
         'durum_dagilim': durum_dagilim,
         'puan_dagilim': puan_dagilim,
         'toplam_yorum': len(yorumlar),
         'ort_puan': usta.ortalama_puan(),
         'yorumlar': [y.to_dict() for y in yorumlar[:20]],
     })
+
+
+# ──────────────────────────────────────────────────────────
+# Ayarlar: bildirim tercihleri, şifre, hesap kapatma
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/ayarlar', methods=['GET'])
+@usta_gerekli
+def ayarlar_getir(usta):
+    k = Kullanici.query.get(usta.kullanici_id)
+    return jsonify({
+        'email': k.email if k else '',
+        'telefon': usta.telefon,
+        'bildirim': usta.bildirim_tercihi(),
+        'push_cihaz_sayisi': FCMToken.query.filter_by(kullanici_id=usta.kullanici_id, aktif=True).count(),
+    })
+
+
+@usta_panel_bp.route('/ayarlar', methods=['PUT'])
+@usta_gerekli
+def ayarlar_kaydet(usta):
+    data = request.get_json(silent=True) or {}
+    gelen = data.get('bildirim')
+    if not isinstance(gelen, dict):
+        return jsonify({'hata': 'Geçersiz istek'}), 400
+    tercih = usta.bildirim_tercihi()
+    for anahtar in Usta.VARSAYILAN_BILDIRIM:
+        if isinstance(gelen.get(anahtar), bool):
+            tercih[anahtar] = gelen[anahtar]
+    usta.ekstra_guncelle(bildirim=tercih)
+    db.session.commit()
+    return jsonify({'mesaj': 'Ayarlar kaydedildi', 'bildirim': tercih})
+
+
+@usta_panel_bp.route('/sifre-degistir', methods=['POST'])
+@limiter.limit('5 per minute; 20 per hour')
+@usta_gerekli
+def sifre_degistir(usta):
+    data = request.get_json(silent=True) or {}
+    eski, yeni = data.get('eski_sifre', ''), data.get('yeni_sifre', '')
+    k = Kullanici.query.get(usta.kullanici_id)
+    if not k or not k.sifre_kontrol(eski):
+        return jsonify({'hata': 'Mevcut şifre hatalı'}), 400
+    if len(yeni) < 8:
+        return jsonify({'hata': 'Yeni şifre en az 8 karakter olmalı'}), 400
+    if yeni == eski:
+        return jsonify({'hata': 'Yeni şifre eskisiyle aynı olamaz'}), 400
+    k.sifre_set(yeni)
+    db.session.commit()
+    return jsonify({'mesaj': 'Şifreniz güncellendi'})
+
+
+@usta_panel_bp.route('/hesap-kapat', methods=['POST'])
+@limiter.limit('3 per hour')
+@usta_gerekli
+def hesap_kapat(usta):
+    """Hesabı kapatır: profil yayından kalkar ve giriş devre dışı kalır. Veriler SİLİNMEZ
+    (yorumlar, talepler, ödeme kayıtları korunur); geri açma / kalıcı silme için destek gerekir."""
+    data = request.get_json(silent=True) or {}
+    k = Kullanici.query.get(usta.kullanici_id)
+    if not k or not k.sifre_kontrol(data.get('sifre', '')):
+        return jsonify({'hata': 'Şifre hatalı'}), 400
+    usta.aktif = False
+    usta.musaitlik = False
+    k.aktif = False
+    db.session.add(AdminBildirim(tur='hesap_kapatma', mesaj=f'Usta hesabını kapattı: {usta.ad} {usta.soyad} (#{usta.id}) — {usta.telefon}'))
+    db.session.commit()
+    session.clear()
+    return jsonify({'mesaj': 'Hesabınız kapatıldı'})
 
 
 # ──────────────────────────────────────────────────────────
@@ -438,6 +541,82 @@ def abonelik_durumu(usta):
         'plan_bitis': usta.plan_bitis.isoformat() if usta.plan_bitis else None,
         'kayitli_kart_var': bool(usta.cardplus_safekey),
         'abonelik': ab.to_dict() if ab else None,
+    })
+
+
+# ──────────────────────────────────────────────────────────
+# Abonelik ve Öne Çıkarma sayfası için tek çağrıda özet:
+# planlar, mevcut abonelik, profil durumu, öne çıkarma ürünleri, ödeme geçmişi, referans
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/abonelik/ozet', methods=['GET'])
+@usta_gerekli
+def abonelik_ozet(usta):
+    simdi = datetime.utcnow()
+    ab = (
+        Abonelik.query.filter_by(usta_id=usta.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+        or Abonelik.query.filter_by(usta_id=usta.id, durum='askida').order_by(Abonelik.id.desc()).first()
+    )
+    kalan_gun = max(0, (usta.plan_bitis - simdi).days) if usta.plan_bitis else 0
+
+    planlar = Plan.query.filter_by(aktif=True).order_by(Plan.fiyat).all()
+    aylik = next((p for p in planlar if p.sure_tip == 'aylik'), None)
+    plan_listesi = []
+    for p in planlar:
+        ay = max(1, round(p.sure_gun() / 30))
+        aylik_fiyat = round(p.fiyat / ay, 2)
+        tasarruf = 0
+        if aylik and ay > 1 and aylik.fiyat > 0:
+            tasarruf = max(0, round((1 - aylik_fiyat / aylik.fiyat) * 100))
+        plan_listesi.append({
+            'id': p.id, 'ad': p.ad, 'fiyat': p.fiyat, 'sure_tip': p.sure_tip, 'ay': ay,
+            'aylik_fiyat': aylik_fiyat, 'tasarruf_yuzde': tasarruf,
+        })
+
+    odemeler = Odeme.query.filter_by(usta_id=usta.id).order_by(Odeme.tarih.desc()).limit(30).all()
+
+    referanslar = Referans.query.filter_by(davet_eden_id=usta.id).order_by(Referans.id.desc()).all()
+    davetler = []
+    for r in referanslar:
+        d = r.davet_edilen
+        davetler.append({
+            'ad': (f"{d.ad} {d.soyad[:1]}.".strip() if d and d.soyad else (d.ad if d else '-')),
+            'durum': r.durum, 'bonus_gun': r.bonus_gun,
+            'tarih': r.olusturma.strftime('%d.%m.%Y') if r.olusturma else '',
+        })
+    ek = usta.ekstra()
+    site = os.environ.get('SITE_URL', 'https://adausta.com')
+    kod = referans_kodu(usta.id)
+
+    return jsonify({
+        'usta_id': usta.id,
+        'profil': {'durum': 'yayinda' if (usta.onaylanmis and usta.aktif) else ('onay_bekliyor' if usta.aktif else 'pasif'),
+                   'onaylanmis': usta.onaylanmis, 'aktif': usta.aktif},
+        'abonelik': {
+            'plan': usta.plan, 'plan_bitis': usta.plan_bitis.isoformat() if usta.plan_bitis else None,
+            'kalan_gun': kalan_gun, 'ucretli': bool(usta.plan and usta.plan != 'ucretsiz' and kalan_gun > 0),
+            'durum': ab.durum if ab else None,
+            'otomatik_yenileme': bool(ab.otomatik_yenileme) if ab else False,
+            'kayitli_kart_var': bool(usta.cardplus_safekey),
+        },
+        'planlar': plan_listesi,
+        'promosyon': {
+            'fiyatlar': {t: [{'sure_gun': g, 'fiyat_usd': f} for g, f in v.items()] for t, v in PROMO_FIYATLARI.items()},
+            'aciklamalar': PROMO_ACIKLAMA,
+            'aktif': usta.aktif_promosyonlar(),
+            'hizmetler': [{'id': k['id'], 'ad': k['ad']} for k in ([{'id': usta.kategori_id, 'ad': usta.kategori.ad}] if usta.kategori else [])
+                          + [{'id': k.id, 'ad': k.ad} for k in usta.ek_kategoriler if k.id != usta.kategori_id]],
+        },
+        'odemeler': [{
+            'id': o.id, 'tarih': o.tarih.strftime('%d.%m.%Y %H:%M') if o.tarih else '', 'tutar': o.tutar,
+            'para_birimi': o.para_birimi, 'durum': o.durum, 'aciklama': o.aciklama or '',
+            'siparis_no': o.siparis_no, 'kart_son4': o.kart_son4,
+            'tur': 'promosyon' if o.reference_type == 'promosyon' else 'abonelik',
+        } for o in odemeler],
+        'referans': {
+            'kod': kod, 'link': f'{site}/usta-kayit?ref={kod}', 'bonus_gun': REFERANS_BONUS_GUN,
+            'davetler': davetler, 'kazanilan_gun': int(ek.get('bonus_gun_toplam', 0)),
+        },
+        'linkler': {'profil': f'{site}/usta/{usta.id}', 'yorum': f'{site}/usta/{usta.id}?yorum=1'},
     })
 
 
