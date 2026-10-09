@@ -214,6 +214,7 @@ class Usta(db.Model):
             {'anahtar': 'logo', 'baslik': 'Logo veya profil görseli ekleyin', 'tamam': bool(self.logo)},
             {'anahtar': 'diller', 'baslik': 'Konuştuğunuz dilleri seçin', 'tamam': bool(ek.get('diller'))},
             {'anahtar': 'saatler', 'baslik': 'Çalışma saatlerinizi girin', 'tamam': bool(ek.get('calisma_saatleri') or ek.get('yedi_yirmi_dort'))},
+            {'anahtar': 'fiyat', 'baslik': 'Hizmetleriniz için fiyat bilgisi ekleyin', 'tamam': any((d or {}).get('fiyat') for d in (ek.get('hizmetler') or {}).values())},
         ]
         tamam_sayisi = sum(1 for m in maddeler if m['tamam'])
         yuzde = round(tamam_sayisi / len(maddeler) * 100)
@@ -242,6 +243,14 @@ class Usta(db.Model):
                 liste.append({'tur': 'hizmet', 'kategori_id': int(kid), 'bitis': bitis})
         return liste
 
+    MAX_TOPLAM_HIZMET = 6   # ana + ek kategori (mevcut daha fazlası olan ustalar korunur)
+    MAX_UZMANLIK = 3
+
+    @staticmethod
+    def _hizmet_detay_ek(ek, kategori_id):
+        d = (ek.get('hizmetler') or {}).get(str(kategori_id)) or {}
+        return {'fiyat': str(d.get('fiyat') or ''), 'uzmanlik': bool(d.get('uzmanlik')), 'yedi_yirmi_dort': bool(d.get('yedi_yirmi_dort'))}
+
     VARSAYILAN_BILDIRIM = {'talep_push': True, 'talep_sms': False, 'mesaj_push': True}
 
     def bildirim_tercihi(self):
@@ -253,6 +262,14 @@ class Usta(db.Model):
                 if isinstance(kayitli.get(k), bool):
                     sonuc[k] = kayitli[k]
         return sonuc
+
+    def oncelikli_mi(self, kategori_id=None):
+        """Süresi dolmamış profil / (ilgili kategori için) hizmet öne çıkarması var mı?
+        Konuma göre sıralanan listelerde de öne çıkarmanın etkili olması için kullanılır."""
+        ek = self.ekstra()
+        if self._gelecekte(ek.get('one_cikma_bitis')):
+            return True
+        return bool(kategori_id and self._gelecekte((ek.get('hizmet_one_cikma') or {}).get(str(kategori_id))))
 
     def siralama_puani(self, kategori_id=None, vitrin=False):
         """Listelerde 'en iyi' sıralaması: öne çıkarma > ücretli plan > yorum > profil doluluğu.
@@ -345,8 +362,8 @@ class Usta(db.Model):
             'olusturma': self.olusturma.isoformat(),
             'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler],
             'tum_kategoriler': (
-                [{'id': self.kategori_id, 'ad': self.kategori.ad, 'ikon': self.kategori.ikon}] if self.kategori else []
-            ) + [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler if k.id != self.kategori_id]
+                [dict({'id': self.kategori_id, 'ad': self.kategori.ad, 'ikon': self.kategori.ikon}, **self._hizmet_detay_ek(ek, self.kategori_id))] if self.kategori else []
+            ) + [dict({'id': k.id, 'ad': k.ad, 'ikon': k.ikon}, **self._hizmet_detay_ek(ek, k.id)) for k in self.ek_kategoriler if k.id != self.kategori_id]
         }
 
 

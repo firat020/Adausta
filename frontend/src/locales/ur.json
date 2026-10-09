@@ -132,7 +132,10 @@
     "tumSehirler": "تمام شہر",
     "filtreleriTemizle": "فلٹر صاف کریں",
     "ustaBulunamadi": "کوئی کاریگر نہیں ملا",
-    "farkliFiltre": "مختلف فلٹر آزمائیں"
+    "farkliFiltre": "مختلف فلٹر آزمائیں",
+    "hizmetDili": "خدمت کی زبان",
+    "tumDiller": "تمام زبانیں",
+    "dilNotu": "زبانیں کاریگر خود شامل کرتے ہیں؛ جو نہ لکھیں انہیں ترکی سمجھا جاتا ہے۔"
   },
   "ustaDetay": {
     "geri": "واپس",

@@ -21,4 +21,9 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 })
 
+// Sayfa dili değişince <html lang> güncellenir (erişilebilirlik ve arama motoru sinyali)
+const htmlDilGuncelle = (lng) => { try { document.documentElement.lang = lng || 'tr' } catch { /* SSR/test ortamı */ } }
+htmlDilGuncelle(i18n.language)
+i18n.on('languageChanged', htmlDilGuncelle)
+
 export default i18n

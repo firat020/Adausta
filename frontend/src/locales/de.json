@@ -132,7 +132,10 @@
     "tumSehirler": "Alle Städte",
     "filtreleriTemizle": "Filter zurücksetzen",
     "ustaBulunamadi": "Keine Handwerker gefunden",
-    "farkliFiltre": "Andere Filter ausprobieren"
+    "farkliFiltre": "Andere Filter ausprobieren",
+    "hizmetDili": "Servicesprache",
+    "tumDiller": "Alle Sprachen",
+    "dilNotu": "Die Sprachen werden von den Handwerkern selbst angegeben; ohne Angabe gilt Türkisch."
   },
   "ustaDetay": {
     "geri": "Zurück",

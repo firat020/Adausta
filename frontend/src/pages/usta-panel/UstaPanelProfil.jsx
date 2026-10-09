@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload, Globe, Clock, Wallet, Image as ImageIcon } from 'lucide-react'
 import { DILLER, ODEME_YONTEMLERI, GUNLER, VARSAYILAN_SAATLER } from '../../data/profilSecenekleri.js'
 import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, ustaPanelKapakYukle, ustaPanelKapakSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
@@ -610,7 +611,7 @@ export default function UstaPanelProfil() {
                 </div>
               </div>
             )}
-            <p className="text-xs text-gray-400">Kategori değişikliği için admin ile iletişime geçin.</p>
+            <p className="text-xs text-gray-400">Ek hizmet ekleyip fiyat ve uzmanlık bilgisi girmek için <Link to="/usta/panel/hizmetler" className="text-blue-600 hover:underline font-semibold">Hizmetlerim</Link> sayfasını kullan. Ana hizmet değişikliği için bizimle iletişime geç.</p>
           </div>
         </div>
       )}

@@ -76,6 +76,8 @@ export const ustaPanelIsTalepleri = (params) => api.get('/usta/is-talepleri', { 
 export const ustaPanelTalepGuncelle = (id, data) => api.put(`/usta/is-talepleri/${id}`, data);
 export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
+export const ustaHizmetlerGetir = () => api.get('/usta/hizmetlerim');
+export const ustaHizmetlerKaydet = (data) => api.put('/usta/hizmetlerim', data);
 export const ustaAyarlarGetir = () => api.get('/usta/ayarlar');
 export const ustaAyarlarKaydet = (bildirim) => api.put('/usta/ayarlar', { bildirim });
 export const ustaSifreDegistir = (data) => api.post('/usta/sifre-degistir', data);

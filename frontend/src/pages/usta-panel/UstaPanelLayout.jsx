@@ -18,6 +18,7 @@ const menuItems = [
   { to: '/usta/panel/belgeler',  icon: FileCheck2,     label: 'Belgelerim' },
   { to: '/usta/panel/magaza',    icon: ShoppingBag,    label: 'Mağaza' },
   { to: '/usta/panel/profil',    icon: User,           label: 'Profilim' },
+  { to: '/usta/panel/hizmetler', icon: Wrench,         label: 'Hizmetlerim' },
   { to: '/usta/panel/ayarlar',   icon: Settings,       label: 'Ayarlar' },
 ]
 

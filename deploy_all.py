@@ -278,8 +278,17 @@ def deploy_backend():
 
 # ── FRONTEND DEPLOY ────────────────────────────────────────────────────────
 def build_frontend():
-    print("  Frontend yeniden build ediliyor (npm run build) ...")
     frontend_dir = os.path.join(ROOT, 'frontend')
+    # Sitemap'i canli API verisiyle (usta profilleri, hizmet x sehir) yenile. Hata olursa
+    # mevcut sitemap.xml korunur ve deploy devam eder (script API'ye ulasamazsa dosyaya dokunmaz).
+    print("  Sitemap guncelleniyor (node scripts/generate-sitemap.mjs) ...")
+    sm = subprocess.run(
+        ['node', 'scripts/generate-sitemap.mjs'],
+        cwd=frontend_dir, capture_output=True, text=True, shell=True,
+        encoding='utf-8', errors='replace',
+    )
+    print("  " + (sm.stdout.strip() or sm.stderr.strip() or "(cikti yok)"))
+    print("  Frontend yeniden build ediliyor (npm run build) ...")
     result = subprocess.run(
         ['npm', 'run', 'build'],
         cwd=frontend_dir, capture_output=True, text=True, shell=True,

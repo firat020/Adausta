@@ -14,7 +14,7 @@ import { ustaSlugUrl } from '../data/hizmetler.js'
 const LABELS = {
   tr: {
     hakkinda: 'Hakkında', hizmetler: 'Hizmetler', vitrin: 'Vitrin', yorumlar: 'Yorumlar', bolge: 'Hizmet Bölgesi', bilgiler: 'İşletme Bilgileri',
-    kimdir: 'kimdir?', aciklamaYok: 'Usta henüz bir tanıtım yazısı eklemedi.', anaUzmanlik: 'Ana uzmanlık', ekHizmet: 'Ek hizmet',
+    kimdir: 'kimdir?', aciklamaYok: 'Usta henüz bir tanıtım yazısı eklemedi.', anaUzmanlik: 'Ana uzmanlık', ekHizmet: 'Ek hizmet', uzmanlik: 'Uzmanlık', fiyatYok: 'Fiyat için teklif alın',
     fiyatNotu: 'Fiyat için “Hemen Teklif Al” ile iş detayını gönderin; usta size özel fiyat verir.',
     onayli: 'Onaylı', belgeli: 'Belgeli', yeni: 'Yeni', oneCikan: 'Öne Çıkan', uyeSince: 'yılından beri üye', simdiAcik: 'Şu an açık', simdiKapali: 'Şu an kapalı',
     webSitesi: 'Web Sitesi', paylas: 'Paylaş', kopyalandi: 'Kopyalandı!', favori: 'Favori', favoride: 'Favoride',
@@ -23,7 +23,7 @@ const LABELS = {
   },
   en: {
     hakkinda: 'About', hizmetler: 'Services', vitrin: 'Gallery', yorumlar: 'Reviews', bolge: 'Service Area', bilgiler: 'Business Info',
-    kimdir: '— who we are', aciklamaYok: 'This professional has not added a description yet.', anaUzmanlik: 'Main expertise', ekHizmet: 'Additional service',
+    kimdir: '— who we are', aciklamaYok: 'This professional has not added a description yet.', anaUzmanlik: 'Main expertise', ekHizmet: 'Additional service', uzmanlik: 'Specialty', fiyatYok: 'Get a quote for pricing',
     fiyatNotu: 'For a price, send your job details with “Get a Quote”; the professional will quote you.',
     onayli: 'Verified', belgeli: 'Certified', yeni: 'New', oneCikan: 'Featured', uyeSince: 'member since', simdiAcik: 'Open now', simdiKapali: 'Closed now',
     webSitesi: 'Website', paylas: 'Share', kopyalandi: 'Copied!', favori: 'Favourite', favoride: 'Saved',
@@ -496,13 +496,21 @@ export default function UstaDetay() {
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
               {kategoriler.map((k, idx) => (
-                <div key={k.id ?? idx} className="flex items-center gap-3 border border-gray-100 rounded-xl px-4 py-3 bg-gray-50/60">
-                  <span className="text-xl">{k.ikon || '🔧'}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{katAd(k.ad)}</p>
-                    <p className="text-xs text-gray-400">{idx === 0 ? L.anaUzmanlik : L.ekHizmet}</p>
+                <div key={k.id ?? idx} className="flex items-start gap-3 border border-gray-100 rounded-xl px-4 py-3 bg-gray-50/60">
+                  <span className="text-xl mt-0.5">{k.ikon || '🔧'}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                      <span className="truncate">{katAd(k.ad)}</span>
+                      {k.uzmanlik && <Star size={13} className="text-amber-400 fill-amber-400 flex-shrink-0" title={L.uzmanlik} />}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${k.fiyat ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>{k.fiyat || L.fiyatYok}</p>
+                    {(k.uzmanlik || k.yedi_yirmi_dort) && (
+                      <div className="flex gap-1.5 mt-1.5">
+                        {k.uzmanlik && <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded">{L.uzmanlik}</span>}
+                        {k.yedi_yirmi_dort && <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded">7/24</span>}
+                      </div>
+                    )}
                   </div>
-                  {idx === 0 && <Star size={14} className="ml-auto text-amber-400 fill-amber-400 flex-shrink-0" />}
                 </div>
               ))}
             </div>

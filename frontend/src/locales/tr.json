@@ -132,7 +132,10 @@
     "tumSehirler": "Tüm Şehirler",
     "filtreleriTemizle": "Filtreleri temizle",
     "ustaBulunamadi": "Usta bulunamadı",
-    "farkliFiltre": "Farklı filtreler deneyin"
+    "farkliFiltre": "Farklı filtreler deneyin",
+    "hizmetDili": "Hizmet Dili",
+    "tumDiller": "Tüm Diller",
+    "dilNotu": "Diller ustalar tarafından profillerine eklenir; dil belirtmeyenler Türkçe kabul edilir."
   },
   "ustaDetay": {
     "geri": "Geri",

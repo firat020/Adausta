@@ -505,6 +505,91 @@ def kategorilerim(usta):
 
 
 # ──────────────────────────────────────────────────────────
+# Hizmetlerim: ustanın kendi hizmetlerini (ek kategoriler) yönetmesi + hizmet bazlı fiyat / uzmanlık / 7-24
+# Ana kategori değişmez (değişiklik için admin). Toplam hizmet sayısı MAX_TOPLAM_HIZMET ile sınırlı.
+# ──────────────────────────────────────────────────────────
+def _hizmetlerim_cevap(usta):
+    ek = usta.ekstra()
+    kayitlar = []
+    if usta.kategori:
+        kayitlar.append((usta.kategori, True))
+    kayitlar += [(k, False) for k in usta.ek_kategoriler if k.id != usta.kategori_id]
+    aktif_promo = {p['kategori_id'] for p in usta.aktif_promosyonlar() if p['tur'] == 'hizmet'}
+    return {
+        'hizmetler': [dict({'id': k.id, 'ad': k.ad, 'ikon': k.ikon, 'grup': k.grup, 'ana': ana,
+                            'promosyon_aktif': k.id in aktif_promo}, **Usta._hizmet_detay_ek(ek, k.id)) for k, ana in kayitlar],
+        'limit': Usta.MAX_TOPLAM_HIZMET, 'max_uzmanlik': Usta.MAX_UZMANLIK,
+    }
+
+
+@usta_panel_bp.route('/hizmetlerim', methods=['GET'])
+@usta_gerekli
+def hizmetlerim_getir(usta):
+    return jsonify(_hizmetlerim_cevap(usta))
+
+
+@usta_panel_bp.route('/hizmetlerim', methods=['PUT'])
+@usta_gerekli
+def hizmetlerim_kaydet(usta):
+    data = request.get_json(silent=True) or {}
+    istenen = data.get('ek_kategori_ids')
+    detaylar = data.get('detaylar') or {}
+    if not isinstance(istenen, list) or not isinstance(detaylar, dict):
+        return jsonify({'hata': 'Geçersiz istek'}), 400
+    try:
+        istenen_idler = []
+        for i in istenen:
+            i = int(i)
+            if i != usta.kategori_id and i not in istenen_idler:
+                istenen_idler.append(i)
+    except (TypeError, ValueError):
+        return jsonify({'hata': 'Geçersiz hizmet'}), 400
+
+    kategoriler = Kategori.query.filter(Kategori.id.in_(istenen_idler), Kategori.aktif == True).all() if istenen_idler else []  # noqa: E712
+    if len(kategoriler) != len(istenen_idler):
+        return jsonify({'hata': 'Seçilen hizmetlerden biri bulunamadı'}), 400
+
+    mevcut_ek = {k.id for k in usta.ek_kategoriler if k.id != usta.kategori_id}
+    toplam = 1 + len(istenen_idler)
+    eski_toplam = 1 + len(mevcut_ek)
+    # Limit yeni eklemeleri sınırlar; limitin üstünde hizmeti olan eski ustalar mevcut sayıları kadar tutabilir
+    if toplam > max(Usta.MAX_TOPLAM_HIZMET, eski_toplam):
+        return jsonify({'hata': f'En fazla {Usta.MAX_TOPLAM_HIZMET} hizmet ekleyebilirsin (ana hizmet dahil)'}), 400
+
+    # Aktif öne çıkarması (ödenmiş) olan hizmet, süre bitmeden kaldırılamaz
+    kaldirilan = mevcut_ek - set(istenen_idler)
+    kilitli = [p['kategori_id'] for p in usta.aktif_promosyonlar() if p['tur'] == 'hizmet' and p['kategori_id'] in kaldirilan]
+    if kilitli:
+        ad = next((k.ad for k in usta.ek_kategoriler if k.id == kilitli[0]), 'Bu hizmet')
+        return jsonify({'hata': f'"{ad}" için aktif öne çıkarman var; süresi bitince kaldırabilirsin'}), 400
+
+    gecerli_idler = {usta.kategori_id} | set(istenen_idler)
+    temiz = {}
+    uzmanlik_sayisi = 0
+    for kid_str, d in detaylar.items():
+        try:
+            kid = int(kid_str)
+        except (TypeError, ValueError):
+            continue
+        if kid not in gecerli_idler or not isinstance(d, dict):
+            continue
+        fiyat = ' '.join(str(d.get('fiyat') or '').split())[:60]
+        uzmanlik = bool(d.get('uzmanlik'))
+        if uzmanlik:
+            uzmanlik_sayisi += 1
+        temiz[str(kid)] = {'fiyat': fiyat, 'uzmanlik': uzmanlik, 'yedi_yirmi_dort': bool(d.get('yedi_yirmi_dort'))}
+    if uzmanlik_sayisi > Usta.MAX_UZMANLIK:
+        return jsonify({'hata': f'En fazla {Usta.MAX_UZMANLIK} hizmeti "Uzmanlık" olarak işaretleyebilirsin'}), 400
+
+    usta.ek_kategoriler = kategoriler
+    usta.ekstra_guncelle(hizmetler=temiz)
+    db.session.commit()
+    cevap = _hizmetlerim_cevap(usta)
+    cevap['mesaj'] = 'Hizmetlerin güncellendi'
+    return jsonify(cevap)
+
+
+# ──────────────────────────────────────────────────────────
 # İş talebi okundu işaretle
 # ──────────────────────────────────────────────────────────
 @usta_panel_bp.route('/is-talepleri/<int:tid>/okundu', methods=['POST'])

@@ -6,6 +6,7 @@ import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaSlugUrl } from '../data/hizmetler.js'
 import API from '../config.js'
 import { gosterimEkle } from '../utils/gosterim.js'
+import { DILLER } from '../data/profilSecenekleri.js'
 
 export default function UstaKart({ usta }) {
   const navigate = useNavigate()
@@ -64,6 +65,13 @@ export default function UstaKart({ usta }) {
             </div>
           )}
         </div>
+
+        {/* Konuşulan diller */}
+        {usta.diller?.length > 0 && (
+          <div className="flex items-center gap-1 mb-2 -mt-1" title={usta.diller.map(k => DILLER.find(d => d.kod === k)?.ad_en).filter(Boolean).join(', ')}>
+            {usta.diller.slice(0, 5).map(k => <span key={k} className="text-sm leading-none">{DILLER.find(d => d.kod === k)?.bayrak}</span>)}
+          </div>
+        )}
 
         {/* Puan */}
         <div className="flex items-center gap-1.5 mb-3">

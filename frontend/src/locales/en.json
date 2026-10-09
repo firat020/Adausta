@@ -132,7 +132,10 @@
     "tumSehirler": "All Cities",
     "filtreleriTemizle": "Clear filters",
     "ustaBulunamadi": "No craftsmen found",
-    "farkliFiltre": "Try different filters"
+    "farkliFiltre": "Try different filters",
+    "hizmetDili": "Service Language",
+    "tumDiller": "All Languages",
+    "dilNotu": "Languages are added by each professional; those who list none are treated as Turkish."
   },
   "ustaDetay": {
     "geri": "Back",

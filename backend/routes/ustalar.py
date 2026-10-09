@@ -6,6 +6,7 @@ from whatsapp import admin_whatsapp_gonder
 from extensions import limiter
 from promosyon import referans_kaydet
 from datetime import datetime, timedelta
+from sqlalchemy.orm import selectinload
 import os, uuid, random, hashlib
 
 ustalar_bp = Blueprint('ustalar', __name__)
@@ -22,6 +23,7 @@ def listele():
     sehir_ad    = request.args.get('sehir', '')
     ilce_id     = request.args.get('ilce_id', type=int)
     arama       = request.args.get('arama', '')
+    dil         = request.args.get('dil', '').strip().lower()
     lat  = request.args.get('lat', type=float)
     lng  = request.args.get('lng', type=float)
     yakin = request.args.get('yakin', type=int, default=0)
@@ -63,17 +65,32 @@ def listele():
                 Kategori.ad.ilike(f'%{kelime}%')
             )
 
-    ustalar = q.all()
+    # yorum/fotoğraf/ek kategori ilişkileri toplu yüklenir (sıralama puanı ve to_dict her usta için bunlara bakar)
+    ustalar = q.options(selectinload(Usta.yorumlar), selectinload(Usta.fotograflar), selectinload(Usta.ek_kategoriler)).all()
+
+    # Hizmet dili filtresi: usta profiline eklenen diller. Dil bilgisi girmemiş ustalar Türkçe kabul edilir.
+    if dil:
+        if dil not in Usta.EKSTRA_DILLER:
+            return jsonify({'hata': 'Geçersiz dil'}), 400
+        ustalar = [u for u in ustalar if (dil in u.ekstra().get('diller', [])) or (dil == 'tr' and not u.ekstra().get('diller'))]
+
+    # Öne çıkarma için ilgili kategori: açık kategori filtresi ya da arama kelimesi tam bir kategori adıysa o kategori
+    promo_kat = kategori_id
+    if not promo_kat and arama:
+        k = Kategori.query.filter(db.func.lower(Kategori.ad) == arama.strip().lower()).first()
+        promo_kat = k.id if k else None
 
     # En yakın usta filtresi
     if lat and lng and yakin:
         ustalar = [u for u in ustalar if u.mesafe_hesapla(lat, lng) is not None and u.mesafe_hesapla(lat, lng) <= yakin]
-        ustalar.sort(key=lambda u: u.mesafe_hesapla(lat, lng))
+        ustalar.sort(key=lambda u: (0 if u.oncelikli_mi(promo_kat) else 1, u.mesafe_hesapla(lat, lng)))
     elif lat and lng:
-        ustalar = sorted(ustalar, key=lambda u: (u.mesafe_hesapla(lat, lng) or 9999))
+        # Konuma göre: önce (satın alınmış) öne çıkarılanlar, sonra mesafe
+        ustalar = sorted(ustalar, key=lambda u: (0 if u.oncelikli_mi(promo_kat) else 1, u.mesafe_hesapla(lat, lng) or 9999))
     else:
         # Konum yoksa: öne çıkarılan / ücretli / yorumlu / dolu profiller üstte (kararlı sıralama)
-        ustalar = sorted(ustalar, key=lambda u: (-u.siralama_puani(), u.id))
+        vitrin = request.args.get('vitrin', type=int, default=0) == 1
+        ustalar = sorted(ustalar, key=lambda u: (-u.siralama_puani(promo_kat, vitrin), u.id))
 
     toplam = len(ustalar)
     baslangic = (sayfa - 1) * limit

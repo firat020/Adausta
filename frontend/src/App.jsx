@@ -90,6 +90,7 @@ const UstaPanelBelgeler = lazy(() => import('./pages/usta-panel/UstaPanelBelgele
 const UstaPanelProfil = lazy(() => import('./pages/usta-panel/UstaPanelProfil'))
 const UstaPanelAbonelik = lazy(() => import('./pages/usta-panel/UstaPanelAbonelik'))
 const UstaPanelAyarlar = lazy(() => import('./pages/usta-panel/UstaPanelAyarlar'))
+const UstaPanelHizmetler = lazy(() => import('./pages/usta-panel/UstaPanelHizmetler'))
 const UstaPanelMagaza = lazy(() => import('./pages/usta-panel/UstaPanelMagaza'))
 // Şirket Paneli
 const SirketGiris = lazy(() => import('./pages/sirket-panel/SirketGiris'))
@@ -259,6 +260,7 @@ export default function App() {
         <Route path="panel/profil" element={<UstaPanelProfil />} />
         <Route path="panel/abonelik" element={<UstaPanelAbonelik />} />
         <Route path="panel/ayarlar" element={<UstaPanelAyarlar />} />
+        <Route path="panel/hizmetler" element={<UstaPanelHizmetler />} />
       </Route>
 
       {/* Şirket Paneli */}

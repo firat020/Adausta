@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, X, ExternalLink, MapPin, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { DILLER } from '../data/profilSecenekleri.js'
 import { ustaListele, kategorileriGetir, sehirleriGetir, reklamlariGetir, reklamTikla } from '../api'
 import UstaKart from '../components/UstaKart'
 import SEO from '../components/SEO'
@@ -116,7 +117,7 @@ function ReklamKutusu({ reklam }) {
 }
 
 export default function UstaListesi() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [searchParams] = useSearchParams()
   const [ustalar, setUstalar] = useState([])
   const [kategoriler, setKategoriler] = useState([])
@@ -129,6 +130,7 @@ export default function UstaListesi() {
     kategori_id: searchParams.get('kategori_id') || '',
     sehir_id: searchParams.get('sehir_id') || '',
     arama: searchParams.get('arama') || '',
+    dil: DILLER.some(d => d.kod === searchParams.get('dil')) ? searchParams.get('dil') : '',
   })
   const [reklamlar, setReklamlar] = useState({ sol: [], sag: [] })
   const [konum, setKonum] = useState(null) // { lat, lng }
@@ -179,6 +181,7 @@ export default function UstaListesi() {
     if (filtreler.kategori_id) params.kategori_id = filtreler.kategori_id
     if (filtreler.sehir_id) params.sehir_id = filtreler.sehir_id
     if (filtreler.arama) params.arama = filtreler.arama
+    if (filtreler.dil) params.dil = filtreler.dil
     if (konum) { params.lat = konum.lat; params.lng = konum.lng }
     ustaListele(params)
       .then(r => { setUstalar(r.data.ustalar || []); setToplam(r.data.toplam || 0) })
@@ -186,7 +189,7 @@ export default function UstaListesi() {
       .finally(() => setYukleniyor(false))
   }, [filtreler, konum])
 
-  const temizle = () => setFiltreler(f => ({ ...f, kategori_id: '', sehir_id: '' }))
+  const temizle = () => setFiltreler(f => ({ ...f, kategori_id: '', sehir_id: '', dil: '' }))
 
   const aramaTerimi = searchParams.get('arama') || ''
   const sehirTerimi = searchParams.get('sehir') || ''
@@ -305,7 +308,17 @@ export default function UstaListesi() {
               {sehirler.map(s => <option key={s.id} value={s.id}>{s.ad}</option>)}
             </select>
           </div>
-          {(filtreler.kategori_id || filtreler.sehir_id) && (
+          <div className="md:col-span-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaListesi.hizmetDili')}</label>
+            <select value={filtreler.dil}
+              onChange={e => setFiltreler(f => ({ ...f, dil: e.target.value }))}
+              className="w-full md:w-1/2 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+              <option value="">{t('ustaListesi.tumDiller')}</option>
+              {DILLER.map(d => <option key={d.kod} value={d.kod}>{d.bayrak} {i18n.language === 'tr' ? d.ad : d.ad_en}</option>)}
+            </select>
+            <p className="text-[11px] text-gray-400 mt-1">{t('ustaListesi.dilNotu')}</p>
+          </div>
+          {(filtreler.kategori_id || filtreler.sehir_id || filtreler.dil) && (
             <div className="md:col-span-2 flex justify-end">
               <button onClick={temizle}
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors">

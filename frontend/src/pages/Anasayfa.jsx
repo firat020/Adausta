@@ -55,7 +55,7 @@ export default function Anasayfa() {
     Promise.all([
       kategorileriGetir(),
       sehirleriGetir(),
-      ustaListele({ limit: 3 }),
+      ustaListele({ limit: 3, vitrin: 1 }),
     ]).then(([katRes, sehRes, ustaRes]) => {
       setKategoriler(katRes.data.kategoriler || [])
       setSehirler(sehRes.data.sehirler || [])
@@ -393,6 +393,11 @@ export default function Anasayfa() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-base">{u.ad_soyad}</h3>
+                      {u.one_cikan && (
+                        <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-md">
+                          <Star size={9} className="fill-violet-500 text-violet-500" /> Öne Çıkan
+                        </span>
+                      )}
                       <p className="text-blue-600 text-sm font-medium mt-0.5">{u.kategori}</p>
                       <div className="flex items-center gap-1 mt-1">
                         <MapPin size={12} className="text-gray-400 flex-shrink-0" />

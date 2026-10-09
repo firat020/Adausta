@@ -183,3 +183,13 @@ Her grup kendi içinde birbirine link verir, dışarıya vermez.
 - NEVER omit code. No "// ... rest of code" placeholders.
 - Always provide full file content for new files or major changes.
 - Ensure all imports are present and correct.
+
+## Usta Paneli / Gelir Özellikleri (Ekim 2026)
+- **Öne çıkarma ürünleri:** `backend/promosyon.py` → `PROMO_FIYATLARI` (USD; profil / hizmet / vitrin × 7-14-30 gün). Fiyat değiştirmek için sadece bu sözlük. Satın alma: `POST /api/odeme/cardplus/promosyon/baslat`. Etki: `Usta.siralama_puani()` + `oncelikli_mi()` (liste sıralaması, konumlu listede de geçerli).
+- **Referans:** kod `referans_kodu(usta_id)`; kayıt linki `/usta-kayit?ref=KOD`; iki taraf da ücretli abone olunca +`REFERANS_BONUS_GUN` gün (tek seferlik).
+- **Zengin profil verisi** `ustalar.profil_ekstra` (JSON metin): kapak, diller, saatler, ödeme, hizmet detayları, bildirim tercihi, öne çıkarma bitişleri. Yeni alan için migrasyon gerekmez.
+- **Yeni tablolar** (`promosyon_satislari`, `referanslar`, `analitik_gosterim`) uygulama açılışında `db.create_all()` ile kendiliğinden oluşur. Mevcut tabloya SÜTUN eklemek gerekirse ayrı `migrate_*.py` yazılır.
+- **Ödeme:** abonelik ödemesi başlatılırken seçilen plan `Odeme.reference_type='abonelik_plan'`, `reference_id=plan.id` olarak saklanır; `_aktiflestir_abonelik` bu planı kullanır ve süresi dolmamış aboneliği UZATIR (kalan gün kaybolmaz).
+- **Sitemap:** `frontend/scripts/generate-sitemap.mjs` canlı API'den üretir (`deploy_all.py` frontend build'inden önce çalıştırır; API yoksa dosyaya dokunmaz). Elle: `cd frontend; node scripts/generate-sitemap.mjs`.
+- **Dil:** URL'de dil yok (i18n istemci tarafı), bu yüzden `hreflang` EKLENMEDİ (yanlış sinyal olurdu). `<html lang>` dil değişince güncellenir. Dil filtresi: `/api/ustalar/?dil=en` (dil belirtmeyen usta Türkçe sayılır).
+- **Gösterim sayacı:** `UstaKart` görünür olunca `utils/gosterim.js` ile toplu `POST /api/analitik/gosterim` (saatte bir kez/usta, günlük sayaç satırı).
