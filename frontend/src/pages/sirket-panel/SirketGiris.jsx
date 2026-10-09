@@ -5,7 +5,7 @@ import { giris, benimBilgilerim } from '../../api'
 
 const OZELLIKLER = [
   { ikon: ClipboardList, baslik: 'Talep Yönetimi',    aciklama: 'Gelen iş taleplerini takip et' },
-  { ikon: Users,         baslik: 'Müşteri Erişimi',    aciklama: 'Binlerce müşteriye ulaş' },
+  { ikon: Users,         baslik: 'Müşteri Erişimi',    aciklama: 'Müşterilere ulaş' },
   { ikon: Building2,     baslik: 'Kurumsal Profil',    aciklama: 'Şirketini profesyonel sergile' },
   { ikon: Globe,         baslik: 'KKTC Geneli',        aciklama: 'Tüm adada görünür ol' },
 ]
@@ -73,7 +73,7 @@ export default function SirketGiris() {
             </span>
           </h1>
           <p className="text-indigo-200/70 text-sm leading-relaxed max-w-sm">
-            Kurumsal profilinizi oluşturun, KKTC genelinde binlerce müşteriye ulaşın.
+            Kurumsal profilinizi oluşturun, KKTC genelinde müşterilere ulaşın.
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">
             {OZELLIKLER.map(({ ikon: Icon, baslik, aciklama }) => (

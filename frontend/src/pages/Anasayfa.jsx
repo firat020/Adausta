@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { kategorileriGetir, ustaListele, sehirleriGetir } from '../api'
+import { kategorileriGetir, ustaListele, sehirleriGetir, sonYorumlariGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
@@ -24,12 +24,6 @@ const HIZLI_KATEGORILER = [
   { key: 'ilaclama',  ikon: <Bug size={15} />,            arama: 'Böcek İlaçlama' },
 ]
 
-const YORUMLAR = [
-  { ad: 'Ayşe K.',    sehir: 'Girne',       puan: 5, yorum: 'Elektrikçiyi çok hızlı buldum, işini düzgün yaptı. Kesinlikle tavsiye ederim.', avatar: 'A' },
-  { ad: 'Mehmet T.',  sehir: 'Lefkoşa',     puan: 5, yorum: 'Boyacı ustası harika iş çıkardı. Fiyat da uygundu, çok memnun kaldım.', avatar: 'M' },
-  { ad: 'Zeynep S.',  sehir: 'Gazimağusa',  puan: 4, yorum: 'Tesisatçı aynı gün geldi, sorunu hemen çözdü. Teşekkürler AdaUsta!', avatar: 'Z' },
-]
-
 const AVATAR_RENK = ['bg-blue-600', 'bg-sky-500', 'bg-cyan-600', 'bg-indigo-600', 'bg-blue-800']
 
 const OZELLIKLER_IKONLAR = [
@@ -44,6 +38,7 @@ export default function Anasayfa() {
   const [kategoriler, setKategoriler] = useState([])
   const [sehirler, setSehirler]       = useState([])
   const [enIyiUstalar, setEnIyiUstalar] = useState([])
+  const [yorumlar, setYorumlar]       = useState([])
   const [arama, setArama]             = useState('')
   const [secilenSehirId, setSecilenSehirId] = useState('')
   const [oneriAcik, setOneriAcik]     = useState(false)
@@ -66,6 +61,7 @@ export default function Anasayfa() {
       setEnIyiUstalar(ustaRes.data.ustalar || [])
     }).catch(() => {})
       .finally(() => setYukleniyor(false))
+    sonYorumlariGetir(3).then(r => setYorumlar(r.data.yorumlar || [])).catch(() => {})
   }, [])
 
   const aramayaGit = (e) => {
@@ -314,6 +310,7 @@ export default function Anasayfa() {
       {/* ══════════════════════════════════════════
           MÜŞTERİ YORUMLARI
       ══════════════════════════════════════════ */}
+      {yorumlar.length > 0 && (
       <section className="bg-blue-50 border-y border-blue-100 py-14 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
@@ -324,19 +321,22 @@ export default function Anasayfa() {
             </div>
             <p className="text-gray-500 text-sm mt-1">{t('yorumlar.alt')}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {YORUMLAR.map((y, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100">
+          <div className={`grid grid-cols-1 gap-6 ${yorumlar.length === 1 ? 'max-w-md mx-auto' : yorumlar.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
+            {yorumlar.map((y, i) => (
+              <div key={y.id} onClick={() => navigate(ustaSlugUrl(y.usta))}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100 cursor-pointer hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-full ${AVATAR_RENK[i % AVATAR_RENK.length]} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-                    {y.avatar}
+                    {y.ad.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{y.ad}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <MapPin size={11} className="text-gray-400" />
-                      <span className="text-xs text-gray-400">{y.sehir}</span>
-                    </div>
+                    {y.sehir && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <MapPin size={11} className="text-gray-400" />
+                        <span className="text-xs text-gray-400">{y.sehir}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="ml-auto flex">
                     {Array.from({ length: 5 }, (_, s) => (
@@ -346,11 +346,13 @@ export default function Anasayfa() {
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm leading-relaxed">"{y.yorum}"</p>
+                <p className="text-xs text-blue-600 font-semibold mt-3">{y.usta.ad_soyad} · {y.usta.kategori}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════
           EN İYİ USTALARIMIZ

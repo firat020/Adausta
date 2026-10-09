@@ -219,6 +219,33 @@ class Usta(db.Model):
         yuzde = round(tamam_sayisi / len(maddeler) * 100)
         return {'yuzde': yuzde, 'maddeler': maddeler}
 
+    def siralama_puani(self):
+        """Listelerde 'en iyi' sıralaması: öne çıkarma > ücretli plan > yorum > profil doluluğu.
+        Ağır sorgu yapmaz (liste başına yüzlerce usta için çağrılır)."""
+        puan = 0.0
+        simdi = datetime.utcnow()
+        ek = self.ekstra()
+        one_cikma = ek.get('one_cikma_bitis')
+        if one_cikma:
+            try:
+                if datetime.fromisoformat(one_cikma) > simdi:
+                    puan += 1000
+            except ValueError:
+                pass
+        if self.plan and self.plan != 'ucretsiz' and (not self.plan_bitis or self.plan_bitis > simdi):
+            puan += 100
+        yorum_sayisi = len(self.yorumlar)
+        puan += min(yorum_sayisi, 20) * 5
+        if yorum_sayisi:
+            puan += self.ortalama_puan() * 4
+        puan += 6 if self.logo else 0
+        puan += min(len(self.fotograflar), 6) * 1.5
+        puan += 3 if self.aciklama and len(self.aciklama.strip()) >= 40 else 0
+        puan += 2 if ek.get('diller') else 0
+        puan += 2 if (ek.get('calisma_saatleri') or ek.get('yedi_yirmi_dort')) else 0
+        puan += 1 if self.onaylanmis else 0
+        return puan
+
     def ortalama_puan(self):
         if not self.yorumlar:
             return 0

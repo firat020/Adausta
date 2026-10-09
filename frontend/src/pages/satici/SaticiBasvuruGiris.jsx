@@ -41,7 +41,7 @@ export default function SaticiBasvuruGiris() {
             </div>
           </div>
           <p className="text-blue-100 text-base sm:text-lg max-w-xl mb-8 leading-relaxed">
-            KKTC'nin büyüyen e-ticaret platformunda mağazanızı açın. Binlerce müşteriye ulaşın, güvenli altyapımızla satış yapın.
+            KKTC'nin büyüyen e-ticaret platformunda mağazanızı açın. Müşterilere ulaşın, güvenli altyapımızla satış yapın.
           </p>
           <ul className="space-y-2.5 mb-10">
             {FAYDALAR.map((f, i) => (

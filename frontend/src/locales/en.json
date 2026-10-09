@@ -22,7 +22,7 @@
     "guvenilir": "Trusted Craftsmen",
     "guvenilirAlt": "Identity-verified profiles",
     "hizli": "Fast Response",
-    "hizliAlt": "Find a pro in avg. 15 min",
+    "hizliAlt": "Your request goes straight to the pro",
     "ucretsiz": "Free",
     "ucretsizAlt": "Platform is free to use"
   },
@@ -111,7 +111,7 @@
   },
   "yorumlar": {
     "baslik": "Customer Reviews",
-    "alt": "Thousands of happy customers across North Cyprus"
+    "alt": "Real reviews from our customers"
   },
   "heroTaglar": {
     "elektrikci": "Electrician",

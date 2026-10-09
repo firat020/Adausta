@@ -22,7 +22,7 @@
     "guvenilir": "Güvenilir Ustalar",
     "guvenilirAlt": "Kimlik doğrulamalı profiller",
     "hizli": "Hızlı Yanıt",
-    "hizliAlt": "Ort. 15 dakikada usta bulun",
+    "hizliAlt": "Talebiniz doğrudan ustaya iletilir",
     "ucretsiz": "Ücretsiz",
     "ucretsizAlt": "Platform kullanımı ücretsiz"
   },
@@ -111,7 +111,7 @@
   },
   "yorumlar": {
     "baslik": "Müşteri Yorumları",
-    "alt": "KKTC genelinde binlerce mutlu müşteri"
+    "alt": "Müşterilerimizin gerçek yorumları"
   },
   "heroTaglar": {
     "elektrikci": "Elektrikçi",

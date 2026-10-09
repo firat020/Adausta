@@ -70,6 +70,9 @@ def listele():
         ustalar.sort(key=lambda u: u.mesafe_hesapla(lat, lng))
     elif lat and lng:
         ustalar = sorted(ustalar, key=lambda u: (u.mesafe_hesapla(lat, lng) or 9999))
+    else:
+        # Konum yoksa: öne çıkarılan / ücretli / yorumlu / dolu profiller üstte (kararlı sıralama)
+        ustalar = sorted(ustalar, key=lambda u: (-u.siralama_puani(), u.id))
 
     toplam = len(ustalar)
     baslangic = (sayfa - 1) * limit
@@ -81,6 +84,28 @@ def listele():
         'sayfa': sayfa,
         'toplam_sayfa': (toplam + limit - 1) // limit
     })
+
+@ustalar_bp.route('/son-yorumlar', methods=['GET'])
+def son_yorumlar():
+    """Ana sayfa için: gerçek, onaylı ve anlamlı yorumlar (uydurma yorum gösterilmez)."""
+    limit = min(request.args.get('limit', 3, type=int), 6)
+    adaylar = Yorum.query.filter(Yorum.onaylanmis == True, Yorum.puan >= 4)        .order_by(Yorum.tarih.desc()).limit(60).all()
+    sonuc = []
+    for y in adaylar:
+        if not y.yorum or len(y.yorum.strip()) < 20 or not y.usta or not y.usta.aktif:
+            continue
+        parcalar = (y.musteri_adi or '').split()
+        kisa_ad = parcalar[0] + (f' {parcalar[-1][0]}.' if len(parcalar) > 1 else '') if parcalar else 'Müşteri'
+        sonuc.append({
+            'id': y.id, 'ad': kisa_ad, 'puan': y.puan, 'yorum': y.yorum.strip()[:220],
+            'sehir': y.usta.sehir.ad if y.usta.sehir else '',
+            'usta': {'id': y.usta.id, 'ad_soyad': f"{y.usta.ad} {y.usta.soyad}".strip(), 'kategori': y.usta.kategori.ad if y.usta.kategori else '',
+                     'ad': y.usta.ad, 'soyad': y.usta.soyad, 'sehir': y.usta.sehir.ad if y.usta.sehir else ''},
+        })
+        if len(sonuc) >= limit:
+            break
+    return jsonify({'yorumlar': sonuc})
+
 
 @ustalar_bp.route('/<int:id>', methods=['GET'])
 def detay(id):

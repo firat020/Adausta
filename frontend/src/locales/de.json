@@ -22,7 +22,7 @@
     "guvenilir": "Vertrauenswürdige Handwerker",
     "guvenilirAlt": "Identitätsgeprüfte Profile",
     "hizli": "Schnelle Antwort",
-    "hizliAlt": "Handwerker in Ø 15 Min. finden",
+    "hizliAlt": "Ihre Anfrage geht direkt an den Handwerker",
     "ucretsiz": "Kostenlos",
     "ucretsizAlt": "Plattformnutzung ist kostenlos"
   },
@@ -111,7 +111,7 @@
   },
   "yorumlar": {
     "baslik": "Kundenbewertungen",
-    "alt": "Tausende zufriedene Kunden in ganz Nordzypern"
+    "alt": "Echte Bewertungen unserer Kunden"
   },
   "heroTaglar": {
     "elektrikci": "Elektriker",

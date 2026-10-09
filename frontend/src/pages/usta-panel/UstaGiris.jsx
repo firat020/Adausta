@@ -11,7 +11,7 @@ const OZELLIKLER = [
 ]
 
 const GUVEN = [
-  { ikon: Users2,    satir1: 'Binlerce',       satir2: 'memnun müşteri' },
+  { ikon: Users2,    satir1: 'Gerçek',        satir2: 'müşteri talepleri' },
   { ikon: ShieldCheck, satir1: 'Güvenilir',    satir2: 'platform' },
   { ikon: BarChart3, satir1: 'Daha fazla iş,', satir2: 'daha büyük fırsatlar' },
 ]
