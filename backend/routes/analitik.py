@@ -8,12 +8,14 @@ analitik_bp = Blueprint('analitik', __name__)
 
 @analitik_bp.route('/iletisim', methods=['POST'])
 def iletisim_log():
-    """Kullanıcı bir usta ile iletişime geçince çağrılır (ara / whatsapp / goruntule / teklif)."""
+    """Kullanıcı bir usta ile iletişime geçince çağrılır (ara / whatsapp / goruntule / teklif / favori / paylas / web_sitesi)."""
     data = request.get_json(silent=True) or {}
     usta_id = data.get('usta_id')
     tur = data.get('tur', 'goruntule')
-    if tur not in ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas'):
+    if tur not in ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas', 'web_sitesi'):
         tur = 'goruntule'
+    # Ziyaretçinin arayüz dili — opsiyonel, gelmezse None kalır (eski çağrılar da çalışır)
+    dil = (data.get('dil') or '').strip().lower()[:5] or None
 
     if not usta_id:
         return jsonify({'hata': 'usta_id gerekli'}), 400
@@ -28,6 +30,7 @@ def iletisim_log():
         ip=request.remote_addr or '',
         kategori_id=usta.kategori_id,
         sehir=usta.sehir.ad if usta.sehir else '',
+        dil=dil,
     )
     db.session.add(log)
     db.session.commit()

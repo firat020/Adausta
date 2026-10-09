@@ -204,17 +204,23 @@ class Usta(db.Model):
 
     def profil_tamamlama(self):
         ek = self.ekstra()
+        # SoliHoli kıyaslaması — Faz 2 Görev 6: her madde artık hangi panel sayfasında
+        # tamamlanacağını belirten bir 'link' taşır (frontend "Düzenle →" linki için kullanır).
+        belge_onayli = UstaBelge.query.filter_by(usta_id=self.id, durum='onaylandi').count() > 0
         maddeler = [
-            {'anahtar': 'foto', 'baslik': 'Profil fotoğrafı ekleyin', 'tamam': len(self.fotograflar) > 0},
-            {'anahtar': 'aciklama', 'baslik': 'Hakkınızda açıklama yazın (en az 20 karakter)', 'tamam': bool(self.aciklama and len(self.aciklama.strip()) >= 20)},
-            {'anahtar': 'deneyim', 'baslik': 'Deneyim yılınızı belirtin', 'tamam': (self.deneyim_yil or 0) > 0},
-            {'anahtar': 'whatsapp', 'baslik': 'WhatsApp numarası ekleyin', 'tamam': bool(self.whatsapp)},
-            {'anahtar': 'ilce', 'baslik': 'İlçe/bölge bilginizi ekleyin', 'tamam': self.ilce_id is not None},
-            {'anahtar': 'konum', 'baslik': 'Haritada konumunuzu işaretleyin', 'tamam': self.lat is not None and self.lng is not None},
-            {'anahtar': 'logo', 'baslik': 'Logo veya profil görseli ekleyin', 'tamam': bool(self.logo)},
-            {'anahtar': 'diller', 'baslik': 'Konuştuğunuz dilleri seçin', 'tamam': bool(ek.get('diller'))},
-            {'anahtar': 'saatler', 'baslik': 'Çalışma saatlerinizi girin', 'tamam': bool(ek.get('calisma_saatleri') or ek.get('yedi_yirmi_dort'))},
-            {'anahtar': 'fiyat', 'baslik': 'Hizmetleriniz için fiyat bilgisi ekleyin', 'tamam': any((d or {}).get('fiyat') for d in (ek.get('hizmetler') or {}).values())},
+            {'anahtar': 'foto', 'baslik': 'En az 1 vitrin fotoğrafı ekleyin', 'tamam': len(self.fotograflar) > 0, 'link': '/usta/panel/profil'},
+            {'anahtar': 'aciklama', 'baslik': 'Hakkınızda açıklama yazın (en az 20 karakter)', 'tamam': bool(self.aciklama and len(self.aciklama.strip()) >= 20), 'link': '/usta/panel/profil'},
+            {'anahtar': 'deneyim', 'baslik': 'Deneyim yılınızı belirtin', 'tamam': (self.deneyim_yil or 0) > 0, 'link': '/usta/panel/profil'},
+            {'anahtar': 'whatsapp', 'baslik': 'WhatsApp numarası ekleyin', 'tamam': bool(self.whatsapp), 'link': '/usta/panel/profil'},
+            {'anahtar': 'ilce', 'baslik': 'İlçe/bölge bilginizi ekleyin', 'tamam': self.ilce_id is not None, 'link': '/usta/panel/profil'},
+            {'anahtar': 'konum', 'baslik': 'Haritada konumunuzu işaretleyin', 'tamam': self.lat is not None and self.lng is not None, 'link': '/usta/panel/profil'},
+            {'anahtar': 'logo', 'baslik': 'Logo veya profil görseli ekleyin', 'tamam': bool(self.logo), 'link': '/usta/panel/profil'},
+            {'anahtar': 'diller', 'baslik': 'Konuştuğunuz dilleri seçin', 'tamam': bool(ek.get('diller')), 'link': '/usta/panel/profil'},
+            {'anahtar': 'saatler', 'baslik': 'Çalışma saatlerinizi girin', 'tamam': bool(ek.get('calisma_saatleri') or ek.get('yedi_yirmi_dort')), 'link': '/usta/panel/profil'},
+            {'anahtar': 'odeme', 'baslik': 'Kabul ettiğiniz ödeme yöntemlerini seçin', 'tamam': bool(ek.get('odeme_yontemleri')), 'link': '/usta/panel/profil'},
+            {'anahtar': 'fiyat', 'baslik': 'Hizmetleriniz için fiyat bilgisi ekleyin', 'tamam': any((d or {}).get('fiyat') for d in (ek.get('hizmetler') or {}).values()), 'link': '/usta/panel/hizmetler'},
+            {'anahtar': 'ek_hizmet', 'baslik': 'Ek hizmet ekleyin, daha çok müşteriye görünün', 'tamam': len(self.ek_kategoriler) > 0, 'link': '/usta/panel/hizmetler'},
+            {'anahtar': 'belge', 'baslik': 'Kimlik/ustalık belgenizi yükleyip onaylatın', 'tamam': belge_onayli, 'link': '/usta/panel/belgeler'},
         ]
         tamam_sayisi = sum(1 for m in maddeler if m['tamam'])
         yuzde = round(tamam_sayisi / len(maddeler) * 100)
@@ -251,7 +257,14 @@ class Usta(db.Model):
         d = (ek.get('hizmetler') or {}).get(str(kategori_id)) or {}
         return {'fiyat': str(d.get('fiyat') or ''), 'uzmanlik': bool(d.get('uzmanlik')), 'yedi_yirmi_dort': bool(d.get('yedi_yirmi_dort'))}
 
-    VARSAYILAN_BILDIRIM = {'talep_push': True, 'talep_sms': False, 'mesaj_push': True}
+    VARSAYILAN_BILDIRIM = {
+        'talep_push': True, 'talep_sms': False, 'mesaj_push': True,
+        # SoliHoli kıyaslamasından: tek "açık/kapalı" yerine ayrı tercihler
+        'yorum_bildirim': True,       # Yeni değerlendirmeler
+        'abonelik_bildirim': True,    # Abonelik ve deneme hatırlatmaları
+        'promosyon_bildirim': True,   # Öne çıkarma güncellemeleri
+        'duyuru_bildirim': True,      # Platform duyuruları
+    }
 
     def bildirim_tercihi(self):
         """Ayarlar sayfasındaki bildirim tercihleri (kaydedilmemişse varsayılanlar)."""
@@ -304,6 +317,20 @@ class Usta(db.Model):
             return 0
         return round(sum(y.puan for y in self.yorumlar) / len(self.yorumlar), 1)
 
+    def ortalama_alt_puanlar(self):
+        """Faz 2 Görev 10 — kategori bazlı alt puanların ortalaması.
+        Sadece bu alanı doldurmuş yorumlar ortalamaya girer (opsiyonel alanlar)."""
+        alanlar = {
+            'is_kalitesi': 'puan_is_kalitesi',
+            'iletisim': 'puan_iletisim',
+            'fiyat_performans': 'puan_fiyat_performans',
+        }
+        sonuc = {}
+        for anahtar, kolon in alanlar.items():
+            degerler = [v for v in (getattr(y, kolon) for y in self.yorumlar) if v]
+            sonuc[anahtar] = round(sum(degerler) / len(degerler), 1) if degerler else None
+        return sonuc
+
     def mesafe_hesapla(self, kullanici_lat, kullanici_lng):
         if not self.lat or not self.lng:
             return None
@@ -339,6 +366,7 @@ class Usta(db.Model):
             'aciklama': self.aciklama,
             'deneyim_yil': self.deneyim_yil,
             'puan': self.ortalama_puan(),
+            'alt_puanlar': self.ortalama_alt_puanlar(),
             'yorum_sayisi': len(self.yorumlar),
             'logo': self.logo,
             'logo_url': f'/uploads/{self.logo}' if self.logo else None,
@@ -383,12 +411,16 @@ class Yorum(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id'), nullable=False)
     musteri_adi = db.Column(db.String(100), nullable=False)
-    puan = db.Column(db.Integer, nullable=False)  # 1-5
+    puan = db.Column(db.Integer, nullable=False)  # 1-5 — genel puan (geriye dönük uyumluluk için adı/anlamı değişmez)
     yorum = db.Column(db.Text, default='')
     onaylanmis = db.Column(db.Boolean, default=False)
     tarih = db.Column(db.DateTime, default=datetime.utcnow)
     cevap = db.Column(db.Text, default='')            # Ustanın yoruma verdiği yanıt
     cevap_tarih = db.Column(db.DateTime, nullable=True)
+    # Faz 2 Görev 10 — kategori bazlı opsiyonel alt puanlar (1-5, nullable; eski yorumlarda boş olabilir)
+    puan_is_kalitesi = db.Column(db.Integer, nullable=True)
+    puan_iletisim = db.Column(db.Integer, nullable=True)
+    puan_fiyat_performans = db.Column(db.Integer, nullable=True)
 
     def to_dict(self):
         return {
@@ -396,6 +428,9 @@ class Yorum(db.Model):
             'usta_id': self.usta_id,
             'musteri_adi': self.musteri_adi,
             'puan': self.puan,
+            'puan_is_kalitesi': self.puan_is_kalitesi,
+            'puan_iletisim': self.puan_iletisim,
+            'puan_fiyat_performans': self.puan_fiyat_performans,
             'yorum': self.yorum,
             'tarih': self.tarih.strftime('%d.%m.%Y'),
             'cevap': self.cevap or '',
@@ -428,11 +463,12 @@ class IletisimLog(db.Model):
     __tablename__ = 'iletisim_log'
     id = db.Column(db.Integer, primary_key=True)
     usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
-    tur = db.Column(db.String(20), nullable=False)  # ara / whatsapp / goruntule / teklif
+    tur = db.Column(db.String(20), nullable=False)  # ara / whatsapp / goruntule / teklif / favori / paylas / web_sitesi
     ip = db.Column(db.String(60), default='')
     tarih = db.Column(db.DateTime, default=datetime.utcnow)
     kategori_id = db.Column(db.Integer, nullable=True)
     sehir = db.Column(db.String(100), default='')
+    dil = db.Column(db.String(5), nullable=True)  # ziyaretçinin arayüz dili (tr/en/ru/de/fa/ur) — opsiyonel
 
     def to_dict(self):
         return {
@@ -441,6 +477,7 @@ class IletisimLog(db.Model):
             'tur': self.tur,
             'tarih': self.tarih.strftime('%d.%m.%Y %H:%M'),
             'sehir': self.sehir,
+            'dil': self.dil,
         }
 
 
@@ -481,10 +518,14 @@ class IsTalebi(db.Model):
     durum = db.Column(db.String(30), default='bekliyor')  # bekliyor / kabul / red / tamamlandi
     usta_notu = db.Column(db.Text, default='')  # Ustanın notu
     okundu = db.Column(db.Boolean, default=False)  # Usta tarafından okundu mu
+    # Faz 3 Görev 13 — "Hizmet Talep Et" (toplu dağıtım): aynı müşteri talebi birden çok
+    # ustaya giderse hepsi aynı grup_id'yi taşır. Tekil (eski) teklif akışında None kalır.
+    grup_id = db.Column(db.String(40), nullable=True, index=True)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     guncelleme = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     musteri = db.relationship('Kullanici', foreign_keys=[musteri_id])
+    mesajlar = db.relationship('IsTalebiMesaj', backref='talep', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
         return {
@@ -500,8 +541,32 @@ class IsTalebi(db.Model):
             'durum': self.durum,
             'usta_notu': self.usta_notu,
             'okundu': self.okundu,
+            'grup_id': self.grup_id,
             'olusturma': fmt(self.olusturma),
             'guncelleme': fmt(self.guncelleme),
+        }
+
+
+class IsTalebiMesaj(db.Model):
+    """Faz 3 Görev 12 — müşteri ↔ usta mesajlaşması; her thread BELLİ bir IsTalebi'ne bağlıdır
+    (SoliHoli'deki gibi açık uçlu genel sohbet DEĞİL — bilinçli olarak kapsamı dar tutulmuş).
+    Mesajlar.py'daki admin↔usta tek-thread desenine benzer: gönderen alanı, okundu, olusturma."""
+    __tablename__ = 'is_talebi_mesajlari'
+    id = db.Column(db.Integer, primary_key=True)
+    is_talebi_id = db.Column(db.Integer, db.ForeignKey('is_talepleri.id', ondelete='CASCADE'), nullable=False, index=True)
+    gonderen = db.Column(db.String(10), nullable=False)  # 'musteri' / 'usta'
+    icerik = db.Column(db.Text, nullable=False)
+    okundu = db.Column(db.Boolean, default=False)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'is_talebi_id': self.is_talebi_id,
+            'gonderen': self.gonderen,
+            'icerik': self.icerik,
+            'okundu': self.okundu,
+            'olusturma': fmt(self.olusturma),
         }
 
 
@@ -553,6 +618,8 @@ class Abonelik(db.Model):
     otomatik_yenileme = db.Column(db.Boolean, default=False)  # SafeKey ile sessiz (3D'siz) otomatik tahsilat açık mı
     basarisiz_deneme_sayisi = db.Column(db.Integer, default=0)  # otomatik tahsilat dunning sayacı
     son_deneme_tarihi = db.Column(db.DateTime, nullable=True)  # son otomatik tahsilat deneme zamanı (başarılı/başarısız)
+    duraklatildi_mi = db.Column(db.Boolean, default=False)  # usta profilini kendi isteğiyle duraklattı mı (SoliHoli tarzı "duraklat")
+    duraklatma_tarihi = db.Column(db.DateTime, nullable=True)  # duraklatıldığı an — devam ettirilince bu süre bitiş tarihine eklenir
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     usta = db.relationship('Usta', foreign_keys=[usta_id])
     odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
@@ -574,12 +641,41 @@ class Abonelik(db.Model):
             'yenileme_tarihi': fmt(self.yenileme_tarihi),
             'otomatik_yenileme': self.otomatik_yenileme,
             'basarisiz_deneme_sayisi': self.basarisiz_deneme_sayisi,
+            'duraklatildi_mi': bool(self.duraklatildi_mi),
+            'duraklatma_tarihi': fmt(self.duraklatma_tarihi),
             'olusturma': fmt(self.olusturma),
             # Bu aboneliğe bağlı, gerçekten yapılmış (durum=basarili) ödemelerin toplamı —
             # plan_fiyat sadece planın liste fiyatı, bu ise usta'nın fiilen ödediği tutar.
             'toplam_odenen': round(sum(o.tutar for o in basarili_odemeler), 2),
             'odeme_sayisi': len(basarili_odemeler),
             'son_odeme_tarihi': fmt(son_odeme.tarih) if son_odeme else None,
+        }
+
+
+class UstaSikayet(db.Model):
+    """Ziyaretçilerin bir usta profilini bildirmesi (şikayet). Moderasyon admin panelden yapılır."""
+    __tablename__ = 'usta_sikayetleri'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    sikayet_eden_ad = db.Column(db.String(150), default='')
+    sikayet_eden_iletisim = db.Column(db.String(150), default='')
+    sebep = db.Column(db.String(50), nullable=False)  # yaniltici / kotu_davranis / dolandiricilik / diger
+    aciklama = db.Column(db.Text, default='')
+    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    durum = db.Column(db.String(20), default='bekliyor')  # bekliyor / incelendi / reddedildi
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'sikayet_eden_ad': self.sikayet_eden_ad,
+            'sikayet_eden_iletisim': self.sikayet_eden_iletisim,
+            'sebep': self.sebep,
+            'aciklama': self.aciklama,
+            'tarih': fmt(self.tarih),
+            'durum': self.durum,
         }
 
 
@@ -1202,9 +1298,110 @@ class UstaBelge(db.Model):
         }
 
 
+class UstaEkipUyesi(db.Model):
+    """Faz 2 Görev 7 — SoliHoli kıyaslaması: usta/işletme profilinde SADECE GÖRÜNÜM amaçlı
+    çalışan listesi (isim + serbest metin rol, örn. 'Çırak'). Yetkilendirme/izin sistemi DEĞİL —
+    satıcı panelindeki rol-bazlı yetki sisteminden tamamen ayrı, basit bir vitrin özelliği."""
+    __tablename__ = 'usta_ekip_uyeleri'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    ad = db.Column(db.String(100), nullable=False)
+    rol = db.Column(db.String(60), default='')  # serbest metin: "Çırak", "Usta Yardımcısı" vb.
+    foto = db.Column(db.String(256), nullable=True)
+    sira = db.Column(db.Integer, default=0)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'ad': self.ad,
+            'rol': self.rol or '',
+            'foto_url': f'/uploads/{self.foto}' if self.foto else None,
+            'sira': self.sira,
+        }
+
+
+class UstaSertifika(db.Model):
+    """Faz 2 Görev 8 — ustanın kendi isteğiyle PUBLIC profilde göstermek istediği sertifika/
+    diploma/yeterlilik görselleri. UstaBelge (kimlik doğrulama, GİZLİ/admin onaylı) ile
+    KARIŞTIRILMAMALI: bu alan bir vitrin/iddiadır, admin onayı gerekmez, her zaman görünür."""
+    __tablename__ = 'usta_sertifikalar'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    baslik = db.Column(db.String(150), nullable=False)
+    aciklama = db.Column(db.Text, nullable=True)
+    dosya = db.Column(db.String(256), nullable=False)
+    sira = db.Column(db.Integer, default=0)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        ext = (self.dosya.rsplit('.', 1)[-1].lower() if self.dosya and '.' in self.dosya else '')
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'baslik': self.baslik,
+            'aciklama': self.aciklama or '',
+            'url': f'/uploads/{self.dosya}',
+            'pdf_mi': ext == 'pdf',
+            'sira': self.sira,
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class UstaOdul(db.Model):
+    """Faz 2 Görev 9 — PUBLIC profilde gösterilen ödül/başarı listesi (vitrin amaçlı, admin onayı gerekmez)."""
+    __tablename__ = 'usta_oduller'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    baslik = db.Column(db.String(150), nullable=False)
+    veren_kurum = db.Column(db.String(150), nullable=True)
+    yil = db.Column(db.Integer, nullable=True)
+    aciklama = db.Column(db.Text, nullable=True)
+    sira = db.Column(db.Integer, default=0)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'baslik': self.baslik,
+            'veren_kurum': self.veren_kurum or '',
+            'yil': self.yil,
+            'aciklama': self.aciklama or '',
+            'sira': self.sira,
+        }
+
+
 # ──────────────────────────────────────────────────────────
 # Multi-seller marketplace models
 # ──────────────────────────────────────────────────────────
+
+class HizmetOnerisi(db.Model):
+    """Faz 3 Görev 14 — "Yeni hizmet öner": usta, kategori listesinde bulamadığı bir hizmeti
+    öneriyor. Admin'e bildirim gider, admin uygun görürse ileride Kategori olarak eklenir
+    (bu fazın kapsamı sadece öneri toplama — otomatik kategori oluşturma YOK)."""
+    __tablename__ = 'hizmet_onerileri'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    hizmet_adi = db.Column(db.String(150), nullable=False)
+    aciklama = db.Column(db.Text, nullable=True)
+    durum = db.Column(db.String(20), default='bekliyor')  # bekliyor / degerlendirildi / eklendi / reddedildi
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'hizmet_adi': self.hizmet_adi,
+            'aciklama': self.aciklama or '',
+            'durum': self.durum,
+            'olusturma': fmt(self.olusturma),
+        }
+
 
 class SellerApplication(db.Model):
     __tablename__ = 'satici_basvurular'

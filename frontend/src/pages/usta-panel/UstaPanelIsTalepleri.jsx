@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { ClipboardList, Phone, MapPin, Calendar, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
-import { ustaPanelIsTalepleri, ustaPanelTalepGuncelle } from '../../api'
+import { ClipboardList, Phone, MapPin, Calendar, ChevronDown, ChevronUp, MessageSquare, MessageCircle } from 'lucide-react'
+import { ustaPanelIsTalepleri, ustaPanelTalepGuncelle, ustaPanelTalepMesajlari, ustaPanelTalepMesajGonder } from '../../api'
 import axios from 'axios'
 import API from '../../config.js'
+import TalepMesajThread from '../../components/TalepMesajThread'
 
 const DURUM_RENK = {
   bekliyor:   'bg-yellow-100 text-yellow-700 border-yellow-300',
@@ -29,6 +30,12 @@ function TalepKart({ talep, onGuncelle }) {
   const [yukleniyor, setYukleniyor] = useState(false)
   const [okundu, setOkundu] = useState(talep.okundu)
 
+  // Faz 3 Görev 12 — mesajlaşma (thread = bu IsTalebi)
+  const [mesajAcik, setMesajAcik] = useState(false)
+  const [mesajlar, setMesajlar] = useState([])
+  const [mesajYukleniyor, setMesajYukleniyor] = useState(false)
+  const [mesajGonderiliyor, setMesajGonderiliyor] = useState(false)
+
   const handleAc = () => {
     if (!okundu) {
       axios.post(`${API}/api/usta/is-talepleri/${talep.id}/okundu`, {}, { withCredentials: true })
@@ -36,6 +43,27 @@ function TalepKart({ talep, onGuncelle }) {
         .catch(() => {})
     }
     setAcik(p => !p)
+  }
+
+  const mesajlasiAcKapa = () => {
+    const yeni = !mesajAcik
+    setMesajAcik(yeni)
+    if (yeni) {
+      setMesajYukleniyor(true)
+      ustaPanelTalepMesajlari(talep.id)
+        .then(r => { setMesajlar(r.data.mesajlar); onGuncelle() })
+        .finally(() => setMesajYukleniyor(false))
+    }
+  }
+
+  const mesajGonder = async (icerik) => {
+    setMesajGonderiliyor(true)
+    try {
+      const r = await ustaPanelTalepMesajGonder(talep.id, icerik)
+      setMesajlar(l => [...l, r.data.kayit])
+    } finally {
+      setMesajGonderiliyor(false)
+    }
   }
 
   const durumGuncelle = async (yeniDurum) => {
@@ -73,6 +101,11 @@ function TalepKart({ talep, onGuncelle }) {
             <div className="flex items-center gap-2">
               <p className="font-bold text-gray-900 truncate">{talep.baslik}</p>
               {!okundu && <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold">Yeni</span>}
+              {talep.mesaj_okunmamis > 0 && (
+                <span className="flex items-center gap-1 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                  <MessageCircle size={10} /> {talep.mesaj_okunmamis}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {talep.musteri_telefon}</span>
@@ -175,7 +208,28 @@ function TalepKart({ talep, onGuncelle }) {
             >
               Notu Kaydet
             </button>
+            <button
+              onClick={mesajlasiAcKapa}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold border transition ${
+                mesajAcik ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              <MessageCircle size={15} /> {mesajAcik ? 'Mesajlaşmayı Kapat' : 'Mesajlaş'}
+            </button>
           </div>
+
+          {/* Mesajlaşma (Faz 3 Görev 12) */}
+          {mesajAcik && (
+            <TalepMesajThread
+              mesajlar={mesajlar}
+              yukleniyor={mesajYukleniyor}
+              gonderiliyor={mesajGonderiliyor}
+              onGonder={mesajGonder}
+              kendiTaraf="usta"
+              bosMetin="Henüz mesaj yok. Müşteriye ilk mesajı gönderebilirsin."
+              placeholder="Müşteriye yazın..."
+            />
+          )}
         </div>
       )}
     </div>
@@ -187,11 +241,11 @@ export default function UstaPanelIsTalepleri() {
   const [filtre, setFiltre] = useState('hepsi')
   const [yukleniyor, setYukleniyor] = useState(true)
 
-  const yukle = () => {
-    setYukleniyor(true)
+  const yukle = (sessiz = false) => {
+    if (!sessiz) setYukleniyor(true)
     ustaPanelIsTalepleri({ durum: filtre })
       .then(r => setTalepler(r.data.talepler))
-      .finally(() => setYukleniyor(false))
+      .finally(() => { if (!sessiz) setYukleniyor(false) })
   }
 
   useEffect(() => { yukle() }, [filtre])
@@ -241,7 +295,7 @@ export default function UstaPanelIsTalepleri() {
       ) : (
         <div className="space-y-3">
           {talepler.map(t => (
-            <TalepKart key={t.id} talep={t} onGuncelle={yukle} />
+            <TalepKart key={t.id} talep={t} onGuncelle={() => yukle(true)} />
           ))}
         </div>
       )}

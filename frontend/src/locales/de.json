@@ -153,7 +153,17 @@
     "yorumunuz": "Ihre Rezension",
     "deneyimPaylas": "Erfahrung teilen...",
     "yorumGonder": "Bewertung senden",
-    "ustaBulunamadi": "Handwerker nicht gefunden"
+    "ustaBulunamadi": "Handwerker nicht gefunden",
+    "ekibimiz": "Unser Team",
+    "sertifikalarimiz": "Zertifikate & Qualifikationen",
+    "oduller": "Auszeichnungen",
+    "dogrulanmamisNot": "Diese Angaben stammen vom Fachbetrieb selbst und wurden von der Plattform nicht überprüft.",
+    "detayliDegerlendirme": "Detaillierte Bewertung",
+    "isKalitesi": "Arbeitsqualität",
+    "iletisimPuani": "Kommunikation",
+    "fiyatPerformans": "Preis / Leistung",
+    "opsiyonel": "(optional)",
+    "verenKurum": "Ausgestellt von"
   },
   "kayit": {
     "baslik": "Als Handwerker registrieren",
@@ -265,5 +275,44 @@
     "populer": "Beliebte & aktive Dienste",
     "diger": "Weitere Kategorien",
     "tumuBtn": "Alle"
+  },
+  "hizmetTalepEt": {
+    "linkOncesi": "Nicht gefunden, was Sie suchen?",
+    "linkButon": "Service anfragen",
+    "baslik": "Service anfragen",
+    "aciklama": "Teilen Sie uns einmal mit, was Sie brauchen — wir leiten es an passende Handwerker in Ihrer Region weiter und vermitteln Sie sofort mit bis zu {{sayi}} Handwerkern.",
+    "formKategori": "Welchen Service benötigen Sie? *",
+    "formKategoriPlaceholder": "Service auswählen oder suchen...",
+    "formSehir": "Stadt *",
+    "formSehirSec": "Stadt auswählen",
+    "formIlce": "Bezirk",
+    "formIlceSec": "Alle Bezirke",
+    "formAd": "Vor- und Nachname *",
+    "formTelefon": "Telefon *",
+    "formAdres": "Adresse",
+    "formAciklama": "Beschreiben Sie den Auftrag",
+    "formTarih": "Bevorzugtes Datum/Uhrzeit",
+    "gonderButon": "An Handwerker senden",
+    "gonderiliyor": "Wird gesendet...",
+    "basariBaslik": "Ihre Anfrage wurde gesendet!",
+    "basariAciklama": "An {{sayi}} Handwerker gesendet. Sie können Ihre Anfrage jederzeit mit Ihrer Telefonnummer verfolgen.",
+    "takipLink": "Meine Anfragen verfolgen",
+    "geriDon": "Zur Startseite",
+    "zorunluAlanlar": "Mit * markierte Felder sind erforderlich"
+  },
+  "guvenBari": {
+    "usta": "Geprüfte Handwerker",
+    "kategori": "Servicekategorien",
+    "tamamlananTalep": "Abgeschlossene Anfragen",
+    "bolge": "Abgedeckte Regionen"
+  },
+  "talepTakip": {
+    "grupBaslik": "Diese Anfrage wurde an {{sayi}} Handwerker gesendet",
+    "mesajlasAc": "Nachricht",
+    "mesajlasKapat": "Schließen",
+    "mesajYaz": "Schreiben Sie Ihre Nachricht...",
+    "mesajGonder": "Senden",
+    "mesajYok": "Noch keine Nachrichten.",
+    "telefonGerekli": "Suchen Sie mit Ihrer Telefonnummer, um zu schreiben."
   }
 }

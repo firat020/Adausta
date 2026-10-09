@@ -56,7 +56,7 @@ limiter.init_app(app)
 
 from routes.auth import auth_bp
 from routes.ustalar import ustalar_bp
-from routes.kategoriler import kategoriler_bp
+from routes.kategoriler import kategoriler_bp, istatistikler_bp
 from routes.admin import admin_bp
 from routes.analitik import analitik_bp
 from routes.usta_panel import usta_panel_bp
@@ -79,6 +79,7 @@ from routes.satici_yorum import satici_yorum_bp
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(ustalar_bp, url_prefix='/api/ustalar')
 app.register_blueprint(kategoriler_bp, url_prefix='/api/kategoriler')
+app.register_blueprint(istatistikler_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(analitik_bp, url_prefix='/api/analitik')
 app.register_blueprint(usta_panel_bp, url_prefix='/api/usta')
@@ -221,7 +222,8 @@ def abonelik_kontrol():
     bitis_gecmis = Abonelik.query.filter(
         Abonelik.durum == 'aktif',
         Abonelik.bitis != None,
-        Abonelik.bitis < simdi
+        Abonelik.bitis < simdi,
+        Abonelik.duraklatildi_mi != True  # duraklatılmış abonelikte sayaç durur, otomatik pasife alınmaz
     ).all()
     for a in bitis_gecmis:
         a.durum = 'askida'

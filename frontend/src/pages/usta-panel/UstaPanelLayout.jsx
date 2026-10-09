@@ -5,11 +5,11 @@ import {
   LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag,
   MessageCircle, FileCheck2, Crown, Settings
 } from 'lucide-react'
-import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis } from '../../api'
+import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis, ustaPanelTalepMesajOkunmamis } from '../../api'
 
 const menuItems = [
   { to: '/usta/panel',          icon: LayoutDashboard, label: 'Genel Bakış',    end: true },
-  { to: '/usta/panel/talepler', icon: ClipboardList,   label: 'İş Talepleri' },
+  { to: '/usta/panel/talepler', icon: ClipboardList,   label: 'İş Talepleri', talepMesajBadge: true },
   { to: '/usta/panel/musteriler', icon: Users,         label: 'Müşterilerim' },
   { to: '/usta/panel/istatistik', icon: BarChart2,     label: 'İstatistikler' },
   { to: '/usta/panel/yorumlar',  icon: Star,           label: 'Yorumlar' },
@@ -28,6 +28,7 @@ export default function UstaPanelLayout() {
   const [kullanici, setKullanici] = useState(null)
   const [musaitlik, setMusaitlik] = useState(true)
   const [okunmamisMesaj, setOkunmamisMesaj] = useState(0)
+  const [okunmamisTalepMesaj, setOkunmamisTalepMesaj] = useState(0)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function UstaPanelLayout() {
           setKullanici(k)
           setKontrol(false)
           ustaPanelMesajOkunmamis().then(r => setOkunmamisMesaj(r.data.sayi || 0)).catch(() => {})
+          ustaPanelTalepMesajOkunmamis().then(r => setOkunmamisTalepMesaj(r.data.sayi || 0)).catch(() => {})
         }
       })
       .catch(() => navigate('/usta/giris', { replace: true }))
@@ -48,6 +50,7 @@ export default function UstaPanelLayout() {
   useEffect(() => {
     const interval = setInterval(() => {
       ustaPanelMesajOkunmamis().then(r => setOkunmamisMesaj(r.data.sayi || 0)).catch(() => {})
+      ustaPanelTalepMesajOkunmamis().then(r => setOkunmamisTalepMesaj(r.data.sayi || 0)).catch(() => {})
     }, 60000)
     return () => clearInterval(interval)
   }, [])
@@ -119,12 +122,12 @@ export default function UstaPanelLayout() {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {menuItems.map(({ to, icon: Icon, label, end, mesajBadge }) => (
+          {menuItems.map(({ to, icon: Icon, label, end, mesajBadge, talepMesajBadge }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
-              onClick={() => { setAcik(false); if (mesajBadge) setOkunmamisMesaj(0) }}
+              onClick={() => { setAcik(false); if (mesajBadge) setOkunmamisMesaj(0); if (talepMesajBadge) setOkunmamisTalepMesaj(0) }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
@@ -140,6 +143,11 @@ export default function UstaPanelLayout() {
                   {mesajBadge && okunmamisMesaj > 0 && (
                     <span className="bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
                       {okunmamisMesaj}
+                    </span>
+                  )}
+                  {talepMesajBadge && okunmamisTalepMesaj > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {okunmamisTalepMesaj}
                     </span>
                   )}
                 </>

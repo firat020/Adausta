@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload, Globe, Clock, Wallet, Image as ImageIcon } from 'lucide-react'
+import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle, AlertCircle, Tag, CreditCard, RefreshCw, LocateFixed, Check, Upload, Globe, Clock, Wallet, Image as ImageIcon, Users, Award, Plus } from 'lucide-react'
 import { DILLER, ODEME_YONTEMLERI, GUNLER, VARSAYILAN_SAATLER } from '../../data/profilSecenekleri.js'
-import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, ustaPanelKapakYukle, ustaPanelKapakSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla } from '../../api'
+import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, ustaPanelKapakYukle, ustaPanelKapakSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla, ustaPanelEkipGetir, ustaPanelEkipEkle, ustaPanelEkipSil, ustaPanelOdullerGetir, ustaPanelOdulEkle, ustaPanelOdulSil } from '../../api'
 import axios from 'axios'
 
 import API from '../../config.js'
@@ -25,6 +25,84 @@ export default function UstaPanelProfil() {
   const kapakRef = useRef()
   const fileRef = useRef()
   const logoRef = useRef()
+
+  // Ekibimiz (Faz 2 Görev 7 — sadece görünüm amaçlı, yetkilendirme sistemi değil)
+  const [ekip, setEkip] = useState([])
+  const [ekipForm, setEkipForm] = useState({ ad: '', rol: '' })
+  const [ekipFoto, setEkipFoto] = useState(null)
+  const [ekipGonderiliyor, setEkipGonderiliyor] = useState(false)
+  const ekipFotoRef = useRef()
+
+  // Ödüller (Faz 2 Görev 9 — public vitrin, admin onayı gerekmez)
+  const [oduller, setOduller] = useState([])
+  const [odulForm, setOdulForm] = useState({ baslik: '', veren_kurum: '', yil: '', aciklama: '' })
+  const [odulGonderiliyor, setOdulGonderiliyor] = useState(false)
+
+  const ekipYukle = () => ustaPanelEkipGetir().then(r => setEkip(r.data.ekip || [])).catch(() => {})
+  const odulYukle = () => ustaPanelOdullerGetir().then(r => setOduller(r.data.oduller || [])).catch(() => {})
+
+  useEffect(() => { ekipYukle(); odulYukle() }, [])
+
+  const ekipEkle = async (e) => {
+    e.preventDefault()
+    if (!ekipForm.ad.trim()) return
+    setEkipGonderiliyor(true)
+    try {
+      const fd = new FormData()
+      fd.append('ad', ekipForm.ad.trim())
+      fd.append('rol', ekipForm.rol.trim())
+      if (ekipFoto) fd.append('dosya', ekipFoto)
+      await ustaPanelEkipEkle(fd)
+      setEkipForm({ ad: '', rol: '' })
+      setEkipFoto(null)
+      if (ekipFotoRef.current) ekipFotoRef.current.value = ''
+      ekipYukle()
+    } catch (err) {
+      setMesaj({ tip: 'hata', metin: err.response?.data?.hata || 'Ekip üyesi eklenemedi.' })
+    } finally {
+      setEkipGonderiliyor(false)
+    }
+  }
+
+  const ekipSilTikla = async (id) => {
+    if (!window.confirm('Bu ekip üyesini silmek istediğinize emin misiniz?')) return
+    try {
+      await ustaPanelEkipSil(id)
+      setEkip(prev => prev.filter(e => e.id !== id))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Ekip üyesi silinemedi.' })
+    }
+  }
+
+  const odulEkle = async (e) => {
+    e.preventDefault()
+    if (!odulForm.baslik.trim()) return
+    setOdulGonderiliyor(true)
+    try {
+      await ustaPanelOdulEkle({
+        baslik: odulForm.baslik.trim(),
+        veren_kurum: odulForm.veren_kurum.trim(),
+        yil: odulForm.yil ? Number(odulForm.yil) : null,
+        aciklama: odulForm.aciklama.trim(),
+      })
+      setOdulForm({ baslik: '', veren_kurum: '', yil: '', aciklama: '' })
+      odulYukle()
+    } catch (err) {
+      setMesaj({ tip: 'hata', metin: err.response?.data?.hata || 'Ödül eklenemedi.' })
+    } finally {
+      setOdulGonderiliyor(false)
+    }
+  }
+
+  const odulSilTikla = async (id) => {
+    if (!window.confirm('Bu ödülü silmek istediğinize emin misiniz?')) return
+    try {
+      await ustaPanelOdulSil(id)
+      setOduller(prev => prev.filter(o => o.id !== id))
+    } catch {
+      setMesaj({ tip: 'hata', metin: 'Ödül silinemedi.' })
+    }
+  }
 
   const abonelikiYenile = () => {
     ustaAbonelikGetir().then(r => setAbonelik(r.data)).catch(() => {})
@@ -283,8 +361,12 @@ export default function UstaPanelProfil() {
           <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
             {tamamlama.maddeler.map(m => (
               <li key={m.anahtar} className={`text-xs flex items-center gap-1.5 ${m.tamam ? 'text-green-600' : 'text-gray-500'}`}>
-                {m.tamam ? <CheckCircle size={13} /> : <span className="w-[13px] h-[13px] rounded-full border border-gray-300 inline-block" />}
-                <span className={m.tamam ? 'line-through opacity-70' : ''}>{m.baslik}</span>
+                {m.tamam ? <CheckCircle size={13} /> : <span className="w-[13px] h-[13px] rounded-full border border-gray-300 inline-block shrink-0" />}
+                {m.tamam || !m.link || m.link === '/usta/panel/profil' ? (
+                  <span className={m.tamam ? 'line-through opacity-70' : ''}>{m.baslik}</span>
+                ) : (
+                  <Link to={m.link} className="hover:text-blue-600 hover:underline">{m.baslik}</Link>
+                )}
               </li>
             ))}
           </ul>
@@ -615,6 +697,112 @@ export default function UstaPanelProfil() {
           </div>
         </div>
       )}
+
+      {/* Ekibimiz — Faz 2 Görev 7 (SoliHoli kıyaslaması: sadece görünüm amaçlı liste, yetkilendirme sistemi değil) */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <Users size={18} className="text-blue-600" /> Ekibimiz
+        </h2>
+        <p className="text-xs text-gray-400 mb-4">Profilinizde görünen çalışan listesi (isim + rol, örn. "Çırak"). Panel yetkisi vermez, sadece görünüm amaçlıdır.</p>
+
+        {ekip.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-4">
+            {ekip.map(e => (
+              <div key={e.id} className="relative group w-24 text-center">
+                <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                  {e.foto_url ? (
+                    <img src={`${API_URL}${e.foto_url}`} alt={e.ad} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-gray-300">{e.ad.charAt(0).toUpperCase()}</span>
+                  )}
+                  <button
+                    onClick={() => ekipSilTikla(e.id)}
+                    className="absolute inset-0 bg-black/50 rounded-full hidden group-hover:flex items-center justify-center text-white"
+                    title="Sil"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <p className="text-xs font-semibold text-gray-800 mt-1.5 truncate">{e.ad}</p>
+                {e.rol && <p className="text-[11px] text-gray-400 truncate">{e.rol}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={ekipEkle} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">Ad</label>
+            <input value={ekipForm.ad} onChange={e => setEkipForm(p => ({ ...p, ad: e.target.value }))}
+              placeholder="Örn: Ahmet Yılmaz" maxLength={100}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">Rol</label>
+            <input value={ekipForm.rol} onChange={e => setEkipForm(p => ({ ...p, rol: e.target.value }))}
+              placeholder="Örn: Çırak, Usta Yardımcısı" maxLength={60}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <label className="px-3 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer text-center whitespace-nowrap">
+            {ekipFoto ? ekipFoto.name.slice(0, 14) : 'Foto Ekle (ops.)'}
+            <input ref={ekipFotoRef} type="file" accept="image/*" className="hidden"
+              onChange={e => setEkipFoto(e.target.files[0] || null)} />
+          </label>
+          <button type="submit" disabled={ekipGonderiliyor || !ekipForm.ad.trim()}
+            className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
+            <Plus size={15} /> Ekle
+          </button>
+        </form>
+      </div>
+
+      {/* Ödüller — Faz 2 Görev 9 (public vitrin, admin onayı gerekmez) */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <Award size={18} className="text-blue-600" /> Ödüller
+        </h2>
+        <p className="text-xs text-gray-400 mb-4">Profilinizde gösterilecek ödül / başarı listesi.</p>
+
+        {oduller.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {oduller.map(o => (
+              <div key={o.id} className="flex items-start justify-between gap-3 bg-gray-50 rounded-xl px-3.5 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-800">{o.baslik}</p>
+                  <p className="text-xs text-gray-400">
+                    {[o.veren_kurum, o.yil].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                <button onClick={() => odulSilTikla(o.id)} className="text-gray-400 hover:text-red-600 p-1 shrink-0">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={odulEkle} className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input value={odulForm.baslik} onChange={e => setOdulForm(p => ({ ...p, baslik: e.target.value }))}
+              placeholder="Ödül başlığı *" maxLength={150}
+              className="sm:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+            <input value={odulForm.veren_kurum} onChange={e => setOdulForm(p => ({ ...p, veren_kurum: e.target.value }))}
+              placeholder="Veren kurum (ops.)" maxLength={150}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+            <input value={odulForm.yil} onChange={e => setOdulForm(p => ({ ...p, yil: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+              placeholder="Yıl (ops.)" inputMode="numeric"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div className="flex gap-2">
+            <input value={odulForm.aciklama} onChange={e => setOdulForm(p => ({ ...p, aciklama: e.target.value }))}
+              placeholder="Açıklama (ops.)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+            <button type="submit" disabled={odulGonderiliyor || !odulForm.baslik.trim()}
+              className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
+              <Plus size={15} /> Ekle
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

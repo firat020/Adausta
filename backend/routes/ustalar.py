@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge, Abonelik, UstaSikayet, UstaEkipUyesi, UstaSertifika, UstaOdul
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
@@ -37,6 +37,13 @@ def listele():
             sehir_id = s.id
 
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
+
+    # Profilini duraklatan ustalar (SoliHoli kıyaslaması — Faz 1 "Profili Duraklat"):
+    # aboneliği aktif ama kendi isteğiyle duraklattığı için arama/listelerde gizlenir.
+    duraklatilan_usta_idleri = db.session.query(Abonelik.usta_id).filter(
+        Abonelik.durum == 'aktif', Abonelik.duraklatildi_mi == True  # noqa: E712
+    )
+    q = q.filter(~Usta.id.in_(duraklatilan_usta_idleri))
 
     if kategori_id:
         # Ana kategori VEYA ek kategoriler içinde ara
@@ -135,6 +142,10 @@ def detay(id):
     # Yalnızca admin onaylı ustalık belgesi varsa herkese açık "Belgeli" rozeti gösterilir
     veri['onayli_belge'] = UstaBelge.query.filter_by(
         usta_id=u.id, tur='ustalik_belgesi', durum='onaylandi').count() > 0
+    # Faz 2 — Ekibimiz / Public Sertifikalarım / Ödüller (tamamı görünüm amaçlı, vitrin verisi)
+    veri['ekip'] = [e.to_dict() for e in UstaEkipUyesi.query.filter_by(usta_id=u.id).order_by(UstaEkipUyesi.sira, UstaEkipUyesi.id).all()]
+    veri['sertifikalar'] = [s.to_dict() for s in UstaSertifika.query.filter_by(usta_id=u.id).order_by(UstaSertifika.sira, UstaSertifika.id).all()]
+    veri['oduller'] = [o.to_dict() for o in UstaOdul.query.filter_by(usta_id=u.id).order_by(UstaOdul.sira, UstaOdul.id).all()]
     return jsonify(veri)
 
 @ustalar_bp.route('/kayit', methods=['POST'])
@@ -324,6 +335,18 @@ def fotograf_yukle(id):
     db.session.commit()
     return jsonify({'url': f'/uploads/{dosya_adi}'}), 201
 
+def _opsiyonel_alt_puan(data, anahtar):
+    """1-5 arası opsiyonel alt puan: boş/None geçilebilir, geçersizse yok sayılır (isteği reddetmez)."""
+    deger = data.get(anahtar)
+    if deger in (None, ''):
+        return None
+    try:
+        deger = int(deger)
+    except (TypeError, ValueError):
+        return None
+    return deger if 1 <= deger <= 5 else None
+
+
 @ustalar_bp.route('/<int:id>/yorum', methods=['POST'])
 def yorum_ekle(id):
     Usta.query.get_or_404(id)
@@ -338,7 +361,11 @@ def yorum_ekle(id):
         musteri_adi=data['musteri_adi'],
         puan=puan,
         yorum=data.get('yorum', ''),
-        onaylanmis=False
+        onaylanmis=False,
+        # Faz 2 Görev 10 — kategori bazlı alt puanlar opsiyoneldir, boş geçilebilir
+        puan_is_kalitesi=_opsiyonel_alt_puan(data, 'puan_is_kalitesi'),
+        puan_iletisim=_opsiyonel_alt_puan(data, 'puan_iletisim'),
+        puan_fiyat_performans=_opsiyonel_alt_puan(data, 'puan_fiyat_performans'),
     )
     db.session.add(y)
     db.session.commit()
@@ -398,6 +425,39 @@ def _usta_bildirim_gonder(usta, baslik, icerik, data=None):
     db.session.commit()
 
 
+SIKAYET_SEBEPLERI = ('yaniltici', 'kotu_davranis', 'dolandiricilik', 'diger')
+
+
+@ustalar_bp.route('/<int:id>/sikayet', methods=['POST'])
+@limiter.limit('5 per hour')
+def sikayet_gonder(id):
+    """Ziyaretçi bir usta profilini bildirir (Faz 1 — Şikayet Et / Bildir)."""
+    usta = Usta.query.get_or_404(id)
+    data = request.get_json(silent=True) or {}
+
+    sebep = (data.get('sebep') or '').strip()
+    aciklama = (data.get('aciklama') or '').strip()
+    if sebep not in SIKAYET_SEBEPLERI:
+        return jsonify({'hata': 'Geçerli bir sebep seçin'}), 400
+    if not aciklama or len(aciklama) < 5:
+        return jsonify({'hata': 'Lütfen şikayetinizi biraz detaylandırın'}), 400
+
+    sikayet = UstaSikayet(
+        usta_id=usta.id,
+        sikayet_eden_ad=(data.get('sikayet_eden_ad') or '').strip()[:150],
+        sikayet_eden_iletisim=(data.get('sikayet_eden_iletisim') or '').strip()[:150],
+        sebep=sebep,
+        aciklama=aciklama,
+    )
+    db.session.add(sikayet)
+    db.session.add(AdminBildirim(
+        tur='usta_sikayeti',
+        mesaj=f'Şikayet: {usta.ad} {usta.soyad} (#{usta.id}) — sebep: {sebep}'
+    ))
+    db.session.commit()
+    return jsonify({'mesaj': 'Şikayetiniz alındı, ekibimiz inceleyecek.'}), 201
+
+
 @ustalar_bp.route('/en-yakin', methods=['GET'])
 def en_yakin():
     lat = request.args.get('lat', type=float)
@@ -409,6 +469,10 @@ def en_yakin():
         return jsonify({'hata': 'Konum gerekli'}), 400
 
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
+    duraklatilan_usta_idleri = db.session.query(Abonelik.usta_id).filter(
+        Abonelik.durum == 'aktif', Abonelik.duraklatildi_mi == True  # noqa: E712
+    )
+    q = q.filter(~Usta.id.in_(duraklatilan_usta_idleri))
     if kategori_id:
         q = q.filter_by(kategori_id=kategori_id)
 

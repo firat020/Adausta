@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Star, Phone, Clock, Navigation } from 'lucide-react'
+import { MapPin, Star, Phone, Clock, Navigation, MessageCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
 import { ustaSlugUrl } from '../data/hizmetler.js'
@@ -98,22 +98,36 @@ export default function UstaKart({ usta }) {
         )}
 
         {/* Alt alan */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-          {usta.deneyim_yil > 0 ? (
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="pt-3 border-t border-gray-50">
+          {usta.deneyim_yil > 0 && (
+            <div className="flex items-center gap-1 text-xs text-gray-400 mb-2">
               <Clock size={11} />
               <span>{usta.deneyim_yil} {t('ustaDetay.yilDeneyim')}</span>
             </div>
-          ) : <div />}
+          )}
 
-          <a
-            href={`tel:${usta.telefon}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
-          >
-            <Phone size={12} />
-            {t('common.ara')}
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`tel:${usta.telefon}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+            >
+              <Phone size={12} />
+              {t('common.ara')}
+            </a>
+            {usta.whatsapp && (
+              <a
+                href={`https://wa.me/${usta.whatsapp.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+              >
+                <MessageCircle size={12} />
+                WhatsApp
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>

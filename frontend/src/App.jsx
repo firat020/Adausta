@@ -45,6 +45,7 @@ import MagazaSiparisBasarili from './pages/MagazaSiparisBasarili'
 import MagazaSiparisBasarisiz from './pages/MagazaSiparisBasarisiz'
 import MagazaSiparislerim from './pages/MagazaSiparislerim'
 import TalepTakip from './pages/TalepTakip'
+import HizmetTalepEt from './pages/HizmetTalepEt'
 import SifremiUnuttum from './pages/SifremiUnuttum'
 import MagazaSatici from './pages/MagazaSatici'
 import MagazaSaticilar from './pages/MagazaSaticilar'
@@ -170,6 +171,7 @@ function PublicSite() {
           <Route path="/magaza/satici/:slug" element={<MagazaSatici />} />
           <Route path="/magaza/saticilar" element={<MagazaSaticilar />} />
           <Route path="/talep-takip" element={<TalepTakip />} />
+          <Route path="/hizmet-talep-et" element={<HizmetTalepEt />} />
           <Route path="/satici-basvuru" element={<SaticiBasvuruGiris />} />
           <Route path="/satici-basvuru/basvur" element={<SaticiBasvuruForm />} />
           <Route path="/satici-basvuru/durum" element={<SaticiBasvuruDurum />} />

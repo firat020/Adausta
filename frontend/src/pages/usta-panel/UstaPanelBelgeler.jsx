@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { FileCheck2, Upload, Trash2, Clock, CheckCircle2, XCircle } from 'lucide-react'
-import { ustaPanelBelgeler, ustaPanelBelgeYukle, ustaPanelBelgeSil } from '../../api'
+import { FileCheck2, Upload, Trash2, Clock, CheckCircle2, XCircle, GraduationCap, Info, FileText } from 'lucide-react'
+import { ustaPanelBelgeler, ustaPanelBelgeYukle, ustaPanelBelgeSil, ustaPanelSertifikalarGetir, ustaPanelSertifikaEkle, ustaPanelSertifikaSil } from '../../api'
+import API from '../../config.js'
 
 const TUR_ETIKET = {
   kimlik: 'Kimlik Belgesi',
@@ -22,13 +23,61 @@ export default function UstaPanelBelgeler() {
   const [hata, setHata] = useState('')
   const dosyaRef = useRef(null)
 
+  // Public Sertifikalarım — Faz 2 Görev 8. UstaBelge (yukarıdaki, GİZLİ/admin onaylı kimlik
+  // doğrulama) ile KARIŞTIRILMAMALI: bu alan ustanın kendi isteğiyle public profilde göstermek
+  // istediği sertifika/diploma görselleridir, admin onayı gerekmez, her zaman görünür.
+  const [sertifikalar, setSertifikalar] = useState([])
+  const [sertifikaYukleniyor, setSertifikaYukleniyor] = useState(true)
+  const [sertifikaForm, setSertifikaForm] = useState({ baslik: '', aciklama: '' })
+  const [sertifikaDosya, setSertifikaDosya] = useState(null)
+  const [sertifikaYukluyor, setSertifikaYukluyor] = useState(false)
+  const [sertifikaHata, setSertifikaHata] = useState('')
+  const sertifikaDosyaRef = useRef(null)
+
   const yukle = () => {
     ustaPanelBelgeler()
       .then(r => setBelgeler(r.data.belgeler))
       .finally(() => setYukleniyor(false))
   }
 
-  useEffect(() => { yukle() }, [])
+  const sertifikalariYukle = () => {
+    ustaPanelSertifikalarGetir()
+      .then(r => setSertifikalar(r.data.sertifikalar || []))
+      .finally(() => setSertifikaYukleniyor(false))
+  }
+
+  useEffect(() => { yukle(); sertifikalariYukle() }, [])
+
+  const sertifikaEkle = async (e) => {
+    e.preventDefault()
+    if (!sertifikaForm.baslik.trim() || !sertifikaDosya) return
+    setSertifikaHata('')
+    setSertifikaYukluyor(true)
+    try {
+      const fd = new FormData()
+      fd.append('baslik', sertifikaForm.baslik.trim())
+      fd.append('aciklama', sertifikaForm.aciklama.trim())
+      fd.append('dosya', sertifikaDosya)
+      await ustaPanelSertifikaEkle(fd)
+      setSertifikaForm({ baslik: '', aciklama: '' })
+      setSertifikaDosya(null)
+      if (sertifikaDosyaRef.current) sertifikaDosyaRef.current.value = ''
+      sertifikalariYukle()
+    } catch (err) {
+      setSertifikaHata(err.response?.data?.hata || 'Sertifika eklenemedi')
+    }
+    setSertifikaYukluyor(false)
+  }
+
+  const sertifikaSilTikla = async (id) => {
+    if (!confirm('Bu sertifikayı silmek istiyor musunuz?')) return
+    try {
+      await ustaPanelSertifikaSil(id)
+      setSertifikalar(prev => prev.filter(s => s.id !== id))
+    } catch (err) {
+      alert(err.response?.data?.hata || 'Silinemedi')
+    }
+  }
 
   const dosyaSecildi = async (e) => {
     const dosya = e.target.files?.[0]
@@ -134,6 +183,88 @@ export default function UstaPanelBelgeler() {
           })}
         </div>
       )}
+
+      {/* Public Sertifikalarım — Faz 2 Görev 8. KYC belgelerinden görsel olarak ve kavramsal
+          olarak tamamen ayrı: admin onayı gerekmez, her zaman public profilde görünür. */}
+      <div className="pt-4 border-t border-dashed border-gray-200">
+        <div className="mb-1">
+          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+            <GraduationCap size={22} className="text-purple-600" /> Public Sertifikalarım
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">Profilinizde herkese açık gösterilecek sertifika, diploma veya yeterlilik belgeleri</p>
+        </div>
+
+        <div className="bg-purple-50 border border-purple-100 text-purple-700 text-xs px-4 py-3 rounded-xl flex items-start gap-2 mb-4 mt-3">
+          <Info size={14} className="shrink-0 mt-0.5" />
+          Bu alan platform tarafından doğrulanmamıştır; yukarıdaki kimlik/ustalık belgelerinden farklı olarak admin onayı gerektirmez ve eklediğiniz anda herkese görünür olur.
+        </div>
+
+        <form onSubmit={sertifikaEkle} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Başlık *</label>
+              <input value={sertifikaForm.baslik} onChange={e => setSertifikaForm(p => ({ ...p, baslik: e.target.value }))}
+                placeholder="Örn: Elektrik Tesisatçılığı Yeterlilik Belgesi" maxLength={150}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Açıklama (opsiyonel)</label>
+              <input value={sertifikaForm.aciklama} onChange={e => setSertifikaForm(p => ({ ...p, aciklama: e.target.value }))}
+                placeholder="Kısa açıklama"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <label className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 text-sm font-semibold cursor-pointer hover:border-purple-400 hover:text-purple-600 transition-colors">
+              <Upload size={16} />
+              {sertifikaDosya ? sertifikaDosya.name : 'Dosya Seç (png, jpg, pdf) *'}
+              <input ref={sertifikaDosyaRef} type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden"
+                onChange={e => setSertifikaDosya(e.target.files?.[0] || null)} />
+            </label>
+            <button type="submit" disabled={sertifikaYukluyor || !sertifikaForm.baslik.trim() || !sertifikaDosya}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 disabled:opacity-50 transition-colors whitespace-nowrap">
+              {sertifikaYukluyor ? 'Yükleniyor...' : 'Sertifika Ekle'}
+            </button>
+          </div>
+          {sertifikaHata && <p className="text-xs text-red-600">{sertifikaHata}</p>}
+        </form>
+
+        {sertifikaYukleniyor ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600" />
+          </div>
+        ) : sertifikalar.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 mt-4">
+            <GraduationCap size={36} className="text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium text-sm">Henüz public sertifika eklemediniz</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+            {sertifikalar.map(s => (
+              <div key={s.id} className="relative group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+                  {s.pdf_mi ? (
+                    <FileText size={32} className="text-gray-300" />
+                  ) : (
+                    <img src={`${API}${s.url}`} alt={s.baslik} className="w-full h-full object-cover" />
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-gray-800 truncate">{s.baslik}</p>
+                  {s.aciklama && <p className="text-[11px] text-gray-400 truncate">{s.aciklama}</p>}
+                </div>
+                <button
+                  onClick={() => sertifikaSilTikla(s.id)}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 hidden group-hover:flex items-center justify-center text-white"
+                  title="Sil"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

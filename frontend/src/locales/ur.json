@@ -153,7 +153,17 @@
     "yorumunuz": "آپ کا جائزہ",
     "deneyimPaylas": "اپنا تجربہ شیئر کریں...",
     "yorumGonder": "جائزہ بھیجیں",
-    "ustaBulunamadi": "کاریگر نہیں ملا"
+    "ustaBulunamadi": "کاریگر نہیں ملا",
+    "ekibimiz": "ہماری ٹیم",
+    "sertifikalarimiz": "سرٹیفکیٹس اور قابلیت",
+    "oduller": "ایوارڈز",
+    "dogrulanmamisNot": "یہ معلومات کاریگر نے خود فراہم کی ہیں اور پلیٹ فارم کی طرف سے تصدیق شدہ نہیں ہیں۔",
+    "detayliDegerlendirme": "تفصیلی درجہ بندی",
+    "isKalitesi": "کام کا معیار",
+    "iletisimPuani": "رابطہ",
+    "fiyatPerformans": "قیمت / کارکردگی",
+    "opsiyonel": "(اختیاری)",
+    "verenKurum": "جاری کنندہ"
   },
   "kayit": {
     "baslik": "کاریگر کے طور پر رجسٹر کریں",
@@ -265,5 +275,44 @@
     "populer": "مقبول اور فعال خدمات",
     "diger": "دیگر زمرے",
     "tumuBtn": "سب"
+  },
+  "hizmetTalepEt": {
+    "linkOncesi": "جو چاہتے تھے نہیں ملا؟",
+    "linkButon": "خدمت کی درخواست دیں",
+    "baslik": "خدمت کی درخواست دیں",
+    "aciklama": "اپنی ضرورت ایک بار بتائیں، ہم اسے آپ کے علاقے کے موزوں کاریگروں تک پہنچائیں گے — فوری طور پر {{sayi}} تک کاریگروں سے رابطہ کریں۔",
+    "formKategori": "آپ کو کس خدمت کی ضرورت ہے؟ *",
+    "formKategoriPlaceholder": "خدمت منتخب کریں یا تلاش کریں...",
+    "formSehir": "شہر *",
+    "formSehirSec": "شہر منتخب کریں",
+    "formIlce": "علاقہ",
+    "formIlceSec": "تمام علاقے",
+    "formAd": "پورا نام *",
+    "formTelefon": "فون *",
+    "formAdres": "پتہ",
+    "formAciklama": "کام کی تفصیل بتائیں",
+    "formTarih": "ترجیحی تاریخ/وقت",
+    "gonderButon": "کاریگروں کو بھیجیں",
+    "gonderiliyor": "بھیجا جا رہا ہے...",
+    "basariBaslik": "آپ کی درخواست بھیج دی گئی!",
+    "basariAciklama": "{{sayi}} کاریگروں کو بھیجا گیا۔ آپ اپنے فون نمبر سے کسی بھی وقت درخواست دیکھ سکتے ہیں۔",
+    "takipLink": "میری درخواستیں دیکھیں",
+    "geriDon": "ہوم پیج پر واپس جائیں",
+    "zorunluAlanlar": "* والے خانے لازمی ہیں"
+  },
+  "guvenBari": {
+    "usta": "تصدیق شدہ کاریگر",
+    "kategori": "خدمات کے زمرے",
+    "tamamlananTalep": "مکمل درخواستیں",
+    "bolge": "احاطہ شدہ علاقے"
+  },
+  "talepTakip": {
+    "grupBaslik": "یہ درخواست {{sayi}} کاریگروں کو بھیجی گئی",
+    "mesajlasAc": "پیغام",
+    "mesajlasKapat": "بند کریں",
+    "mesajYaz": "اپنا پیغام لکھیں...",
+    "mesajGonder": "بھیجیں",
+    "mesajYok": "ابھی تک کوئی پیغام نہیں۔",
+    "telefonGerekli": "پیغام دینے کے لیے اپنے فون نمبر سے تلاش کریں۔"
   }
 }

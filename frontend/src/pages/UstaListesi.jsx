@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { Search, SlidersHorizontal, X, ExternalLink, MapPin, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { DILLER } from '../data/profilSecenekleri.js'
@@ -353,6 +353,12 @@ export default function UstaListesi() {
               <Search size={40} className="mx-auto mb-4 opacity-30" />
               <p className="font-medium text-gray-500">{t('ustaListesi.ustaBulunamadi')}</p>
               <p className="text-sm mt-1">{t('ustaListesi.farkliFiltre')}</p>
+              <p className="text-sm mt-4">
+                {t('hizmetTalepEt.linkOncesi')}{' '}
+                <Link to="/hizmet-talep-et" className="text-blue-600 font-semibold hover:text-blue-700 underline underline-offset-2">
+                  {t('hizmetTalepEt.linkButon')}
+                </Link>
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Crown, Rocket, Sparkles, Star, CheckCircle, AlertCircle, Clock, Gift, Receipt, CreditCard, Eye } from 'lucide-react'
-import { ustaAbonelikOzet, cardplusBaslat, promosyonBaslat } from '../../api'
+import { Crown, Rocket, Sparkles, Star, CheckCircle, AlertCircle, Clock, Gift, Receipt, CreditCard, Eye, PauseCircle, PlayCircle, BarChart2, MousePointerClick, Megaphone } from 'lucide-react'
+import { ustaAbonelikOzet, cardplusBaslat, promosyonBaslat, ustaAbonelikDuraklat, ustaAbonelikDevamEttir, ustaPromosyonPerformans } from '../../api'
 import { PaylasimKartlari, panoyaKopyala } from '../../components/PaylasimKartlari'
+
+const PROMO_TUR_ETIKET = { profil: 'Profil', hizmet: 'Hizmet', vitrin: 'Vitrin' }
 
 const PROMO_BILGI = {
   profil: { baslik: 'Profilimi Öne Çıkar', aciklama: 'Arama sonuçlarında diğer ustaların önünde yer al.', ikon: Rocket, renk: 'violet' },
@@ -29,22 +31,52 @@ const tarihTR = (iso) => new Date(iso).toLocaleDateString('tr-TR')
 
 export default function UstaPanelAbonelik() {
   const [ozet, setOzet] = useState(null)
+  const [performans, setPerformans] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState('')
   const [islem, setIslem] = useState('')           // 'plan-3' / 'promo-profil' ...
   const [sureler, setSureler] = useState({ profil: 7, hizmet: 7, vitrin: 7 })
   const [hizmetId, setHizmetId] = useState('')
   const [otomatik, setOtomatik] = useState(false)
+  const [duraklatIslem, setDuraklatIslem] = useState(false)
+  const [duraklatHata, setDuraklatHata] = useState('')
+
+  const yukleOzet = () => ustaAbonelikOzet().then(r => {
+    setOzet(r.data)
+    setHizmetId(String(r.data.promosyon.hizmetler?.[0]?.id || ''))
+  })
 
   useEffect(() => {
-    ustaAbonelikOzet()
-      .then(r => {
-        setOzet(r.data)
-        setHizmetId(String(r.data.promosyon.hizmetler?.[0]?.id || ''))
-      })
+    yukleOzet()
       .catch(() => setHata('Bilgiler yüklenemedi. Sayfayı yenileyip tekrar deneyin.'))
       .finally(() => setYukleniyor(false))
+    ustaPromosyonPerformans().then(r => setPerformans(r.data.promosyonlar)).catch(() => setPerformans([]))
   }, [])
+
+  const duraklat = async () => {
+    if (!window.confirm('Profilini duraklatmak istediğine emin misin? Profilin aramalardan gizlenecek, kalan günlerin korunacak ve istediğin zaman devam ettirebileceksin.')) return
+    setDuraklatHata(''); setDuraklatIslem(true)
+    try {
+      await ustaAbonelikDuraklat()
+      await yukleOzet()
+    } catch (e) {
+      setDuraklatHata(e.response?.data?.hata || 'İşlem başarısız, tekrar dene.')
+    } finally {
+      setDuraklatIslem(false)
+    }
+  }
+
+  const devamEttir = async () => {
+    setDuraklatHata(''); setDuraklatIslem(true)
+    try {
+      await ustaAbonelikDevamEttir()
+      await yukleOzet()
+    } catch (e) {
+      setDuraklatHata(e.response?.data?.hata || 'İşlem başarısız, tekrar dene.')
+    } finally {
+      setDuraklatIslem(false)
+    }
+  }
 
   // Bankanın 3D Secure sayfasına yönlendiren otomatik-submit formu (kayıt sayfasıyla aynı yöntem)
   const odemeSayfasinaGit = (formHtml) => {
@@ -119,12 +151,42 @@ export default function UstaPanelAbonelik() {
             <>
               <p className="text-sm text-gray-700"><span className="font-semibold">{abonelik.plan}</span> · {tarihTR(abonelik.plan_bitis)} tarihine kadar</p>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Clock size={12} /> {abonelik.kalan_gun} gün kaldı{abonelik.otomatik_yenileme ? ' · otomatik yenileme açık' : ''}</p>
+              {abonelik.duraklatildi_mi && (
+                <p className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1"><PauseCircle size={12} /> Profilin şu an duraklatılmış, aramalarda görünmüyor.</p>
+              )}
             </>
           ) : (
             <p className="text-sm text-gray-500">Ücretli üyeler arama listelerinde daha üst sırada yer alır. Aşağıdan bir plan seçebilirsin.</p>
           )}
         </div>
       </div>
+
+      {/* Profili Duraklat */}
+      {(abonelik.ucretli || abonelik.duraklatildi_mi) && (
+        <div className={`rounded-2xl border p-5 shadow-sm ${abonelik.duraklatildi_mi ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-gray-100'}`}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3">
+              <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${abonelik.duraklatildi_mi ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                {abonelik.duraklatildi_mi ? <PlayCircle size={18} /> : <PauseCircle size={18} />}
+              </span>
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm">{abonelik.duraklatildi_mi ? 'Profilin duraklatılmış' : 'Profilimi Duraklat'}</h3>
+                <p className="text-xs text-gray-500 mt-0.5 max-w-md">
+                  {abonelik.duraklatildi_mi
+                    ? 'Devam ettirince kalan günlerin, duraklattığın süre kadar ileri kaydırılarak korunur.'
+                    : 'Duraklatma profilini aramadan gizler. Kalan ödenmiş günleriniz korunur ve sayaç durur.'}
+                </p>
+              </div>
+            </div>
+            <button type="button" disabled={duraklatIslem}
+              onClick={abonelik.duraklatildi_mi ? devamEttir : duraklat}
+              className={`text-sm font-bold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60 whitespace-nowrap ${abonelik.duraklatildi_mi ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}>
+              {duraklatIslem ? 'İşleniyor...' : abonelik.duraklatildi_mi ? 'Profilimi Devam Ettir' : 'Profilimi Duraklat'}
+            </button>
+          </div>
+          {duraklatHata && <p className="text-xs text-red-600 mt-3">{duraklatHata}</p>}
+        </div>
+      )}
 
       {/* 1. Plan seçimi */}
       <section>
@@ -157,7 +219,7 @@ export default function UstaPanelAbonelik() {
       </section>
 
       {/* 2. Öne çıkarma */}
-      <section>
+      <section id="one-cikarma">
         <h2 className="text-lg font-bold text-gray-900 mb-1">2. İşletmeni öne çıkar</h2>
         <p className="text-sm text-gray-500 mb-4">
           Öne çıkarmalar abonelikten ayrıdır ve isteğe bağlıdır. Süreyi sen seçersin; ardışık alımlarda süre mevcut bitişin üstüne eklenir.
@@ -208,6 +270,58 @@ export default function UstaPanelAbonelik() {
             )
           })}
         </div>
+      </section>
+
+      {/* 2b. Öne çıkarma performansı */}
+      <section>
+        <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><BarChart2 size={19} className="text-blue-600" /> Öne çıkarma performansı</h2>
+        <p className="text-sm text-gray-500 mb-4">Satın aldığın öne çıkarmaların aktif olduğu dönemde elde ettiğin gösterim ve iletişim sayıları.</p>
+        {performans === null ? (
+          <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" /></div>
+        ) : performans.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-3">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 text-gray-500 flex-shrink-0"><Megaphone size={18} /></span>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Bu dönemde öne çıkarma yok</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-md">
+                Daha fazla müşteriye görünmek için profilini veya hizmetini öne çıkar.{' '}
+                <a href="#one-cikarma" className="text-blue-600 font-semibold hover:underline">Yukarıdan öne çıkarma satın al →</a>
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
+                  <th className="px-4 py-3">Tür</th>
+                  <th className="px-4 py-3">Tarih aralığı</th>
+                  <th className="px-4 py-3">Durum</th>
+                  <th className="px-4 py-3">Gösterim</th>
+                  <th className="px-4 py-3">İletişim</th>
+                </tr>
+              </thead>
+              <tbody>
+                {performans.map(p => (
+                  <tr key={p.id} className="border-b border-gray-50 last:border-0">
+                    <td className="px-4 py-3 text-gray-800 font-semibold">
+                      {PROMO_TUR_ETIKET[p.tur] || p.tur}
+                      {p.kategori_ad && <span className="block text-xs text-gray-400 font-normal">{p.kategori_ad}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{p.baslangic} – {p.bitis || 'devam ediyor'}</td>
+                    <td className="px-4 py-3">
+                      {p.aktif_mi
+                        ? <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">Aktif</span>
+                        : <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Sona erdi</span>}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-gray-900"><span className="inline-flex items-center gap-1.5"><Eye size={13} className="text-sky-500" /> {p.gosterim}</span></td>
+                    <td className="px-4 py-3 font-semibold text-gray-900"><span className="inline-flex items-center gap-1.5"><MousePointerClick size={13} className="text-green-600" /> {p.iletisim}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* 3. Paylaşım ve davet */}

@@ -2,11 +2,11 @@ import API from '../config.js'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User, ShieldCheck, KeyRound, Heart, Share2, Globe, Wallet, Wrench, BadgeCheck, GraduationCap, ChevronLeft, ChevronRight, ExternalLink, Languages } from 'lucide-react'
+import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User, ShieldCheck, KeyRound, Heart, Share2, Globe, Wallet, Wrench, BadgeCheck, GraduationCap, ChevronLeft, ChevronRight, ExternalLink, Languages, Flag, Users, Award, Info } from 'lucide-react'
 import { DILLER, ODEME_YONTEMLERI, GUNLER } from '../data/profilSecenekleri.js'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
-import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula } from '../api'
+import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula, ustaSikayetGonder } from '../api'
 import SEO from '../components/SEO'
 import { ustaSlugUrl } from '../data/hizmetler.js'
 
@@ -20,6 +20,11 @@ const LABELS = {
     webSitesi: 'Web Sitesi', paylas: 'Paylaş', kopyalandi: 'Kopyalandı!', favori: 'Favori', favoride: 'Favoride',
     haritadaAc: 'Haritada aç', saatler: 'Çalışma Saatleri', yediYirmiDort: '7/24 hizmet veriyor', kapali: 'Kapalı',
     belirtilmedi: 'Belirtilmedi', odeme: 'Ödeme Yöntemleri', diller: 'Konuşulan Diller', ara: 'Ara',
+    sikayetEt: 'Şikayet Et', sikayetBaslik: 'Bu Profili Bildir', sikayetSebep: 'Sebep', sikayetSebepSec: 'Bir sebep seçin',
+    sikayetYaniltici: 'Yanıltıcı bilgi', sikayetKotu: 'Kötü davranış', sikayetDolandiricilik: 'Dolandırıcılık', sikayetDiger: 'Diğer',
+    sikayetAciklama: 'Açıklama', sikayetAciklamaYerTut: 'Şikayetinizi kısaca açıklayın...', sikayetAdiniz: 'Adınız (opsiyonel)',
+    sikayetIletisim: 'Telefon veya e-posta (opsiyonel)', sikayetGonder: 'Şikayeti Gönder', sikayetGonderiliyor: 'Gönderiliyor...',
+    sikayetBasarili: 'Şikayetiniz alındı, ekibimiz inceleyecek.', sikayetVazgec: 'Vazgeç', sikayetTamam: 'Tamam',
   },
   en: {
     hakkinda: 'About', hizmetler: 'Services', vitrin: 'Gallery', yorumlar: 'Reviews', bolge: 'Service Area', bilgiler: 'Business Info',
@@ -29,6 +34,11 @@ const LABELS = {
     webSitesi: 'Website', paylas: 'Share', kopyalandi: 'Copied!', favori: 'Favourite', favoride: 'Saved',
     haritadaAc: 'Open in map', saatler: 'Opening Hours', yediYirmiDort: 'Available 24/7', kapali: 'Closed',
     belirtilmedi: 'Not specified', odeme: 'Payment Methods', diller: 'Languages Spoken', ara: 'Call',
+    sikayetEt: 'Report', sikayetBaslik: 'Report This Profile', sikayetSebep: 'Reason', sikayetSebepSec: 'Choose a reason',
+    sikayetYaniltici: 'Misleading information', sikayetKotu: 'Bad behaviour', sikayetDolandiricilik: 'Scam/fraud', sikayetDiger: 'Other',
+    sikayetAciklama: 'Description', sikayetAciklamaYerTut: 'Briefly describe your complaint...', sikayetAdiniz: 'Your name (optional)',
+    sikayetIletisim: 'Phone or email (optional)', sikayetGonder: 'Send Report', sikayetGonderiliyor: 'Sending...',
+    sikayetBasarili: 'Your report has been received, our team will review it.', sikayetVazgec: 'Cancel', sikayetTamam: 'OK',
   },
 }
 
@@ -43,7 +53,11 @@ export default function UstaDetay() {
   const [usta, setUsta] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [kullanici, setKullanici] = useState(null)
-  const [yorumForm, setYorumForm] = useState({ musteri_adi: '', puan: 5, yorum: '' })
+  const [yorumForm, setYorumForm] = useState({
+    musteri_adi: '', puan: 5, yorum: '',
+    // Faz 2 Görev 10 — kategori bazlı alt puanlar, opsiyonel (0 = boş geçildi)
+    puan_is_kalitesi: 0, puan_iletisim: 0, puan_fiyat_performans: 0,
+  })
   const [yorumGonderildi, setYorumGonderildi] = useState(false)
   const [teklifModal, setTeklifModal] = useState(false)
   const [teklifGonderildi, setTeklifGonderildi] = useState(false)
@@ -62,6 +76,13 @@ export default function UstaDetay() {
   const [sahiplenYukleniyor, setSahiplenYukleniyor] = useState(false)
   const [sahiplenHata, setSahiplenHata] = useState('')
   const [sahiplenBasarili, setSahiplenBasarili] = useState(false)
+
+  // Şikayet Et / Bildir
+  const [sikayetModal, setSikayetModal] = useState(false)
+  const [sikayetForm, setSikayetForm] = useState({ sebep: '', aciklama: '', ad: '', iletisim: '' })
+  const [sikayetGonderildi, setSikayetGonderildi] = useState(false)
+  const [sikayetYukleniyor, setSikayetYukleniyor] = useState(false)
+  const [sikayetHata, setSikayetHata] = useState('')
 
   // Zengin profil: galeri, favori ve paylaş durumu
   const [lightbox, setLightbox] = useState(null)
@@ -113,7 +134,7 @@ export default function UstaDetay() {
   }
 
   const logIletisim = (tur) => {
-    axios.post(`${API}/api/analitik/iletisim`, { usta_id: numericId, tur }, { withCredentials: false })
+    axios.post(`${API}/api/analitik/iletisim`, { usta_id: numericId, tur, dil: i18n.language }, { withCredentials: false })
       .catch(() => {})
   }
 
@@ -134,10 +155,14 @@ export default function UstaDetay() {
     benimBilgilerim().then(r => setKullanici(r.data.kullanici)).catch(() => {})
   }, [numericId])
 
-  // Ustanın paylaştığı yorum bağlantısı (?yorum=1): yorum formuna kaydır
+  // Ustanın paylaştığı yorum bağlantısı (?yorum=1): yorum formuna kaydır ve ilk alana odaklan
   useEffect(() => {
     if (!usta || !new URLSearchParams(location.search).has('yorum')) return
-    const t = setTimeout(() => document.getElementById('profil-yorum-formu')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
+    const t = setTimeout(() => {
+      const form = document.getElementById('profil-yorum-formu')
+      form?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => document.getElementById('yorum-form-ad-input')?.focus(), 500)
+    }, 400)
     return () => clearTimeout(t)
   }, [usta, location.search])
 
@@ -170,7 +195,13 @@ export default function UstaDetay() {
   const yorumGonder = async (e) => {
     e.preventDefault()
     try {
-      await yorumEkle(numericId, yorumForm)
+      // Alt puanlar opsiyonel: 0 (işaretlenmemiş) ise gönderilmez
+      await yorumEkle(numericId, {
+        ...yorumForm,
+        puan_is_kalitesi: yorumForm.puan_is_kalitesi || null,
+        puan_iletisim: yorumForm.puan_iletisim || null,
+        puan_fiyat_performans: yorumForm.puan_fiyat_performans || null,
+      })
       setYorumGonderildi(true)
     } catch {}
   }
@@ -212,6 +243,32 @@ export default function UstaDetay() {
       setSahiplenHata(err.response?.data?.hata || 'Doğrulama başarısız. Tekrar deneyin.')
     } finally {
       setSahiplenYukleniyor(false)
+    }
+  }
+
+  const sikayetKapat = () => {
+    setSikayetModal(false)
+    setSikayetForm({ sebep: '', aciklama: '', ad: '', iletisim: '' })
+    setSikayetGonderildi(false)
+    setSikayetHata('')
+  }
+
+  const sikayetGonderSubmit = async (e) => {
+    e.preventDefault()
+    setSikayetHata('')
+    setSikayetYukleniyor(true)
+    try {
+      await ustaSikayetGonder(numericId, {
+        sebep: sikayetForm.sebep,
+        aciklama: sikayetForm.aciklama,
+        sikayet_eden_ad: sikayetForm.ad,
+        sikayet_eden_iletisim: sikayetForm.iletisim,
+      })
+      setSikayetGonderildi(true)
+    } catch (err) {
+      setSikayetHata(err.response?.data?.hata || 'Şikayet gönderilemedi. Tekrar deneyin.')
+    } finally {
+      setSikayetYukleniyor(false)
     }
   }
 
@@ -293,11 +350,21 @@ export default function UstaDetay() {
   const haritaUrl = (usta.lat && usta.lng)
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${usta.lng - 0.03}%2C${usta.lat - 0.02}%2C${usta.lng + 0.03}%2C${usta.lat + 0.02}&layer=mapnik&marker=${usta.lat}%2C${usta.lng}`
     : null
+  // Faz 2 — Ekibimiz / Public Sertifikalarım / Ödüller (tamamen opsiyonel vitrin bölümleri)
+  const ekip = usta.ekip || []
+  const sertifikalar = usta.sertifikalar || []
+  const oduller = usta.oduller || []
+  const altPuanlar = usta.alt_puanlar || {}
+  const altPuanVar = altPuanlar.is_kalitesi || altPuanlar.iletisim || altPuanlar.fiyat_performans
+  const ALT_PUAN_ETIKET = { is_kalitesi: t('ustaDetay.isKalitesi'), iletisim: t('ustaDetay.iletisimPuani'), fiyat_performans: t('ustaDetay.fiyatPerformans') }
   const git = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const sekmeler = [
     ['profil-hakkinda', L.hakkinda],
     ['profil-hizmetler', L.hizmetler],
     ...(usta.fotograflar?.length ? [['profil-vitrin', L.vitrin]] : []),
+    ...(ekip.length ? [['profil-ekip', t('ustaDetay.ekibimiz')]] : []),
+    ...(sertifikalar.length ? [['profil-sertifikalar', t('ustaDetay.sertifikalarimiz')]] : []),
+    ...(oduller.length ? [['profil-oduller', t('ustaDetay.oduller')]] : []),
     ['profil-yorumlar', L.yorumlar],
     ['profil-bolge', L.bolge],
     ['profil-bilgiler', L.bilgiler],
@@ -445,6 +512,7 @@ export default function UstaDetay() {
               )}
               {usta.web_sitesi && (
                 <a href={usta.web_sitesi} target="_blank" rel="noopener noreferrer nofollow"
+                  onClick={() => logIletisim('web_sitesi')}
                   className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
                   <Globe size={15} /> {L.webSitesi} <ExternalLink size={12} className="text-gray-400" />
                 </a>
@@ -459,6 +527,10 @@ export default function UstaDetay() {
                   <Heart size={14} className={favori ? 'fill-rose-500' : ''} /> {favori ? L.favoride : L.favori}
                 </button>
               </div>
+              <button onClick={() => setSikayetModal(true)}
+                className="self-start flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                <Flag size={12} /> {L.sikayetEt}
+              </button>
             </div>
           </div>
         </div>
@@ -538,6 +610,85 @@ export default function UstaDetay() {
             </section>
           )}
 
+          {/* Ekibimiz — Faz 2 Görev 7 (SoliHoli kıyaslaması: sadece görünüm amaçlı, yetkilendirme sistemi değil) */}
+          {ekip.length > 0 && (
+            <section id="profil-ekip" className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 scroll-mt-16">
+              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Users size={18} className="text-gray-400" /> {t('ustaDetay.ekibimiz')}
+              </h2>
+              <div className="flex flex-wrap gap-4">
+                {ekip.map(e => (
+                  <div key={e.id} className="text-center w-20">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                      {e.foto_url ? (
+                        <img src={`${API}${e.foto_url}`} alt={e.ad} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-gray-300">{e.ad.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 mt-1.5 truncate">{e.ad}</p>
+                    {e.rol && <p className="text-[11px] text-gray-400 truncate">{e.rol}</p>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Public Sertifikalarım — Faz 2 Görev 8 (UstaBelge/KYC'den tamamen ayrı, admin onayı gerekmez) */}
+          {sertifikalar.length > 0 && (
+            <section id="profil-sertifikalar" className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 scroll-mt-16">
+              <h2 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                <GraduationCap size={18} className="text-gray-400" /> {t('ustaDetay.sertifikalarimiz')}
+              </h2>
+              <p className="text-xs text-gray-400 flex items-start gap-1.5 mb-4">
+                <Info size={12} className="shrink-0 mt-0.5" /> {t('ustaDetay.dogrulanmamisNot')}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {sertifikalar.map(s => (
+                  <a key={s.id} href={`${API}${s.url}`} target="_blank" rel="noreferrer"
+                    className="block rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+                      {s.pdf_mi ? (
+                        <FileText size={28} className="text-gray-300" />
+                      ) : (
+                        <img src={`${API}${s.url}`} alt={s.baslik} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{s.baslik}</p>
+                      {s.aciklama && <p className="text-[11px] text-gray-400 truncate">{s.aciklama}</p>}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Ödüller — Faz 2 Görev 9 */}
+          {oduller.length > 0 && (
+            <section id="profil-oduller" className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 scroll-mt-16">
+              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Award size={18} className="text-gray-400" /> {t('ustaDetay.oduller')}
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {oduller.map(o => (
+                  <div key={o.id} className="flex items-start gap-3 border border-gray-100 rounded-xl px-4 py-3 bg-gray-50/60">
+                    <Award size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{o.baslik}</p>
+                      {(o.veren_kurum || o.yil) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {o.veren_kurum && `${t('ustaDetay.verenKurum')}: ${o.veren_kurum}`}{o.veren_kurum && o.yil ? ' · ' : ''}{o.yil || ''}
+                        </p>
+                      )}
+                      {o.aciklama && <p className="text-xs text-gray-500 mt-1">{o.aciklama}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Yorumlar */}
           <section id="profil-yorumlar" className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 scroll-mt-16">
             <h2 className="font-bold text-gray-900 mb-5">
@@ -565,6 +716,22 @@ export default function UstaDetay() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            {/* Faz 2 Görev 10 — kategori bazlı alt puanlar (sadece dolu olanlar ortalamaya girer) */}
+            {altPuanVar > 0 && (
+              <div className="grid sm:grid-cols-3 gap-3 mb-6 pb-6 border-b border-gray-100">
+                {Object.entries(altPuanlar).filter(([, v]) => v).map(([anahtar, deger]) => (
+                  <div key={anahtar}>
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <span>{ALT_PUAN_ETIKET[anahtar]}</span>
+                      <span className="font-bold text-gray-800">{deger.toFixed(1)}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(deger / 5) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             {!yorumlar.length ? (
@@ -605,7 +772,7 @@ export default function UstaDetay() {
               <form onSubmit={yorumGonder} className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.adinizSoyadiniz')}</label>
-                  <input type="text" required value={yorumForm.musteri_adi}
+                  <input id="yorum-form-ad-input" type="text" required value={yorumForm.musteri_adi}
                     onChange={e => setYorumForm(f => ({ ...f, musteri_adi: e.target.value }))}
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400"
                     placeholder={t('ustaDetay.adinizSoyadiniz')} />
@@ -613,6 +780,19 @@ export default function UstaDetay() {
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.puaniniz')}</label>
                   <Yildizlar puan={yorumForm.puan} tikla={(p) => setYorumForm(f => ({ ...f, puan: p }))} boyut={28} />
+                </div>
+                {/* Faz 2 Görev 10 — kategori bazlı alt puanlar, tamamen opsiyonel */}
+                <div className="grid sm:grid-cols-3 gap-3 bg-gray-50 rounded-xl p-3">
+                  {[
+                    ['puan_is_kalitesi', t('ustaDetay.isKalitesi')],
+                    ['puan_iletisim', t('ustaDetay.iletisimPuani')],
+                    ['puan_fiyat_performans', t('ustaDetay.fiyatPerformans')],
+                  ].map(([alan, etiket]) => (
+                    <div key={alan}>
+                      <label className="text-[11px] font-semibold text-gray-500 mb-1 block">{etiket} <span className="text-gray-400 font-normal">{t('ustaDetay.opsiyonel')}</span></label>
+                      <Yildizlar puan={yorumForm[alan]} tikla={(p) => setYorumForm(f => ({ ...f, [alan]: f[alan] === p ? 0 : p }))} boyut={18} />
+                    </div>
+                  ))}
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{t('ustaDetay.yorumunuz')}</label>
@@ -958,6 +1138,90 @@ export default function UstaDetay() {
                       <><CheckCircle2 size={16} /> Hesabımı Oluştur</>
                     )}
                   </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Şikayet Et / Bildir Modal */}
+      {sikayetModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-red-500 to-red-600 rounded-t-2xl">
+              <div>
+                <h3 className="font-extrabold text-white text-base flex items-center gap-2"><Flag size={16} /> {L.sikayetBaslik}</h3>
+                <p className="text-xs text-red-100 mt-0.5 font-medium">{usta.ad_soyad} · {usta.kategori}</p>
+              </div>
+              <button onClick={sikayetKapat}
+                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition">
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {sikayetGonderildi ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-emerald-200">
+                    <CheckCircle2 size={30} className="text-emerald-500" />
+                  </div>
+                  <p className="font-extrabold text-gray-900 text-lg mb-2">{L.sikayetBasarili}</p>
+                  <button onClick={sikayetKapat}
+                    className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-3 rounded-xl text-sm transition">
+                    {L.sikayetTamam}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={sikayetGonderSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">{L.sikayetSebep} *</label>
+                    <select value={sikayetForm.sebep} required
+                      onChange={e => setSikayetForm(f => ({ ...f, sebep: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-400 bg-white">
+                      <option value="">{L.sikayetSebepSec}</option>
+                      <option value="yaniltici">{L.sikayetYaniltici}</option>
+                      <option value="kotu_davranis">{L.sikayetKotu}</option>
+                      <option value="dolandiricilik">{L.sikayetDolandiricilik}</option>
+                      <option value="diger">{L.sikayetDiger}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">{L.sikayetAciklama} *</label>
+                    <textarea value={sikayetForm.aciklama} required minLength={5} rows={3}
+                      onChange={e => setSikayetForm(f => ({ ...f, aciklama: e.target.value }))}
+                      placeholder={L.sikayetAciklamaYerTut}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input value={sikayetForm.ad} placeholder={L.sikayetAdiniz}
+                      onChange={e => setSikayetForm(f => ({ ...f, ad: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-400" />
+                    <input value={sikayetForm.iletisim} placeholder={L.sikayetIletisim}
+                      onChange={e => setSikayetForm(f => ({ ...f, iletisim: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-400" />
+                  </div>
+
+                  {sikayetHata && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+                      {sikayetHata}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={sikayetYukleniyor}
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-white font-extrabold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2">
+                      {sikayetYukleniyor ? (
+                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> {L.sikayetGonderiliyor}</>
+                      ) : (
+                        <><Flag size={14} /> {L.sikayetGonder}</>
+                      )}
+                    </button>
+                    <button type="button" onClick={sikayetKapat}
+                      className="text-sm font-semibold text-gray-600 px-4 py-3 rounded-xl hover:bg-gray-100">
+                      {L.sikayetVazgec}
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
