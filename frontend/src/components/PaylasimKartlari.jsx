@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Share2, Link2, UserPlus, Copy, Check, MessageCircle } from 'lucide-react'
+import { Share2, Link2, UserPlus, Copy, Check, MessageCircle, Mail } from 'lucide-react'
 import { ustaAbonelikOzet } from '../api'
 
 // Panoya kopyala (eski tarayıcılar için yedek yöntemle)
@@ -36,6 +36,35 @@ function KopyalaButon({ metin, etiket, sinif }) {
   )
 }
 
+const wa = (metin) => `https://wa.me/?text=${encodeURIComponent(metin)}`
+
+// Yorum bağlantısı kartı: "Bağlantıyı Kopyala" + "WhatsApp ile Paylaş" + "E-posta ile Paylaş".
+// Hem Abonelik sayfasındaki PaylasimKartlari'nda hem Yorumlar sayfasında tek başına kullanılır.
+export function YorumLinkKarti({ link }) {
+  if (!link) return null
+  const mailto = `mailto:?subject=${encodeURIComponent('Ada Usta - Yorum bırakır mısınız?')}&body=${encodeURIComponent(`Merhaba, Ada Usta'daki profilime bu bağlantıdan yorum bırakabilirsiniz: ${link}`)}`
+  return (
+    <div className="bg-white rounded-2xl border border-violet-100 p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="w-8 h-8 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center"><Link2 size={16} /></span>
+        <h3 className="font-bold text-gray-900 text-sm">Yorum Bağlantınızı Paylaşın</h3>
+      </div>
+      <p className="text-xs text-gray-500 mb-3">Bu bağlantıyı işini bitirdiğin müşteriye gönder; tek tıkla yorum yazsın.</p>
+      <div className="flex flex-wrap gap-2">
+        <div className="flex-1 min-w-[140px]"><KopyalaButon metin={link} etiket="Bağlantıyı Kopyala" sinif="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200" /></div>
+        <a href={wa(`Ada Usta'daki profilime bu bağlantıdan yorum bırakabilirsiniz: ${link}`)} target="_blank" rel="noreferrer"
+          className="flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">
+          <MessageCircle size={13} /> WhatsApp ile Paylaş
+        </a>
+        <a href={mailto}
+          className="flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+          <Mail size={13} /> E-posta ile Paylaş
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // Profil paylaş / yorum bağlantısı / usta davet et — panelin birkaç yerinde aynı kartlar kullanılır.
 export function PaylasimKartlari({ ozet }) {
   if (!ozet) return null
@@ -47,7 +76,6 @@ export function PaylasimKartlari({ ozet }) {
       await panoyaKopyala(linkler.profil)
     }
   }
-  const wa = (metin) => `https://wa.me/?text=${encodeURIComponent(metin)}`
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -69,14 +97,7 @@ export function PaylasimKartlari({ ozet }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-violet-100 p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="w-8 h-8 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center"><Link2 size={16} /></span>
-          <h3 className="font-bold text-gray-900 text-sm">Yorum bağlantını paylaş</h3>
-        </div>
-        <p className="text-xs text-gray-500 mb-3">Bu bağlantıyı işini bitirdiğin müşteriye gönder; tek tıkla yorum yazsın.</p>
-        <KopyalaButon metin={linkler.yorum} etiket="Yorum bağlantısını kopyala" sinif="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200" />
-      </div>
+      <YorumLinkKarti link={linkler.yorum} />
 
       <div className="bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-1.5">
@@ -103,4 +124,11 @@ export default function PaylasimKartlariYukleyici() {
   const [ozet, setOzet] = useState(null)
   useEffect(() => { ustaAbonelikOzet().then(r => setOzet(r.data)).catch(() => {}) }, [])
   return <PaylasimKartlari ozet={ozet} />
+}
+
+// Yorumlar sayfası gibi 'ozet' verisi olmayan yerlerde tek başına "Yorum bağlantını paylaş" kartı için.
+export function YorumLinkKartiYukleyici() {
+  const [link, setLink] = useState(null)
+  useEffect(() => { ustaAbonelikOzet().then(r => setLink(r.data?.linkler?.yorum)).catch(() => {}) }, [])
+  return <YorumLinkKarti link={link} />
 }

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Sehir, Ilce, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Sehir, Ilce, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken, UstaEkipUyesi, UstaSertifika, UstaOdul, IsTalebiMesaj, HizmetOnerisi
 from extensions import limiter
 from datetime import datetime, timedelta
 from functools import wraps
@@ -273,7 +273,18 @@ def is_talepleri(usta):
     if durum != 'hepsi':
         q = q.filter_by(durum=durum)
     talepler = q.order_by(IsTalebi.olusturma.desc()).all()
-    return jsonify({'talepler': [t.to_dict() for t in talepler]})
+    # Her talep için müşteriden gelen okunmamış mesaj sayısı (kart üzerinde rozet için)
+    okunmamis_map = dict(
+        db.session.query(IsTalebiMesaj.is_talebi_id, db.func.count(IsTalebiMesaj.id))
+        .filter(IsTalebiMesaj.is_talebi_id.in_([t.id for t in talepler]), IsTalebiMesaj.gonderen == 'musteri', IsTalebiMesaj.okundu == False)  # noqa: E712
+        .group_by(IsTalebiMesaj.is_talebi_id).all()
+    ) if talepler else {}
+    sonuc = []
+    for t in talepler:
+        d = t.to_dict()
+        d['mesaj_okunmamis'] = okunmamis_map.get(t.id, 0)
+        sonuc.append(d)
+    return jsonify({'talepler': sonuc})
 
 
 @usta_panel_bp.route('/is-talepleri/<int:tid>', methods=['PUT'])
@@ -351,7 +362,7 @@ def istatistikler(usta):
     gosterim_satirlar = db.session.query(AnalitikGosterim.gun, AnalitikGosterim.adet) \
         .filter(AnalitikGosterim.usta_id == usta.id, AnalitikGosterim.gun >= onceki_bas).all()
 
-    TURLER = ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas', 'gosterim')
+    TURLER = ('ara', 'whatsapp', 'goruntule', 'teklif', 'favori', 'paylas', 'gosterim', 'web_sitesi')
     gunluk = {}  # 'YYYY-MM-DD' -> {tur: adet}
     for gun, tur, adet in satirlar:
         gunluk.setdefault(str(gun), {})[tur] = adet
@@ -391,9 +402,16 @@ def istatistikler(usta):
         'iletisim_orani': oran(ozet['iletisim'], ozet['goruntule']),
     }
 
+    # Dile göre talep kırılımı (seçilen aralık) — sadece dolu 'dil' kayıtları sayılır, boş/None toplanmaz
+    bas_gun_dt = datetime.combine(bas_gun, datetime.min.time())
+    dil_satirlar = db.session.query(IletisimLog.dil, func.count(IletisimLog.id)) \
+        .filter(IletisimLog.usta_id == usta.id, IletisimLog.tarih >= bas_gun_dt) \
+        .filter(IletisimLog.dil.isnot(None), IletisimLog.dil != '') \
+        .group_by(IletisimLog.dil).all()
+    dil_dagilim = {dil: adet for dil, adet in dil_satirlar}
+
     # Talep durum dağılımı (seçilen aralık)
-    bas_talep = datetime.combine(bas_gun, datetime.min.time())
-    durum_dagilim = {d: IsTalebi.query.filter(IsTalebi.usta_id == usta.id, IsTalebi.olusturma >= bas_talep).filter_by(durum=d).count()
+    durum_dagilim = {d: IsTalebi.query.filter(IsTalebi.usta_id == usta.id, IsTalebi.olusturma >= bas_gun_dt).filter_by(durum=d).count()
                      for d in ['bekliyor', 'kabul', 'red', 'tamamlandi']}
 
     # Yorumlar
@@ -406,12 +424,67 @@ def istatistikler(usta):
         'aralik': aralik,
         'ozet': ozet, 'onceki': onceki, 'huni': huni, 'seri': seri,
         'gunluk_iletisim': seri,   # eski alan adı (geriye dönük uyumluluk)
+        'dil_dagilim': dil_dagilim,
         'durum_dagilim': durum_dagilim,
         'puan_dagilim': puan_dagilim,
         'toplam_yorum': len(yorumlar),
         'ort_puan': usta.ortalama_puan(),
         'yorumlar': [y.to_dict() for y in yorumlar[:20]],
     })
+
+
+# ──────────────────────────────────────────────────────────
+# Öne çıkarma performansı — satın alınan promosyonların döneminde
+# elde edilen gösterim/iletişim sayıları (basit toplam, "lift" hesabı yok)
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/promosyon-performans', methods=['GET'])
+@usta_gerekli
+def promosyon_performans(usta):
+    from sqlalchemy import func
+    from models import AnalitikGosterim
+
+    simdi = datetime.utcnow()
+    promosyonlar = (
+        PromosyonSatis.query
+        .filter_by(usta_id=usta.id)
+        .filter(PromosyonSatis.durum.in_(['aktif', 'iptal']))
+        .filter(PromosyonSatis.baslangic.isnot(None))
+        .order_by(PromosyonSatis.baslangic.desc())
+        .limit(10)
+        .all()
+    )
+
+    sonuc = []
+    for p in promosyonlar:
+        bitis_eff = min(p.bitis, simdi) if p.bitis else simdi
+        aktif_mi = p.durum == 'aktif' and (not p.bitis or p.bitis >= simdi)
+
+        gosterim_toplam = db.session.query(func.sum(AnalitikGosterim.adet)).filter(
+            AnalitikGosterim.usta_id == usta.id,
+            AnalitikGosterim.gun >= p.baslangic.date(),
+            AnalitikGosterim.gun <= bitis_eff.date(),
+        ).scalar() or 0
+
+        iletisim_toplam = IletisimLog.query.filter(
+            IletisimLog.usta_id == usta.id,
+            IletisimLog.tarih >= p.baslangic,
+            IletisimLog.tarih <= bitis_eff,
+            IletisimLog.tur.in_(['ara', 'whatsapp', 'teklif']),
+        ).count()
+
+        sonuc.append({
+            'id': p.id,
+            'tur': p.tur,  # profil / hizmet / vitrin
+            'kategori_ad': p.kategori.ad if p.kategori else None,
+            'baslangic': p.baslangic.strftime('%d.%m.%Y'),
+            'bitis': p.bitis.strftime('%d.%m.%Y') if p.bitis else None,
+            'durum': p.durum,
+            'aktif_mi': aktif_mi,
+            'gosterim': int(gosterim_toplam),
+            'iletisim': iletisim_toplam,
+        })
+
+    return jsonify({'promosyonlar': sonuc})
 
 
 # ──────────────────────────────────────────────────────────
@@ -425,6 +498,7 @@ def ayarlar_getir(usta):
         'email': k.email if k else '',
         'telefon': usta.telefon,
         'bildirim': usta.bildirim_tercihi(),
+        'tercih_dil': usta.ekstra().get('tercih_dil') or 'tr',
         'push_cihaz_sayisi': FCMToken.query.filter_by(kullanici_id=usta.kullanici_id, aktif=True).count(),
     })
 
@@ -440,9 +514,17 @@ def ayarlar_kaydet(usta):
     for anahtar in Usta.VARSAYILAN_BILDIRIM:
         if isinstance(gelen.get(anahtar), bool):
             tercih[anahtar] = gelen[anahtar]
-    usta.ekstra_guncelle(bildirim=tercih)
+
+    guncellenecek = {'bildirim': tercih}
+    tercih_dil = data.get('tercih_dil')
+    if tercih_dil is not None:
+        if tercih_dil not in Usta.EKSTRA_DILLER:
+            return jsonify({'hata': 'Geçersiz dil'}), 400
+        guncellenecek['tercih_dil'] = tercih_dil
+
+    usta.ekstra_guncelle(**guncellenecek)
     db.session.commit()
-    return jsonify({'mesaj': 'Ayarlar kaydedildi', 'bildirim': tercih})
+    return jsonify({'mesaj': 'Ayarlar kaydedildi', 'bildirim': tercih, 'tercih_dil': usta.ekstra().get('tercih_dil') or 'tr'})
 
 
 @usta_panel_bp.route('/sifre-degistir', methods=['POST'])
@@ -490,7 +572,10 @@ def hesap_kapat(usta):
 def yorumlar(usta):
     tum = Yorum.query.filter_by(usta_id=usta.id)\
         .order_by(Yorum.tarih.desc()).all()
-    return jsonify({'yorumlar': [y.to_dict() for y in tum]})
+    return jsonify({
+        'yorumlar': [y.to_dict() for y in tum],
+        'alt_puanlar': usta.ortalama_alt_puanlar(),
+    })
 
 
 # ──────────────────────────────────────────────────────────
@@ -728,6 +813,8 @@ def abonelik_ozet(usta):
             'durum': ab.durum if ab else None,
             'otomatik_yenileme': bool(ab.otomatik_yenileme) if ab else False,
             'kayitli_kart_var': bool(usta.cardplus_safekey),
+            'duraklatildi_mi': bool(ab.duraklatildi_mi) if ab else False,
+            'duraklatma_tarihi': ab.duraklatma_tarihi.isoformat() if ab and ab.duraklatma_tarihi else None,
         },
         'planlar': plan_listesi,
         'promosyon': {
@@ -777,6 +864,53 @@ def otomatik_yenileme_ayarla(usta):
     ab.otomatik_yenileme = acik
     db.session.commit()
     return jsonify({'mesaj': 'Otomatik yenileme açıldı' if acik else 'Otomatik yenileme kapatıldı, mevcut döneminiz sonuna kadar planınız aktif kalacak', 'otomatik_yenileme': ab.otomatik_yenileme})
+
+
+# ──────────────────────────────────────────────────────────
+# Profili Duraklat (SoliHoli kıyaslaması — Faz 1):
+# Ücretli abonelik varken profil aramalardan gizlenir, kalan gün korunur (sayaç durur).
+# Devam ettirince duraklama süresi kadar bitiş tarihi ileri kaydırılır.
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/abonelik/duraklat', methods=['POST'])
+@usta_gerekli
+def abonelik_duraklat(usta):
+    simdi = datetime.utcnow()
+    ab = Abonelik.query.filter_by(usta_id=usta.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+    if not ab or not usta.plan or usta.plan == 'ucretsiz' or not usta.plan_bitis or usta.plan_bitis <= simdi:
+        return jsonify({'hata': 'Duraklatabileceğin aktif bir ücretli aboneliğin bulunmuyor'}), 400
+    if ab.duraklatildi_mi:
+        return jsonify({'hata': 'Profilin zaten duraklatılmış'}), 400
+
+    ab.duraklatildi_mi = True
+    ab.duraklatma_tarihi = simdi
+    db.session.commit()
+    return jsonify({
+        'mesaj': 'Profilin duraklatıldı. Arama sonuçlarından gizlendin; kalan abonelik günlerin korunuyor.',
+        'abonelik': ab.to_dict(),
+    })
+
+
+@usta_panel_bp.route('/abonelik/devam-ettir', methods=['POST'])
+@usta_gerekli
+def abonelik_devam_ettir(usta):
+    ab = Abonelik.query.filter_by(usta_id=usta.id, duraklatildi_mi=True).order_by(Abonelik.id.desc()).first()
+    if not ab:
+        return jsonify({'hata': 'Duraklatılmış bir aboneliğin bulunmuyor'}), 400
+
+    simdi = datetime.utcnow()
+    duraklama_suresi = simdi - (ab.duraklatma_tarihi or simdi)
+    if ab.bitis:
+        ab.bitis = ab.bitis + duraklama_suresi
+        usta.plan_bitis = ab.bitis
+    if ab.yenileme_tarihi:
+        ab.yenileme_tarihi = ab.yenileme_tarihi + duraklama_suresi
+    ab.duraklatildi_mi = False
+    ab.duraklatma_tarihi = None
+    db.session.commit()
+    return jsonify({
+        'mesaj': 'Profilin devam ettirildi, arama sonuçlarında tekrar görünüyorsun.',
+        'abonelik': ab.to_dict(),
+    })
 
 
 # ──────────────────────────────────────────────────────────
@@ -892,3 +1026,246 @@ def yorum_cevapla(usta, yid):
     yorum.cevap_tarih = datetime.utcnow()
     db.session.commit()
     return jsonify({'mesaj': 'Yanıtınız kaydedildi', 'yorum': yorum.to_dict()})
+
+
+# ──────────────────────────────────────────────────────────
+# Ekibimiz — Faz 2 Görev 7 (SoliHoli kıyaslaması)
+# SADECE GÖRÜNÜM amaçlı çalışan listesi (isim + serbest metin rol). Yetkilendirme/izin
+# sistemi DEĞİL — satıcı panelindeki rol-bazlı yetki sisteminden tamamen ayrı ve basit.
+# ──────────────────────────────────────────────────────────
+MAX_EKIP_UYESI = 20
+
+
+@usta_panel_bp.route('/ekip', methods=['GET'])
+@usta_gerekli
+def ekip_getir(usta):
+    liste = UstaEkipUyesi.query.filter_by(usta_id=usta.id).order_by(UstaEkipUyesi.sira, UstaEkipUyesi.id).all()
+    return jsonify({'ekip': [e.to_dict() for e in liste]})
+
+
+@usta_panel_bp.route('/ekip', methods=['POST'])
+@usta_gerekli
+def ekip_ekle(usta):
+    # multipart/form-data (foto opsiyonel) veya application/json kabul eder
+    veri = request.form if request.form else (request.get_json(silent=True) or {})
+    ad = (veri.get('ad') or '').strip()
+    rol = (veri.get('rol') or '').strip()[:60]
+    if not ad:
+        return jsonify({'hata': 'Ad zorunludur'}), 400
+    if len(ad) > 100:
+        return jsonify({'hata': 'Ad çok uzun'}), 400
+
+    mevcut_sayi = UstaEkipUyesi.query.filter_by(usta_id=usta.id).count()
+    if mevcut_sayi >= MAX_EKIP_UYESI:
+        return jsonify({'hata': f'En fazla {MAX_EKIP_UYESI} ekip üyesi ekleyebilirsin'}), 400
+
+    foto_adi = None
+    if 'dosya' in request.files and request.files['dosya'].filename:
+        f = request.files['dosya']
+        ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+        if ext not in IZIN_UZANTILAR:
+            return jsonify({'hata': 'Desteklenmeyen dosya türü'}), 400
+        foto_adi = f'ekip_{uuid.uuid4().hex}.{ext}'
+        f.save(os.path.join(UPLOAD_FOLDER, foto_adi))
+
+    uye = UstaEkipUyesi(usta_id=usta.id, ad=ad, rol=rol, foto=foto_adi, sira=mevcut_sayi)
+    db.session.add(uye)
+    db.session.commit()
+    return jsonify({'mesaj': 'Ekip üyesi eklendi', 'uye': uye.to_dict()}), 201
+
+
+@usta_panel_bp.route('/ekip/<int:eid>', methods=['DELETE'])
+@usta_gerekli
+def ekip_sil(usta, eid):
+    uye = UstaEkipUyesi.query.filter_by(id=eid, usta_id=usta.id).first_or_404()
+    if uye.foto:
+        yol = os.path.join(UPLOAD_FOLDER, uye.foto)
+        if os.path.exists(yol):
+            os.remove(yol)
+    db.session.delete(uye)
+    db.session.commit()
+    return jsonify({'mesaj': 'Ekip üyesi silindi'})
+
+
+# ──────────────────────────────────────────────────────────
+# Public Sertifikalarım — Faz 2 Görev 8 (DİKKAT: GİZLİLİK)
+# UstaBelge (kimlik doğrulama, GİZLİ/admin onaylı) ile KARIŞTIRILMAMALI.
+# Bu alan ustanın kendi isteğiyle public profilde göstermek istediği sertifika/diploma
+# görselleridir — bir vitrin/iddiadır, admin onayı ZORUNLU DEĞİL, her zaman görünür.
+# ──────────────────────────────────────────────────────────
+IZIN_SERTIFIKA_UZANTILAR = {'png', 'jpg', 'jpeg', 'pdf'}
+MAX_SERTIFIKA = 20
+
+
+@usta_panel_bp.route('/sertifikalar', methods=['GET'])
+@usta_gerekli
+def sertifikalar_getir(usta):
+    liste = UstaSertifika.query.filter_by(usta_id=usta.id).order_by(UstaSertifika.sira, UstaSertifika.id).all()
+    return jsonify({'sertifikalar': [s.to_dict() for s in liste]})
+
+
+@usta_panel_bp.route('/sertifikalar', methods=['POST'])
+@usta_gerekli
+def sertifika_ekle(usta):
+    baslik = (request.form.get('baslik') or '').strip()
+    aciklama = (request.form.get('aciklama') or '').strip()
+    if not baslik:
+        return jsonify({'hata': 'Başlık zorunludur'}), 400
+    if len(baslik) > 150:
+        return jsonify({'hata': 'Başlık çok uzun'}), 400
+    if 'dosya' not in request.files or not request.files['dosya'].filename:
+        return jsonify({'hata': 'Dosya seçilmedi'}), 400
+
+    mevcut_sayi = UstaSertifika.query.filter_by(usta_id=usta.id).count()
+    if mevcut_sayi >= MAX_SERTIFIKA:
+        return jsonify({'hata': f'En fazla {MAX_SERTIFIKA} sertifika ekleyebilirsin'}), 400
+
+    f = request.files['dosya']
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in IZIN_SERTIFIKA_UZANTILAR:
+        return jsonify({'hata': 'Desteklenmeyen dosya türü (png, jpg, pdf)'}), 400
+    ad = f'sertifika_{uuid.uuid4().hex}.{ext}'
+    f.save(os.path.join(UPLOAD_FOLDER, ad))
+
+    sertifika = UstaSertifika(usta_id=usta.id, baslik=baslik, aciklama=aciklama, dosya=ad, sira=mevcut_sayi)
+    db.session.add(sertifika)
+    db.session.commit()
+    return jsonify({'mesaj': 'Sertifika eklendi', 'sertifika': sertifika.to_dict()}), 201
+
+
+@usta_panel_bp.route('/sertifikalar/<int:sid>', methods=['DELETE'])
+@usta_gerekli
+def sertifika_sil(usta, sid):
+    sertifika = UstaSertifika.query.filter_by(id=sid, usta_id=usta.id).first_or_404()
+    yol = os.path.join(UPLOAD_FOLDER, sertifika.dosya)
+    if os.path.exists(yol):
+        os.remove(yol)
+    db.session.delete(sertifika)
+    db.session.commit()
+    return jsonify({'mesaj': 'Sertifika silindi'})
+
+
+# ──────────────────────────────────────────────────────────
+# Ödüller — Faz 2 Görev 9 (public, vitrin amaçlı, admin onayı gerekmez)
+# ──────────────────────────────────────────────────────────
+MAX_ODUL = 20
+
+
+@usta_panel_bp.route('/oduller', methods=['GET'])
+@usta_gerekli
+def oduller_getir(usta):
+    liste = UstaOdul.query.filter_by(usta_id=usta.id).order_by(UstaOdul.sira, UstaOdul.id).all()
+    return jsonify({'oduller': [o.to_dict() for o in liste]})
+
+
+@usta_panel_bp.route('/oduller', methods=['POST'])
+@usta_gerekli
+def odul_ekle(usta):
+    data = request.get_json(silent=True) or {}
+    baslik = (data.get('baslik') or '').strip()
+    if not baslik:
+        return jsonify({'hata': 'Başlık zorunludur'}), 400
+    if len(baslik) > 150:
+        return jsonify({'hata': 'Başlık çok uzun'}), 400
+
+    mevcut_sayi = UstaOdul.query.filter_by(usta_id=usta.id).count()
+    if mevcut_sayi >= MAX_ODUL:
+        return jsonify({'hata': f'En fazla {MAX_ODUL} ödül ekleyebilirsin'}), 400
+
+    yil = data.get('yil')
+    try:
+        yil = int(yil) if yil not in (None, '') else None
+        if yil is not None and (yil < 1950 or yil > datetime.utcnow().year + 1):
+            yil = None
+    except (TypeError, ValueError):
+        yil = None
+
+    odul = UstaOdul(
+        usta_id=usta.id,
+        baslik=baslik,
+        veren_kurum=(data.get('veren_kurum') or '').strip()[:150],
+        yil=yil,
+        aciklama=(data.get('aciklama') or '').strip(),
+        sira=mevcut_sayi,
+    )
+    db.session.add(odul)
+    db.session.commit()
+    return jsonify({'mesaj': 'Ödül eklendi', 'odul': odul.to_dict()}), 201
+
+
+@usta_panel_bp.route('/oduller/<int:oid>', methods=['DELETE'])
+@usta_gerekli
+def odul_sil(usta, oid):
+    odul = UstaOdul.query.filter_by(id=oid, usta_id=usta.id).first_or_404()
+    db.session.delete(odul)
+    db.session.commit()
+    return jsonify({'mesaj': 'Ödül silindi'})
+
+
+# ──────────────────────────────────────────────────────────
+# Faz 3 Görev 12 — Müşteri ↔ Usta mesajlaşması (thread = bir IsTalebi)
+# Admin↔usta Mesaj desenine benzer (gönderen/okundu/olusturma) ama IsTalebi'ye bağlı ve
+# genel bir sohbet/inbox DEĞİL — her thread belli bir iş talebiyle sınırlı.
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/is-talepleri/<int:tid>/mesajlar', methods=['GET'])
+@usta_gerekli
+def talep_mesajlari_getir(usta, tid):
+    talep = IsTalebi.query.filter_by(id=tid, usta_id=usta.id).first_or_404()
+    liste = IsTalebiMesaj.query.filter_by(is_talebi_id=talep.id).order_by(IsTalebiMesaj.olusturma.asc()).all()
+    # Usta thread'i açınca müşteriden gelen okunmamış mesajlar okunmuş sayılır
+    IsTalebiMesaj.query.filter_by(is_talebi_id=talep.id, gonderen='musteri', okundu=False).update({'okundu': True})
+    db.session.commit()
+    return jsonify({'mesajlar': [m.to_dict() for m in liste]})
+
+
+@usta_panel_bp.route('/is-talepleri/<int:tid>/mesajlar', methods=['POST'])
+@limiter.limit('30 per hour')
+@usta_gerekli
+def talep_mesaj_gonder(usta, tid):
+    talep = IsTalebi.query.filter_by(id=tid, usta_id=usta.id).first_or_404()
+    data = request.get_json(silent=True) or {}
+    icerik = (data.get('icerik') or '').strip()
+    if not icerik:
+        return jsonify({'hata': 'Mesaj içeriği boş olamaz'}), 400
+    if len(icerik) > 2000:
+        return jsonify({'hata': 'Mesaj çok uzun'}), 400
+
+    m = IsTalebiMesaj(is_talebi_id=talep.id, gonderen='usta', icerik=icerik)
+    db.session.add(m)
+    db.session.commit()
+    return jsonify({'mesaj': 'Gönderildi', 'kayit': m.to_dict()}), 201
+
+
+@usta_panel_bp.route('/is-talepleri/mesaj-okunmamis-sayisi', methods=['GET'])
+@usta_gerekli
+def talep_mesaj_okunmamis_sayisi(usta):
+    """Nav'daki 'İş Talepleri' rozetinde kullanılır (UstaPanelLayout'taki mesajBadge deseniyle tutarlı)."""
+    sayi = db.session.query(IsTalebiMesaj).join(IsTalebi, IsTalebiMesaj.is_talebi_id == IsTalebi.id) \
+        .filter(IsTalebi.usta_id == usta.id, IsTalebiMesaj.gonderen == 'musteri', IsTalebiMesaj.okundu == False).count()  # noqa: E712
+    return jsonify({'sayi': sayi})
+
+
+# ──────────────────────────────────────────────────────────
+# Faz 3 Görev 14 — "Yeni hizmet öner": usta, kategori listesinde bulamadığı bir hizmeti
+# önerir. Admin'e bildirim gider (hesap_kapat/usta_sikayeti ile aynı desen).
+# ──────────────────────────────────────────────────────────
+@usta_panel_bp.route('/hizmet-oneri', methods=['POST'])
+@limiter.limit('10 per hour')
+@usta_gerekli
+def hizmet_oneri_gonder(usta):
+    data = request.get_json(silent=True) or {}
+    hizmet_adi = (data.get('hizmet_adi') or '').strip()
+    aciklama = (data.get('aciklama') or '').strip()
+    if not hizmet_adi or len(hizmet_adi) < 2:
+        return jsonify({'hata': 'Hizmet adını girin'}), 400
+    if len(hizmet_adi) > 150:
+        return jsonify({'hata': 'Hizmet adı çok uzun'}), 400
+
+    oneri = HizmetOnerisi(usta_id=usta.id, hizmet_adi=hizmet_adi, aciklama=aciklama or None)
+    db.session.add(oneri)
+    db.session.add(AdminBildirim(
+        tur='hizmet_onerisi',
+        mesaj=f'{usta.ad} {usta.soyad} yeni hizmet önerdi: {hizmet_adi}'
+    ))
+    db.session.commit()
+    return jsonify({'mesaj': 'Öneriniz alındı, teşekkürler! Ekibimiz değerlendirecek.', 'oneri': oneri.to_dict()}), 201

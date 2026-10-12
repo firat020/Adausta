@@ -2,8 +2,6 @@
 Abonelikler tablosuna deneme_mi sütunu ekler (90 günlük ücretsiz deneme ile
 başlayan abonelikleri işaretlemek için). Mevcut kayıtlara dokunmaz, hepsi
 varsayılan olarak 0 (deneme değil) kalır.
-usta_bildirimleri tablosu (Bildir özelliği) yeni bir tablo olduğu için ayrı
-migrasyon gerekmez — uygulama açılışında db.create_all() ile kendiliğinden oluşur.
 """
 import sqlite3, os
 

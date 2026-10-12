@@ -153,7 +153,17 @@
     "yorumunuz": "نظر شما",
     "deneyimPaylas": "تجربه خود را به اشتراک بگذارید...",
     "yorumGonder": "ارسال نظر",
-    "ustaBulunamadi": "پیشه‌ور یافت نشد"
+    "ustaBulunamadi": "پیشه‌ور یافت نشد",
+    "ekibimiz": "تیم ما",
+    "sertifikalarimiz": "گواهی‌نامه‌ها و مدارک",
+    "oduller": "جوایز",
+    "dogrulanmamisNot": "این اطلاعات توسط خود استاد اعلام شده و توسط پلتفرم تأیید نشده است.",
+    "detayliDegerlendirme": "ارزیابی تفصیلی",
+    "isKalitesi": "کیفیت کار",
+    "iletisimPuani": "ارتباط",
+    "fiyatPerformans": "قیمت / عملکرد",
+    "opsiyonel": "(اختیاری)",
+    "verenKurum": "صادر شده توسط"
   },
   "kayit": {
     "baslik": "ثبت‌نام به عنوان پیشه‌ور",
@@ -265,5 +275,44 @@
     "populer": "خدمات محبوب و فعال",
     "diger": "سایر دسته‌بندی‌ها",
     "tumuBtn": "همه"
+  },
+  "hizmetTalepEt": {
+    "linkOncesi": "چیزی که دنبالش بودید پیدا نکردید؟",
+    "linkButon": "درخواست خدمات",
+    "baslik": "درخواست خدمات",
+    "aciklama": "یک‌بار نیاز خود را به ما بگویید تا به استادکاران مناسب در منطقه شما ارسال کنیم — فوراً با تا {{sayi}} استادکار مرتبط شوید.",
+    "formKategori": "به چه خدماتی نیاز دارید؟ *",
+    "formKategoriPlaceholder": "خدمت را انتخاب یا جستجو کنید...",
+    "formSehir": "شهر *",
+    "formSehirSec": "شهر را انتخاب کنید",
+    "formIlce": "منطقه",
+    "formIlceSec": "همه مناطق",
+    "formAd": "نام و نام خانوادگی *",
+    "formTelefon": "تلفن *",
+    "formAdres": "آدرس",
+    "formAciklama": "کار را توضیح دهید",
+    "formTarih": "تاریخ/ساعت ترجیحی",
+    "gonderButon": "ارسال به استادکاران",
+    "gonderiliyor": "در حال ارسال...",
+    "basariBaslik": "درخواست شما ارسال شد!",
+    "basariAciklama": "به {{sayi}} استادکار ارسال شد. می‌توانید هر زمان با شماره تلفن خود درخواست را پیگیری کنید.",
+    "takipLink": "پیگیری درخواست‌های من",
+    "geriDon": "بازگشت به صفحه اصلی",
+    "zorunluAlanlar": "فیلدهای علامت‌دار با * الزامی هستند"
+  },
+  "guvenBari": {
+    "usta": "استادکار تأییدشده",
+    "kategori": "دسته خدمات",
+    "tamamlananTalep": "درخواست تکمیل‌شده",
+    "bolge": "منطقه تحت پوشش"
+  },
+  "talepTakip": {
+    "grupBaslik": "این درخواست به {{sayi}} استادکار ارسال شد",
+    "mesajlasAc": "پیام",
+    "mesajlasKapat": "بستن",
+    "mesajYaz": "پیام خود را بنویسید...",
+    "mesajGonder": "ارسال",
+    "mesajYok": "هنوز پیامی نیست.",
+    "telefonGerekli": "برای پیام دادن با شماره تلفن خود جستجو کنید."
   }
 }

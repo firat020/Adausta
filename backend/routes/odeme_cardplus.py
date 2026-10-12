@@ -578,6 +578,10 @@ def _aktiflestir_abonelik(odeme: Odeme, params: dict):
             mevcut.plan_id = plan.id
         mevcut.bitis = temel + timedelta(days=gun)
         mevcut.yenileme_tarihi = mevcut.bitis
+        # Duraklatılmışken ödeme yapılırsa (yeni süre satın almak bilinçli bir devam ettirmedir),
+        # profili tekrar görünür yapmak için duraklatma otomatik kaldırılır.
+        mevcut.duraklatildi_mi = False
+        mevcut.duraklatma_tarihi = None
         ab = mevcut
     else:
         bitis = simdi + timedelta(days=gun)

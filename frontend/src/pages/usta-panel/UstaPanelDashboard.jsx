@@ -247,12 +247,22 @@ export default function UstaPanelDashboard() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {veri.usta.profil_tamamlama.maddeler.map(m => (
-              <div key={m.anahtar} className="flex items-center gap-2 text-sm">
-                {m.tamam
-                  ? <CircleCheck size={16} className="text-green-500 shrink-0" />
-                  : <Circle size={16} className="text-gray-300 shrink-0" />}
-                <span className={m.tamam ? 'text-gray-400 line-through' : 'text-gray-700'}>{m.baslik}</span>
-              </div>
+              m.tamam ? (
+                <div key={m.anahtar} className="flex items-center gap-2 text-sm">
+                  <CircleCheck size={16} className="text-green-500 shrink-0" />
+                  <span className="text-gray-400 line-through">{m.baslik}</span>
+                </div>
+              ) : (
+                <button
+                  key={m.anahtar}
+                  onClick={() => navigate(m.link || '/usta/panel/profil')}
+                  className="flex items-center gap-2 text-sm text-left group"
+                >
+                  <Circle size={16} className="text-gray-300 shrink-0" />
+                  <span className="text-gray-700 group-hover:text-blue-600 transition-colors">{m.baslik}</span>
+                  <span className="text-xs font-semibold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">→</span>
+                </button>
+              )
             ))}
           </div>
         </div>

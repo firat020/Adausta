@@ -153,7 +153,17 @@
     "yorumunuz": "Your Review",
     "deneyimPaylas": "Share your experience...",
     "yorumGonder": "Submit Review",
-    "ustaBulunamadi": "Craftsman not found"
+    "ustaBulunamadi": "Craftsman not found",
+    "ekibimiz": "Our Team",
+    "sertifikalarimiz": "Certificates & Qualifications",
+    "oduller": "Awards",
+    "dogrulanmamisNot": "This information is self-reported by the professional and has not been verified by the platform.",
+    "detayliDegerlendirme": "Detailed Rating",
+    "isKalitesi": "Work Quality",
+    "iletisimPuani": "Communication",
+    "fiyatPerformans": "Price / Value",
+    "opsiyonel": "(optional)",
+    "verenKurum": "Issued by"
   },
   "kayit": {
     "baslik": "Register as a Craftsman",
@@ -265,5 +275,44 @@
     "populer": "Popular & Active Services",
     "diger": "Other Categories",
     "tumuBtn": "All"
+  },
+  "hizmetTalepEt": {
+    "linkOncesi": "Didn't find what you were looking for?",
+    "linkButon": "Request a Service",
+    "baslik": "Request a Service",
+    "aciklama": "Tell us what you need once and we'll send it to the right craftsmen in your area — match with up to {{sayi}} craftsmen instantly.",
+    "formKategori": "What service do you need? *",
+    "formKategoriPlaceholder": "Select or search a service...",
+    "formSehir": "City *",
+    "formSehirSec": "Select a city",
+    "formIlce": "District",
+    "formIlceSec": "All districts",
+    "formAd": "Full Name *",
+    "formTelefon": "Phone *",
+    "formAdres": "Address",
+    "formAciklama": "Describe the job",
+    "formTarih": "Preferred date/time",
+    "gonderButon": "Send to Craftsmen",
+    "gonderiliyor": "Sending...",
+    "basariBaslik": "Your request has been sent!",
+    "basariAciklama": "Sent to {{sayi}} craftsmen. You can track your request anytime with your phone number.",
+    "takipLink": "Track My Requests",
+    "geriDon": "Back to Home",
+    "zorunluAlanlar": "Fields marked with * are required"
+  },
+  "guvenBari": {
+    "usta": "Verified Craftsmen",
+    "kategori": "Service Categories",
+    "tamamlananTalep": "Completed Requests",
+    "bolge": "Regions Covered"
+  },
+  "talepTakip": {
+    "grupBaslik": "This request was sent to {{sayi}} craftsmen",
+    "mesajlasAc": "Message",
+    "mesajlasKapat": "Close",
+    "mesajYaz": "Write your message...",
+    "mesajGonder": "Send",
+    "mesajYok": "No messages yet.",
+    "telefonGerekli": "Search with your phone number to message."
   }
 }

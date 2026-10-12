@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ClipboardList, Phone, MessageCircle, X } from 'lucide-react'
-import api from '../../api'
+import api, { musteriTalepMesajlari, musteriTalepMesajGonder } from '../../api'
+import TalepMesajThread from '../../components/TalepMesajThread'
 
 const DURUM_RENK = {
   bekliyor:   'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -23,11 +24,17 @@ export default function MusteriPanelTalepler() {
   const [secili, setSecili] = useState(null)
   const [iptalId, setIptalId] = useState(null)
 
-  const yukle = (durum) => {
-    setYukleniyor(true)
+  // Faz 3 Görev 12 — mesajlaşma (thread = seçili IsTalebi)
+  const [mesajAcik, setMesajAcik] = useState(false)
+  const [mesajlar, setMesajlar] = useState([])
+  const [mesajYukleniyor, setMesajYukleniyor] = useState(false)
+  const [mesajGonderiliyor, setMesajGonderiliyor] = useState(false)
+
+  const yukle = (durum, sessiz = false) => {
+    if (!sessiz) setYukleniyor(true)
     api.get('/musteri/taleplerim', { params: { durum } })
       .then(r => setTalepler(r.data.talepler))
-      .finally(() => setYukleniyor(false))
+      .finally(() => { if (!sessiz) setYukleniyor(false) })
   }
 
   useEffect(() => { yukle(filtre) }, [filtre])
@@ -37,6 +44,33 @@ export default function MusteriPanelTalepler() {
     setIptalId(null)
     setSecili(null)
     yukle(filtre)
+  }
+
+  const kartiAc = (t) => {
+    setSecili(t)
+    setMesajAcik(false)
+    setMesajlar([])
+  }
+
+  const mesajlasiAcKapa = () => {
+    const yeni = !mesajAcik
+    setMesajAcik(yeni)
+    if (yeni && secili) {
+      setMesajYukleniyor(true)
+      musteriTalepMesajlari(secili.id)
+        .then(r => { setMesajlar(r.data.mesajlar); yukle(filtre, true) })
+        .finally(() => setMesajYukleniyor(false))
+    }
+  }
+
+  const mesajGonder = async (icerik) => {
+    setMesajGonderiliyor(true)
+    try {
+      const r = await musteriTalepMesajGonder(secili.id, icerik)
+      setMesajlar(l => [...l, r.data.kayit])
+    } finally {
+      setMesajGonderiliyor(false)
+    }
   }
 
   return (
@@ -74,12 +108,19 @@ export default function MusteriPanelTalepler() {
           {talepler.map(t => (
             <div
               key={t.id}
-              onClick={() => setSecili(t)}
+              onClick={() => kartiAc(t)}
               className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-gray-900 truncate">{t.baslik}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900 truncate">{t.baslik}</p>
+                    {t.mesaj_okunmamis > 0 && (
+                      <span className="flex items-center gap-1 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">
+                        <MessageCircle size={10} /> {t.mesaj_okunmamis}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {t.usta_ad} · {t.usta_kategori}
                   </p>
@@ -147,6 +188,29 @@ export default function MusteriPanelTalepler() {
             {secili.usta_notu && (
               <div className="mt-2 p-3 bg-blue-50 rounded-xl text-sm text-blue-700">
                 <span className="font-semibold">Usta notu:</span> {secili.usta_notu}
+              </div>
+            )}
+
+            {/* Mesajlaş aç/kapa (Faz 3 Görev 12) */}
+            <button
+              onClick={mesajlasiAcKapa}
+              className={`mt-4 w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold border transition ${
+                mesajAcik ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              <MessageCircle size={15} /> {mesajAcik ? 'Mesajlaşmayı Kapat' : 'Usta ile Mesajlaş'}
+            </button>
+            {mesajAcik && (
+              <div className="mt-3">
+                <TalepMesajThread
+                  mesajlar={mesajlar}
+                  yukleniyor={mesajYukleniyor}
+                  gonderiliyor={mesajGonderiliyor}
+                  onGonder={mesajGonder}
+                  kendiTaraf="musteri"
+                  bosMetin="Henüz mesaj yok."
+                  placeholder="Ustaya yazın..."
+                />
               </div>
             )}
 

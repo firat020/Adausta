@@ -1,8 +1,27 @@
 from flask import Blueprint, jsonify
-from models import Kategori, Sehir, Usta
+from models import Kategori, Sehir, Ilce, Usta, IsTalebi
 from sqlalchemy import func
 
 kategoriler_bp = Blueprint('kategoriler', __name__)
+
+# Faz 3 Görev 15 — ana sayfa güven istatistik barı için ayrı, public, hafif bir blueprint
+# (app.py'de url_prefix='/api' ile kaydedilir -> GET /api/istatistikler)
+istatistikler_bp = Blueprint('istatistikler', __name__)
+
+
+@istatistikler_bp.route('/istatistikler', methods=['GET'])
+def istatistikler():
+    """Ana sayfa güven şeridi için basit COUNT sorguları — trafik düşük, cache gerekmiyor."""
+    usta_sayisi = Usta.query.filter_by(onaylanmis=True, aktif=True).count()
+    kategori_sayisi = Kategori.query.filter_by(aktif=True).count()
+    tamamlanan_talep = IsTalebi.query.filter_by(durum='tamamlandi').count()
+    bolge_sayisi = Ilce.query.count()
+    return jsonify({
+        'usta_sayisi': usta_sayisi,
+        'kategori_sayisi': kategori_sayisi,
+        'tamamlanan_talep': tamamlanan_talep,
+        'bolge_sayisi': bolge_sayisi,
+    })
 
 @kategoriler_bp.route('/', methods=['GET'])
 def listele():

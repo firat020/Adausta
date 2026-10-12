@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
-import { BarChart2, Phone, MessageCircle, Eye, Star, TrendingUp, TrendingDown, Minus, MousePointerClick, FileText, Heart, Share2, Info } from 'lucide-react'
+import { BarChart2, Phone, MessageCircle, Eye, Star, TrendingUp, TrendingDown, Minus, MousePointerClick, FileText, Heart, Share2, Info, Globe, Languages } from 'lucide-react'
 import { ustaPanelIstatistikler } from '../../api'
+import { DILLER } from '../../data/profilSecenekleri'
+
+// Dil kodunu okunabilir isme çevirir (örn. 'en' -> 'İngilizce'); listede yoksa kodu büyük harfle gösterir
+const dilAdi = (kod) => DILLER.find(d => d.kod === kod)?.ad || kod.toUpperCase()
 
 const ARALIKLAR = [
   { val: 7,   label: '7 Gün' },
@@ -103,6 +107,7 @@ export default function UstaPanelIstatistik() {
         <Kpi ikon={Phone} renk="bg-green-50 text-green-600" baslik="İletişim (arama + WhatsApp + teklif)" deger={ozet.iletisim} onceki={onceki.iletisim} />
         <Kpi ikon={Heart} renk="bg-rose-50 text-rose-500" baslik="Favoriye eklenme" deger={ozet.favori} onceki={onceki.favori} />
         <Kpi ikon={Share2} renk="bg-violet-50 text-violet-600" baslik="Profil paylaşımı" deger={ozet.paylas} onceki={onceki.paylas} />
+        <Kpi ikon={Globe} renk="bg-teal-50 text-teal-600" baslik="Medya tıklaması (web sitesi)" deger={ozet.web_sitesi} onceki={onceki.web_sitesi} />
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <span className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-500"><Star size={16} /></span>
@@ -160,6 +165,28 @@ export default function UstaPanelIstatistik() {
           <span className="flex items-center gap-1.5 text-blue-600"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Profil görüntüleme</span>
           <span className="flex items-center gap-1.5 text-green-600"><span className="w-2.5 h-2.5 rounded-sm bg-green-500" /> İletişim</span>
         </div>
+      </div>
+
+      {/* Dile göre talep */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2"><Languages size={18} className="text-blue-600" /> Dile göre talep</h2>
+        <p className="text-xs text-gray-500 mb-4">Ziyaretçilerin seninle hangi site dilinde iletişime geçtiği</p>
+        {Object.keys(veri.dil_dagilim || {}).length === 0 ? (
+          <p className="flex items-start gap-1.5 text-sm text-gray-400"><Info size={14} className="mt-0.5 flex-shrink-0" />Henüz veri yok.</p>
+        ) : (
+          <div className="space-y-3">
+            {Object.entries(veri.dil_dagilim).sort((a, b) => b[1] - a[1]).map(([kod, adet]) => {
+              const maxDil = Math.max(...Object.values(veri.dil_dagilim), 1)
+              return (
+                <div key={kod} className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 w-28 truncate">{dilAdi(kod)}</span>
+                  <div className="flex-1"><MiniBar deger={adet} max={maxDil} renk="bg-blue-500" /></div>
+                  <span className="text-sm font-bold text-gray-700 w-8 text-right">{adet}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Talep durum dağılımı */}

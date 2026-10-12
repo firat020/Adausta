@@ -153,7 +153,17 @@
     "yorumunuz": "Yorumunuz",
     "deneyimPaylas": "Deneyiminizi paylaşın...",
     "yorumGonder": "Yorum Gönder",
-    "ustaBulunamadi": "Usta bulunamadı"
+    "ustaBulunamadi": "Usta bulunamadı",
+    "ekibimiz": "Ekibimiz",
+    "sertifikalarimiz": "Sertifikalar ve Yeterlilikler",
+    "oduller": "Ödüller",
+    "dogrulanmamisNot": "Bu alan ustanın kendi beyanıdır, platform tarafından doğrulanmamıştır.",
+    "detayliDegerlendirme": "Detaylı Değerlendirme",
+    "isKalitesi": "İş Kalitesi",
+    "iletisimPuani": "İletişim",
+    "fiyatPerformans": "Fiyat / Performans",
+    "opsiyonel": "(opsiyonel)",
+    "verenKurum": "Veren kurum"
   },
   "kayit": {
     "baslik": "Usta Olarak Kaydol",
@@ -265,5 +275,44 @@
     "populer": "Popüler ve Aktif Hizmetler",
     "diger": "Diğer Kategoriler",
     "tumuBtn": "Tümü"
+  },
+  "hizmetTalepEt": {
+    "linkOncesi": "Aradığınız hizmeti bulamadınız mı?",
+    "linkButon": "Hizmet Talep Et",
+    "baslik": "Hizmet Talep Et",
+    "aciklama": "İhtiyacınızı bir kez anlatın, bölgenizdeki uygun ustalara iletelim — anında en fazla {{sayi}} usta ile eşleşin.",
+    "formKategori": "Hangi hizmete ihtiyacınız var? *",
+    "formKategoriPlaceholder": "Hizmet seçin veya arayın...",
+    "formSehir": "Şehir *",
+    "formSehirSec": "Şehir seçin",
+    "formIlce": "İlçe",
+    "formIlceSec": "Tüm ilçeler",
+    "formAd": "Adınız Soyadınız *",
+    "formTelefon": "Telefon *",
+    "formAdres": "Adres",
+    "formAciklama": "İşin detayını anlatın",
+    "formTarih": "Tercih ettiğiniz tarih/saat",
+    "gonderButon": "Ustalara İlet",
+    "gonderiliyor": "Gönderiliyor...",
+    "basariBaslik": "Talebiniz iletildi!",
+    "basariAciklama": "{{sayi}} ustaya iletildi. Telefon numaranızla talebinizi her an takip edebilirsiniz.",
+    "takipLink": "Taleplerimi Takip Et",
+    "geriDon": "Ana Sayfaya Dön",
+    "zorunluAlanlar": "* ile işaretli alanlar zorunludur"
+  },
+  "guvenBari": {
+    "usta": "Onaylı Usta",
+    "kategori": "Hizmet Kategorisi",
+    "tamamlananTalep": "Tamamlanan Talep",
+    "bolge": "Bölgede Hizmet"
+  },
+  "talepTakip": {
+    "grupBaslik": "Bu talep {{sayi}} ustaya gönderildi",
+    "mesajlasAc": "Mesajlaş",
+    "mesajlasKapat": "Kapat",
+    "mesajYaz": "Mesajınızı yazın...",
+    "mesajGonder": "Gönder",
+    "mesajYok": "Henüz mesaj yok.",
+    "telefonGerekli": "Mesajlaşmak için telefon numaranızla sorgulayın."
   }
 }

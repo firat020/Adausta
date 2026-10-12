@@ -43,8 +43,13 @@ export const enYakinUstalar = (params) => api.get('/ustalar/en-yakin', { params 
 export const yorumEkle = (id, data) => api.post(`/ustalar/${id}/yorum`, data);
 export const ustaBildir = (id, data) => api.post(`/ustalar/${id}/bildir`, data);
 export const isTalebiGonder = (ustaId, data) => api.post(`/ustalar/${ustaId}/is-talebi`, data);
+// Faz 3 Görev 13 — "Hizmet Talep Et": toplu talep dağıtımı (tek seferde eşleşen tüm ustalara)
+export const topluTalepGonder = (data) => api.post('/musteri/toplu-talep', data);
+// Faz 3 Görev 15 — ana sayfa güven istatistik barı
+export const istatistikleriGetir = () => api.get('/istatistikler');
 export const ustaSahiplenKodGonder = (id, telefon) => api.post(`/ustalar/${id}/sahiplen/kod-gonder`, { telefon });
 export const ustaSahiplenDogrula = (id, data) => api.post(`/ustalar/${id}/sahiplen/dogrula`, data);
+export const ustaSikayetGonder = (id, data) => api.post(`/ustalar/${id}/sikayet`, data);
 
 // Auth
 export const giris = (data) => api.post('/auth/giris', data);
@@ -64,6 +69,8 @@ export const ustaPanelProfil = () => api.get('/usta/profil');
 export const ustaPanelProfilGuncelle = (data) => api.put('/usta/profil', data);
 export const ustaAbonelikGetir = () => api.get('/usta/abonelik');
 export const ustaOtomatikYenilemeAyarla = (acik) => api.post('/usta/abonelik/otomatik-yenileme', { acik });
+export const ustaAbonelikDuraklat = () => api.post('/usta/abonelik/duraklat');
+export const ustaAbonelikDevamEttir = () => api.post('/usta/abonelik/devam-ettir');
 export const ustaPanelFotografYukle = (formData) =>
   api.post('/usta/profil/fotograf', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const ustaPanelFotografSil = (fid) => api.delete(`/usta/profil/fotograf/${fid}`);
@@ -78,12 +85,13 @@ export const ustaPanelIsTalepleri = (params) => api.get('/usta/is-talepleri', { 
 export const ustaPanelTalepGuncelle = (id, data) => api.put(`/usta/is-talepleri/${id}`, data);
 export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
+export const ustaPromosyonPerformans = () => api.get('/usta/promosyon-performans');
 export const ustaHizmetlerGetir = () => api.get('/usta/hizmetlerim');
 export const ustaHizmetlerKaydet = (data) => api.put('/usta/hizmetlerim', data);
 export const ustaHizmetBolgesiGetir = () => api.get('/usta/hizmet-bolgesi');
 export const ustaHizmetBolgesiKaydet = (ilce_ids) => api.put('/usta/hizmet-bolgesi', { ilce_ids });
 export const ustaAyarlarGetir = () => api.get('/usta/ayarlar');
-export const ustaAyarlarKaydet = (bildirim) => api.put('/usta/ayarlar', { bildirim });
+export const ustaAyarlarKaydet = (bildirim, tercih_dil) => api.put('/usta/ayarlar', { bildirim, ...(tercih_dil !== undefined ? { tercih_dil } : {}) });
 export const ustaSifreDegistir = (data) => api.post('/usta/sifre-degistir', data);
 export const ustaHesapKapat = (sifre) => api.post('/usta/hesap-kapat', { sifre });
 export const ustaPanelYorumlar = () => api.get('/usta/yorumlar');
@@ -96,12 +104,42 @@ export const ustaPanelBelgeYukle = (formData) =>
   api.post('/usta/belgeler', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const ustaPanelBelgeSil = (id) => api.delete(`/usta/belgeler/${id}`);
 
+// ── Usta Paneli: İş Talebi Mesajlaşması (Faz 3 Görev 12 — thread = bir IsTalebi) ──
+export const ustaPanelTalepMesajlari = (tid) => api.get(`/usta/is-talepleri/${tid}/mesajlar`);
+export const ustaPanelTalepMesajGonder = (tid, icerik) => api.post(`/usta/is-talepleri/${tid}/mesajlar`, { icerik });
+export const ustaPanelTalepMesajOkunmamis = () => api.get('/usta/is-talepleri/mesaj-okunmamis-sayisi');
+
+// ── Usta Paneli: Yeni hizmet öner (Faz 3 Görev 14) ──
+export const ustaHizmetOneriGonder = (data) => api.post('/usta/hizmet-oneri', data);
+
+// ── Usta Paneli: Ekibimiz (Faz 2 Görev 7 — görünüm amaçlı, yetkilendirme değil) ──
+export const ustaPanelEkipGetir = () => api.get('/usta/ekip');
+export const ustaPanelEkipEkle = (formData) =>
+  api.post('/usta/ekip', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const ustaPanelEkipSil = (id) => api.delete(`/usta/ekip/${id}`);
+
+// ── Usta Paneli: Public Sertifikalarım (Faz 2 Görev 8 — UstaBelge/KYC'den TAMAMEN AYRI) ──
+export const ustaPanelSertifikalarGetir = () => api.get('/usta/sertifikalar');
+export const ustaPanelSertifikaEkle = (formData) =>
+  api.post('/usta/sertifikalar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const ustaPanelSertifikaSil = (id) => api.delete(`/usta/sertifikalar/${id}`);
+
+// ── Usta Paneli: Ödüller (Faz 2 Görev 9) ──
+export const ustaPanelOdullerGetir = () => api.get('/usta/oduller');
+export const ustaPanelOdulEkle = (data) => api.post('/usta/oduller', data);
+export const ustaPanelOdulSil = (id) => api.delete(`/usta/oduller/${id}`);
+
 // ── Müşteri Paneli ───────────────────────────────────────
 export const musteriPanelDashboard = () => api.get('/musteri/panel');
 export const musteriPanelTalepler = (params) => api.get('/musteri/taleplerim', { params });
 export const musteriPanelTalepIptal = (id) => api.put(`/musteri/taleplerim/${id}/iptal`);
 export const musteriPanelProfil = () => api.get('/musteri/profil');
 export const musteriPanelProfilGuncelle = (data) => api.put('/musteri/profil', data);
+
+// Faz 3 Görev 12 — İş talebi mesajlaşması (giriş yapmış müşteri VEYA misafir; telefon ile).
+// Giriş yapmış müşteri session çerezi üzerinden otomatik yetkilenir, telefon göndermesine gerek yok.
+export const musteriTalepMesajlari = (tid, telefon) => api.get(`/musteri/talep-takip/${tid}/mesajlar`, { params: telefon ? { telefon } : {} });
+export const musteriTalepMesajGonder = (tid, icerik, telefon) => api.post(`/musteri/talep-takip/${tid}/mesajlar`, { icerik, ...(telefon ? { telefon } : {}) });
 
 // ── Şirketler ────────────────────────────────────────────
 export const sirketListele = (params) => api.get('/sirketler/', { params });

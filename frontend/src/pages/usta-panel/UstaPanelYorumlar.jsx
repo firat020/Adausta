@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Star, MessageSquare, Reply } from 'lucide-react'
 import { ustaPanelYorumlar, ustaPanelYorumCevapla } from '../../api'
+import { YorumLinkKartiYukleyici } from '../../components/PaylasimKartlari'
+
+const ALT_PUAN_ETIKET = {
+  is_kalitesi: 'İş Kalitesi',
+  iletisim: 'İletişim',
+  fiyat_performans: 'Fiyat / Performans',
+}
 
 export default function UstaPanelYorumlar() {
   const [yorumlar, setYorumlar] = useState([])
+  const [altPuanlar, setAltPuanlar] = useState({})
   const [yukleniyor, setYukleniyor] = useState(true)
   const [cevapAcik, setCevapAcik] = useState(null)
   const [cevapMetin, setCevapMetin] = useState('')
@@ -11,7 +19,10 @@ export default function UstaPanelYorumlar() {
 
   const yukle = () => {
     ustaPanelYorumlar()
-      .then(r => setYorumlar(r.data.yorumlar))
+      .then(r => {
+        setYorumlar(r.data.yorumlar)
+        setAltPuanlar(r.data.alt_puanlar || {})
+      })
       .finally(() => setYukleniyor(false))
   }
 
@@ -51,6 +62,9 @@ export default function UstaPanelYorumlar() {
         <p className="text-sm text-gray-500 mt-1">Müşterilerinizin değerlendirmeleri</p>
       </div>
 
+      {/* Yorum bağlantısını paylaş */}
+      <YorumLinkKartiYukleyici />
+
       {/* Özet */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
@@ -66,6 +80,26 @@ export default function UstaPanelYorumlar() {
           <p className="text-xs text-gray-400 mt-1">Bekleyen</p>
         </div>
       </div>
+
+      {/* Faz 2 Görev 10 — kategori bazlı alt puanların ortalaması (sadece doldurulan yorumlar hesaba girer) */}
+      {Object.values(altPuanlar).some(v => v) && (
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 mb-3">Detaylı Değerlendirme</p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {Object.entries(altPuanlar).filter(([, v]) => v).map(([anahtar, deger]) => (
+              <div key={anahtar}>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>{ALT_PUAN_ETIKET[anahtar] || anahtar}</span>
+                  <span className="font-bold text-gray-800">{deger.toFixed(1)}</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(deger / 5) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {yorumlar.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-gray-100">

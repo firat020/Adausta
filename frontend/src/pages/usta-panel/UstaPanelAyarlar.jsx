@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Smartphone, MessageSquare, MessageCircle, KeyRound, ShieldAlert, CheckCircle, AlertCircle, Mail, Phone } from 'lucide-react'
+import { Bell, Smartphone, MessageSquare, MessageCircle, KeyRound, ShieldAlert, CheckCircle, AlertCircle, Mail, Phone, Star, Crown, Rocket, Megaphone, Globe } from 'lucide-react'
 import { ustaAyarlarGetir, ustaAyarlarKaydet, ustaSifreDegistir, ustaHesapKapat } from '../../api'
+import { DILLER } from '../../data/profilSecenekleri.js'
 
 function Anahtar({ acik, onDegis, devreDisi = false, etiket }) {
   return (
@@ -45,10 +46,23 @@ export default function UstaPanelAyarlar() {
     setAyar(a => ({ ...a, bildirim: yeni }))
     setBildirimMesaj({ tip: '', metin: '' })
     try {
-      await ustaAyarlarKaydet(yeni)
+      await ustaAyarlarKaydet(yeni, ayar.tercih_dil)
       setBildirimMesaj({ tip: 'basari', metin: 'Tercihin kaydedildi.' })
     } catch {
       setAyar(a => ({ ...a, bildirim: onceki }))
+      setBildirimMesaj({ tip: 'hata', metin: 'Kaydedilemedi, tekrar dene.' })
+    }
+  }
+
+  const dilDegistir = async (dil) => {
+    const onceki = ayar.tercih_dil
+    setAyar(a => ({ ...a, tercih_dil: dil }))
+    setBildirimMesaj({ tip: '', metin: '' })
+    try {
+      await ustaAyarlarKaydet(ayar.bildirim, dil)
+      setBildirimMesaj({ tip: 'basari', metin: 'Tercihin kaydedildi.' })
+    } catch {
+      setAyar(a => ({ ...a, tercih_dil: onceki }))
       setBildirimMesaj({ tip: 'hata', metin: 'Kaydedilemedi, tekrar dene.' })
     }
   }
@@ -133,8 +147,49 @@ export default function UstaPanelAyarlar() {
             </div>
             <Anahtar acik={false} onDegis={() => {}} devreDisi etiket="WhatsApp bildirimi (yakında)" />
           </div>
+          <div className="flex items-center gap-3 py-3">
+            <Star size={18} className="text-gray-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-800">Yeni değerlendirmeler</p>
+              <p className="text-xs text-gray-500">Profiline yeni bir müşteri yorumu geldiğinde haberdar ol.</p>
+            </div>
+            <Anahtar acik={b.yorum_bildirim} onDegis={v => tercihDegistir('yorum_bildirim', v)} etiket="Yeni değerlendirme bildirimi" />
+          </div>
+          <div className="flex items-center gap-3 py-3">
+            <Crown size={18} className="text-gray-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-800">Abonelik ve deneme hatırlatmaları</p>
+              <p className="text-xs text-gray-500">Üyeliğin bitmeye yaklaştığında hatırlatma al.</p>
+            </div>
+            <Anahtar acik={b.abonelik_bildirim} onDegis={v => tercihDegistir('abonelik_bildirim', v)} etiket="Abonelik hatırlatma bildirimi" />
+          </div>
+          <div className="flex items-center gap-3 py-3">
+            <Rocket size={18} className="text-gray-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-800">Öne çıkarma güncellemeleri</p>
+              <p className="text-xs text-gray-500">Satın aldığın öne çıkarmaların durumu ve bitişi hakkında bilgi al.</p>
+            </div>
+            <Anahtar acik={b.promosyon_bildirim} onDegis={v => tercihDegistir('promosyon_bildirim', v)} etiket="Öne çıkarma bildirimi" />
+          </div>
+          <div className="flex items-center gap-3 py-3">
+            <Megaphone size={18} className="text-gray-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-800">Platform duyuruları</p>
+              <p className="text-xs text-gray-500">Ada Usta'dan yeni özellikler ve önemli duyurular.</p>
+            </div>
+            <Anahtar acik={b.duyuru_bildirim} onDegis={v => tercihDegistir('duyuru_bildirim', v)} etiket="Platform duyuru bildirimi" />
+          </div>
         </div>
         <div className="mt-3"><Bildirim tip={bildirimMesaj.tip} metin={bildirimMesaj.metin} /></div>
+
+        <div className="mt-5 pt-4 border-t border-gray-100">
+          <label className="text-sm font-semibold text-gray-800 flex items-center gap-2 mb-2"><Globe size={16} className="text-blue-600" /> Tercih edilen iletişim dili</label>
+          <p className="text-xs text-gray-500 mb-2">Ada Usta ekibi seninle mümkünse bu dilde iletişime geçer.</p>
+          <select value={ayar.tercih_dil || 'tr'} onChange={e => dilDegistir(e.target.value)}
+            className="w-full sm:w-64 px-3 py-2.5 border-2 border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            {DILLER.map(d => <option key={d.kod} value={d.kod}>{d.bayrak} {d.ad}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Hesap ve güvenlik */}

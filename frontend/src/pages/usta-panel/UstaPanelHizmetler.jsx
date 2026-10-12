@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Wrench, Star, Clock, Trash2, Plus, Search, Save, CheckCircle, AlertCircle, Lock, Rocket, MapPin } from 'lucide-react'
+import { Wrench, Star, Clock, Trash2, Plus, Search, Save, CheckCircle, AlertCircle, Lock, Rocket, MapPin, X, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ustaHizmetlerGetir, ustaHizmetlerKaydet, kategorileriGetir, ustaHizmetBolgesiGetir, ustaHizmetBolgesiKaydet } from '../../api'
+import { ustaHizmetlerGetir, ustaHizmetlerKaydet, kategorileriGetir, ustaHizmetBolgesiGetir, ustaHizmetBolgesiKaydet, ustaHizmetOneriGonder } from '../../api'
 
 export default function UstaPanelHizmetler() {
   const [hizmetler, setHizmetler] = useState([])   // [{id, ad, ikon, ana, fiyat, uzmanlik, yedi_yirmi_dort, promosyon_aktif}]
@@ -23,6 +23,14 @@ export default function UstaPanelHizmetler() {
   const [bolgeDegisti, setBolgeDegisti] = useState(false)
   const [bolgeKaydediliyor, setBolgeKaydediliyor] = useState(false)
   const [bolgeMesaj, setBolgeMesaj] = useState({ tip: '', metin: '' })
+
+  // Faz 3 Görev 14 — "Yeni hizmet öner"
+  const [oneriModal, setOneriModal] = useState(false)
+  const [oneriHizmetAdi, setOneriHizmetAdi] = useState('')
+  const [oneriAciklama, setOneriAciklama] = useState('')
+  const [oneriGonderiliyor, setOneriGonderiliyor] = useState(false)
+  const [oneriHata, setOneriHata] = useState('')
+  const [oneriBasarili, setOneriBasarili] = useState(false)
 
   useEffect(() => {
     Promise.all([ustaHizmetlerGetir(), kategorileriGetir()])
@@ -91,6 +99,23 @@ export default function UstaPanelHizmetler() {
     } catch (e) {
       setMesaj({ tip: 'hata', metin: e.response?.data?.hata || 'Kaydedilemedi, tekrar dene.' })
     } finally { setKaydediliyor(false) }
+  }
+
+  const oneriModalKapat = () => {
+    setOneriModal(false); setOneriHizmetAdi(''); setOneriAciklama(''); setOneriHata(''); setOneriBasarili(false)
+  }
+
+  const oneriGonder = async (e) => {
+    e.preventDefault()
+    setOneriHata(''); setOneriGonderiliyor(true)
+    try {
+      await ustaHizmetOneriGonder({ hizmet_adi: oneriHizmetAdi.trim(), aciklama: oneriAciklama.trim() })
+      setOneriBasarili(true)
+    } catch (err) {
+      setOneriHata(err.response?.data?.hata || 'Öneri gönderilemedi, tekrar dene.')
+    } finally {
+      setOneriGonderiliyor(false)
+    }
   }
 
   if (yukleniyor) return <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
@@ -175,7 +200,64 @@ export default function UstaPanelHizmetler() {
             </div>
           </>
         )}
+        <button type="button" onClick={() => setOneriModal(true)}
+          className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 transition">
+          <Sparkles size={13} /> Aradığınız hizmeti bulamıyor musunuz? Yeni hizmet öner
+        </button>
       </div>
+
+      {/* Yeni hizmet öner modal (Faz 3 Görev 14) */}
+      {oneriModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+            <button onClick={oneriModalKapat}
+              className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+              <X size={16} />
+            </button>
+            {oneriBasarili ? (
+              <div className="text-center py-6">
+                <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-emerald-200">
+                  <CheckCircle size={26} className="text-emerald-500" />
+                </div>
+                <h3 className="font-extrabold text-gray-900 mb-1">Öneriniz alındı!</h3>
+                <p className="text-sm text-gray-500">Ekibimiz değerlendirip uygun görürse yeni hizmeti kategori listesine ekleyecek.</p>
+                <button onClick={oneriModalKapat}
+                  className="mt-5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2.5 rounded-xl text-sm transition">
+                  Tamam
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={oneriGonder} className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={18} className="text-violet-600" />
+                  <h3 className="font-extrabold text-gray-900">Yeni Hizmet Öner</h3>
+                </div>
+                <p className="text-sm text-gray-500">Aradığınız hizmet kategori listesinde yoksa bize bildirin, değerlendirelim.</p>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Hizmet Adı *</label>
+                  <input value={oneriHizmetAdi} onChange={e => setOneriHizmetAdi(e.target.value)}
+                    required maxLength={150} placeholder="Örn: Güneş Enerjisi Sistemleri Kurulumu"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Açıklama (opsiyonel)</label>
+                  <textarea value={oneriAciklama} onChange={e => setOneriAciklama(e.target.value)}
+                    rows={3} placeholder="Bu hizmet hakkında kısaca bilgi verin..."
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                </div>
+                {oneriHata && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">{oneriHata}</div>
+                )}
+                <button type="submit" disabled={oneriGonderiliyor || oneriHizmetAdi.trim().length < 2}
+                  className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl text-sm transition flex items-center justify-center gap-2">
+                  {oneriGonderiliyor ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : <Sparkles size={15} />}
+                  Öneriyi Gönder
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="sticky bottom-4 flex justify-end">
         <button type="button" onClick={kaydet} disabled={!degisti || kaydediliyor}

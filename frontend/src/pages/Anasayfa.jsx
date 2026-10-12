@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Search, MapPin, Star, ArrowRight, Phone, MessageCircle, Zap, Droplets, Paintbrush, Sparkles, Hammer, Plus, ShieldCheck, CheckCircle2, ChevronRight, Wind, Truck, Armchair, Leaf, Wrench, Camera, Bug, Users, LayoutGrid, MapPinned } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { kategorileriGetir, ustaListele, sehirleriGetir, sonYorumlariGetir } from '../api'
+import { kategorileriGetir, ustaListele, sehirleriGetir, sonYorumlariGetir, istatistikleriGetir } from '../api'
 import KategoriKart from '../components/KategoriKart'
 import ReklamBanner from '../components/ReklamBanner'
 import SEO from '../components/SEO'
@@ -44,6 +44,7 @@ export default function Anasayfa() {
   const [secilenSehirId, setSecilenSehirId] = useState('')
   const [oneriAcik, setOneriAcik]     = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(true)
+  const [istatistik, setIstatistik]   = useState(null)
   const aramaRef = useRef(null)
   const navigate = useNavigate()
 
@@ -64,6 +65,7 @@ export default function Anasayfa() {
     }).catch(() => {})
       .finally(() => setYukleniyor(false))
     sonYorumlariGetir(3).then(r => setYorumlar(r.data.yorumlar || [])).catch(() => {})
+    istatistikleriGetir().then(r => setIstatistik(r.data)).catch(() => {})
   }, [])
 
   const aramayaGit = (e) => {
@@ -193,6 +195,14 @@ export default function Anasayfa() {
               {t('hero.hemenBul')}
             </button>
           </form>
+
+          {/* Faz 3 Görev 13 — "Hizmet Talep Et" linki (fazla göze batmadan, arama kutusunun altında) */}
+          <p className="mt-4 text-xs text-white/70" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
+            {t('hizmetTalepEt.linkOncesi')}{' '}
+            <Link to="/hizmet-talep-et" className="text-yellow-300 font-semibold hover:text-yellow-200 underline underline-offset-2">
+              {t('hizmetTalepEt.linkButon')}
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -214,6 +224,30 @@ export default function Anasayfa() {
           </div>
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════
+          GÜVEN İSTATİSTİK BARI — Faz 3 Görev 15
+      ══════════════════════════════════════════ */}
+      {istatistik && (
+        <section className="bg-white border-b border-gray-100 py-5 px-4">
+          <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { ikon: <Users size={16} className="text-blue-600" />, deger: istatistik.usta_sayisi, artiliMi: true, etiket: t('guvenBari.usta') },
+              { ikon: <LayoutGrid size={16} className="text-blue-600" />, deger: istatistik.kategori_sayisi, artiliMi: true, etiket: t('guvenBari.kategori') },
+              { ikon: <CheckCircle2 size={16} className="text-blue-600" />, deger: istatistik.tamamlanan_talep, artiliMi: false, etiket: t('guvenBari.tamamlananTalep') },
+              { ikon: <MapPinned size={16} className="text-blue-600" />, deger: istatistik.bolge_sayisi, artiliMi: false, etiket: t('guvenBari.bolge') },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 justify-center sm:justify-start">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">{item.ikon}</div>
+                <div>
+                  <p className="font-extrabold text-gray-900 text-base leading-tight">{item.deger}{item.artiliMi ? '+' : ''}</p>
+                  <p className="text-gray-500 text-[11px] leading-tight">{item.etiket}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════
           HIZLI KATEGORİ BUTONLARI
