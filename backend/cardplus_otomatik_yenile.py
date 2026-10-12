@@ -110,6 +110,8 @@ def _yenile(ab: Abonelik):
     kur = _usd_try_kur()
     tutar = round(tutar_usd * kur, 2)
 
+    ilk_ucretli_tahsilat = ab.deneme_mi and ab.son_deneme_tarihi is None  # deneme bitip ilk kez gerçek ücret deneniyor mu
+
     print(f'  usta {usta.id} ({usta.ad} {usta.soyad}) — {tutar} TRY deneniyor (deneme #{ab.basarisiz_deneme_sayisi + 1})...')
 
     try:
@@ -144,8 +146,13 @@ def _yenile(ab: Abonelik):
         usta.plan_bitis = yeni_bitis
 
         print(f'    basarili, yeni bitis: {yeni_bitis:%Y-%m-%d}')
-        _bildirim_gonder(usta, 'Aboneliğiniz yenilendi',
-                          f'{plan.ad if plan else "Aboneliğiniz"} otomatik olarak yenilendi, teşekkür ederiz.')
+        if ilk_ucretli_tahsilat:
+            _bildirim_gonder(usta, 'Ücretsiz deneminiz sona erdi',
+                              f'90 günlük ücretsiz deneminiz bitti, kayıtlı kartınızdan {plan.ad if plan else "aboneliğiniz"} '
+                              f'için ilk ödeme alındı. İstediğiniz an panelinizden otomatik yenilemeyi kapatabilirsiniz.')
+        else:
+            _bildirim_gonder(usta, 'Aboneliğiniz yenilendi',
+                              f'{plan.ad if plan else "Aboneliğiniz"} otomatik olarak yenilendi, teşekkür ederiz.')
     else:
         odeme.durum = 'basarisiz'
         odeme.error_message = sonuc['hata']

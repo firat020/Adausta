@@ -230,6 +230,17 @@ class Usta(db.Model):
         except (ValueError, TypeError):
             return False
 
+    def hizmet_bolgesi_ilceleri(self):
+        """Usta'nın hizmet verdiğini işaretlediği ilçeler (kendi ilçesi + profil_ekstra['hizmet_bolgeleri']).
+        Profildeki 'Hizmet Bölgesi' sekmesinde gösterilir, usta panelinden kendi seçer — migrasyon gerekmez."""
+        ek_idler = set(self.ekstra().get('hizmet_bolgeleri') or [])
+        if self.ilce_id:
+            ek_idler.add(self.ilce_id)
+        if not ek_idler:
+            return []
+        ilceler = Ilce.query.filter(Ilce.id.in_(ek_idler)).all()
+        return [{'id': i.id, 'ad': i.ad, 'sehir': i.sehir.ad if i.sehir else ''} for i in ilceler]
+
     def aktif_promosyonlar(self):
         """Süresi dolmamış öne çıkarma ürünleri: [{'tur', 'kategori_id', 'bitis'}]"""
         ek = self.ekstra()
@@ -359,6 +370,7 @@ class Usta(db.Model):
             'plan': self.plan,
             'plan_bitis': fmt(self.plan_bitis) if self.plan_bitis else None,
             'kayitli_kart_var': bool(self.cardplus_safekey),
+            'hizmet_bolgesi_ilceler': self.hizmet_bolgesi_ilceleri(),
             'olusturma': self.olusturma.isoformat(),
             'ek_kategoriler': [{'id': k.id, 'ad': k.ad, 'ikon': k.ikon} for k in self.ek_kategoriler],
             'tum_kategoriler': (
@@ -553,6 +565,7 @@ class Abonelik(db.Model):
     otomatik_yenileme = db.Column(db.Boolean, default=False)  # SafeKey ile sessiz (3D'siz) otomatik tahsilat açık mı
     basarisiz_deneme_sayisi = db.Column(db.Integer, default=0)  # otomatik tahsilat dunning sayacı
     son_deneme_tarihi = db.Column(db.DateTime, nullable=True)  # son otomatik tahsilat deneme zamanı (başarılı/başarısız)
+    deneme_mi = db.Column(db.Boolean, default=False)  # 90 günlük ücretsiz deneme ile mi başladı (kart doğrulama, gerçek tahsilat yok)
     olusturma = db.Column(db.DateTime, default=datetime.utcnow)
     usta = db.relationship('Usta', foreign_keys=[usta_id])
     odemeler = db.relationship('Odeme', backref='abonelik', lazy=True)
@@ -574,6 +587,7 @@ class Abonelik(db.Model):
             'yenileme_tarihi': fmt(self.yenileme_tarihi),
             'otomatik_yenileme': self.otomatik_yenileme,
             'basarisiz_deneme_sayisi': self.basarisiz_deneme_sayisi,
+            'deneme_mi': self.deneme_mi,
             'olusturma': fmt(self.olusturma),
             # Bu aboneliğe bağlı, gerçekten yapılmış (durum=basarili) ödemelerin toplamı —
             # plan_fiyat sadece planın liste fiyatı, bu ise usta'nın fiilen ödediği tutar.
@@ -1198,6 +1212,30 @@ class UstaBelge(db.Model):
             'url': f'/uploads/{self.dosya}',
             'durum': self.durum,
             'admin_notu': self.admin_notu or '',
+            'olusturma': fmt(self.olusturma),
+        }
+
+
+class UstaBildirim(db.Model):
+    """Usta profilinden 'Bildir' ile gönderilen şikayet/kötüye kullanım bildirimleri."""
+    __tablename__ = 'usta_bildirimleri'
+    id = db.Column(db.Integer, primary_key=True)
+    usta_id = db.Column(db.Integer, db.ForeignKey('ustalar.id', ondelete='CASCADE'), nullable=False)
+    sebep = db.Column(db.String(50), nullable=False)  # yanlis_bilgi / uygunsuz_icerik / dolandiricilik / diger
+    aciklama = db.Column(db.Text, default='')
+    bildiren_kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=True)
+    durum = db.Column(db.String(20), default='yeni')  # yeni / incelendi / kapatildi
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow)
+    usta = db.relationship('Usta', foreign_keys=[usta_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'usta_id': self.usta_id,
+            'usta_ad': f'{self.usta.ad} {self.usta.soyad}'.strip() if self.usta else '',
+            'sebep': self.sebep,
+            'aciklama': self.aciklama,
+            'durum': self.durum,
             'olusturma': fmt(self.olusturma),
         }
 

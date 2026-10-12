@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken
+from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Sehir, Ilce, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken
 from extensions import limiter
 from datetime import datetime, timedelta
 from functools import wraps
@@ -587,6 +587,52 @@ def hizmetlerim_kaydet(usta):
     cevap = _hizmetlerim_cevap(usta)
     cevap['mesaj'] = 'Hizmetlerin güncellendi'
     return jsonify(cevap)
+
+
+# ──────────────────────────────────────────────────────────
+# Hizmet Bölgesi: ustanın kendi ilçesi dışında hizmet verdiği ek ilçeleri kendi
+# panelinden işaretlemesi (profil_ekstra['hizmet_bolgeleri'] — migrasyon gerekmez).
+# Seçenekler ustanın kendi şehrinin ilçeleriyle sınırlı tutulur.
+# ──────────────────────────────────────────────────────────
+MAX_HIZMET_BOLGESI = 8  # kendi ilçesi dahil en fazla kaç ilçe işaretlenebilir
+
+@usta_panel_bp.route('/hizmet-bolgesi', methods=['GET'])
+@usta_gerekli
+def hizmet_bolgesi_getir(usta):
+    secili = [i['id'] for i in usta.hizmet_bolgesi_ilceleri()]
+    ilceler = Ilce.query.filter_by(sehir_id=usta.sehir_id).order_by(Ilce.ad).all() if usta.sehir_id else []
+    return jsonify({
+        'kendi_ilce_id': usta.ilce_id,
+        'secili_ilce_ids': secili,
+        'secenekler': [{'id': i.id, 'ad': i.ad} for i in ilceler],
+        'limit': MAX_HIZMET_BOLGESI,
+    })
+
+
+@usta_panel_bp.route('/hizmet-bolgesi', methods=['PUT'])
+@usta_gerekli
+def hizmet_bolgesi_kaydet(usta):
+    data = request.get_json(silent=True) or {}
+    istenen = data.get('ilce_ids')
+    if not isinstance(istenen, list):
+        return jsonify({'hata': 'Geçersiz istek'}), 400
+    try:
+        istenen_idler = {int(i) for i in istenen}
+    except (TypeError, ValueError):
+        return jsonify({'hata': 'Geçersiz ilçe'}), 400
+
+    istenen_idler.discard(usta.ilce_id)  # kendi ilçesi zaten örtülü dahil, ayrıca tutulmaz
+    if len(istenen_idler) + 1 > MAX_HIZMET_BOLGESI:
+        return jsonify({'hata': f'En fazla {MAX_HIZMET_BOLGESI} ilçe seçebilirsin (kendi ilçen dahil)'}), 400
+
+    if istenen_idler:
+        bulunan = Ilce.query.filter(Ilce.id.in_(istenen_idler), Ilce.sehir_id == usta.sehir_id).all()
+        if len(bulunan) != len(istenen_idler):
+            return jsonify({'hata': 'Seçilen bölgelerden biri geçersiz'}), 400
+
+    usta.ekstra_guncelle(hizmet_bolgeleri=sorted(istenen_idler))
+    db.session.commit()
+    return jsonify({'mesaj': 'Hizmet bölgen güncellendi', 'hizmet_bolgesi_ilceler': usta.hizmet_bolgesi_ilceleri()})
 
 
 # ──────────────────────────────────────────────────────────

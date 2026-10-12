@@ -215,13 +215,17 @@ def saglik():
     return {'durum': 'OK', 'platform': 'AdaUsta KKTC'}
 
 def abonelik_kontrol():
-    """Süresi dolmuş abonelikleri pasife al."""
+    """Süresi dolmuş abonelikleri pasife al.
+    Otomatik yenilemesi açık olanlar hariç — onları cardplus_otomatik_yenile.py (günlük
+    çalışan ayrı cron) birkaç günlük dunning penceresiyle yönetir; burada erken 'askida'
+    yapılırsa deneme/abonelik süresi biter bitmez otomatik tahsilat denenmeden plan düşer."""
     from models import Abonelik, Usta
     simdi = datetime.utcnow()
     bitis_gecmis = Abonelik.query.filter(
         Abonelik.durum == 'aktif',
         Abonelik.bitis != None,
-        Abonelik.bitis < simdi
+        Abonelik.bitis < simdi,
+        Abonelik.otomatik_yenileme == False,
     ).all()
     for a in bitis_gecmis:
         a.durum = 'askida'
@@ -233,8 +237,11 @@ def abonelik_kontrol():
 
 
 def abonelik_uyari_bildirim():
-    """Üyeliği 7/3/1 gün içinde veya bugün biten ustalara FCM bildirimi gönder."""
-    from models import Usta, FCMToken, BildirimGecmisi
+    """Üyeliği 7/3/1 gün içinde veya bugün biten ustalara FCM bildirimi gönder.
+    Otomatik yenilemesi açık (kayıtlı kartı olan) ustalara 'giriş yapıp yenileyin' yerine
+    otomatik tahsilatın yaklaştığını bildiren bir metin gider — aksi halde gereksiz
+    endişe/karışıklık yaratır (bkz. deneme süresi + otomatik ödeme akışı)."""
+    from models import Usta, FCMToken, BildirimGecmisi, Abonelik
     simdi = datetime.utcnow()
     bugun = simdi.date()
     bugun_baslangic = datetime(simdi.year, simdi.month, simdi.day)
@@ -260,7 +267,21 @@ def abonelik_uyari_bildirim():
         if zaten:
             continue
 
-        if kalan == 0:
+        ab = Abonelik.query.filter_by(usta_id=u.id, durum='aktif').order_by(Abonelik.id.desc()).first()
+        otomatik_acik = bool(ab and ab.otomatik_yenileme and u.cardplus_safekey)
+        deneme_mi = bool(ab and ab.deneme_mi)
+
+        if otomatik_acik:
+            if kalan == 0:
+                baslik = 'Deneminiz Sona Erdi' if deneme_mi else 'Aboneliginiz Yenileniyor'
+                icerik = ('Ucretsiz deneme sureniz bugun sona eriyor, kayitli kartinizdan otomatik tahsilat denenecek.'
+                           if deneme_mi else 'Kayitli kartinizdan otomatik yenileme tahsilati bugun denenecek.')
+            else:
+                baslik = f'{"Deneminiz" if deneme_mi else "Aboneliginiz"} {kalan} Gun Sonra Bitiyor'
+                icerik = (f'Ucretsiz deneme sureniz {kalan} gun icinde sona eriyor, kayitli kartinizdan otomatik tahsilat baslayacak. '
+                           f'Istemiyorsaniz panelinizden otomatik yenilemeyi kapatabilirsiniz.' if deneme_mi else
+                           f'Aboneliginiz {kalan} gun icinde kayitli kartinizdan otomatik olarak yenilenecek.')
+        elif kalan == 0:
             baslik = 'Uyeliginiz Sona Erdi'
             icerik = 'AdaUsta uyeliginiz sona erdi. Yenilemek icin giris yapiniz.'
         else:

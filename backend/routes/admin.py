@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, FCMToken, BildirimGecmisi, fmt
+from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, UstaBildirim, FCMToken, BildirimGecmisi, fmt
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -410,6 +410,31 @@ def belge_reddet(bid):
     db.session.commit()
     log_kaydet('BELGE_REDDET', f'Usta #{b.usta_id} belge #{bid} reddedildi')
     return jsonify({'mesaj': 'Belge reddedildi', 'belge': b.to_dict()})
+
+
+@admin_bp.route('/bildirimler', methods=['GET'])
+@admin_gerekli
+def sikayet_bildirimleri():
+    """Usta profillerinden 'Bildir' ile gelen şikayetler (varsayılan: sadece 'yeni' olanlar)."""
+    sadece_yeni = request.args.get('hepsi') != '1'
+    q = UstaBildirim.query
+    if sadece_yeni:
+        q = q.filter_by(durum='yeni')
+    liste = q.order_by(UstaBildirim.olusturma.desc()).all()
+    return jsonify({'bildirimler': [b.to_dict() for b in liste], 'toplam': len(liste)})
+
+
+@admin_bp.route('/bildirimler/<int:bid>/durum', methods=['POST'])
+@admin_gerekli
+def sikayet_bildirimi_durum(bid):
+    b = UstaBildirim.query.get_or_404(bid)
+    data = request.get_json() or {}
+    yeni_durum = data.get('durum')
+    if yeni_durum not in ('yeni', 'incelendi', 'kapatildi'):
+        return jsonify({'hata': 'Geçersiz durum'}), 400
+    b.durum = yeni_durum
+    db.session.commit()
+    return jsonify({'mesaj': 'Durum güncellendi', 'bildirim': b.to_dict()})
 
 
 @admin_bp.route('/ustalar/<int:id>/kategoriler', methods=['GET'])

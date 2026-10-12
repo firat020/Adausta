@@ -2,11 +2,11 @@ import API from '../config.js'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User, ShieldCheck, KeyRound, Heart, Share2, Globe, Wallet, Wrench, BadgeCheck, GraduationCap, ChevronLeft, ChevronRight, ExternalLink, Languages } from 'lucide-react'
+import { MapPin, Phone, MessageCircle, Star, Clock, ArrowLeft, Image, FileText, CheckCircle2, X, Calendar, User, ShieldCheck, KeyRound, Heart, Share2, Globe, Wallet, Wrench, BadgeCheck, GraduationCap, ChevronLeft, ChevronRight, ExternalLink, Languages, Flag } from 'lucide-react'
 import { DILLER, ODEME_YONTEMLERI, GUNLER } from '../data/profilSecenekleri.js'
 import { useTranslation } from 'react-i18next'
 import { KAT_EN, KAT_RU } from '../locales/katAdlari'
-import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula } from '../api'
+import { ustaDetay, yorumEkle, benimBilgilerim, isTalebiGonder, ustaSahiplenKodGonder, ustaSahiplenDogrula, ustaBildir } from '../api'
 import SEO from '../components/SEO'
 import { ustaSlugUrl } from '../data/hizmetler.js'
 
@@ -20,6 +20,7 @@ const LABELS = {
     webSitesi: 'Web Sitesi', paylas: 'Paylaş', kopyalandi: 'Kopyalandı!', favori: 'Favori', favoride: 'Favoride',
     haritadaAc: 'Haritada aç', saatler: 'Çalışma Saatleri', yediYirmiDort: '7/24 hizmet veriyor', kapali: 'Kapalı',
     belirtilmedi: 'Belirtilmedi', odeme: 'Ödeme Yöntemleri', diller: 'Konuşulan Diller', ara: 'Ara',
+    telefonuGoster: 'Telefonu Göster', bildir: 'Bildir', bolgeler: 'Hizmet verdiği bölgeler',
   },
   en: {
     hakkinda: 'About', hizmetler: 'Services', vitrin: 'Gallery', yorumlar: 'Reviews', bolge: 'Service Area', bilgiler: 'Business Info',
@@ -29,8 +30,16 @@ const LABELS = {
     webSitesi: 'Website', paylas: 'Share', kopyalandi: 'Copied!', favori: 'Favourite', favoride: 'Saved',
     haritadaAc: 'Open in map', saatler: 'Opening Hours', yediYirmiDort: 'Available 24/7', kapali: 'Closed',
     belirtilmedi: 'Not specified', odeme: 'Payment Methods', diller: 'Languages Spoken', ara: 'Call',
+    telefonuGoster: 'Show Phone', bildir: 'Report', bolgeler: 'Areas served',
   },
 }
+
+const BILDIR_SEBEPLERI = [
+  { kod: 'yanlis_bilgi', tr: 'Yanlış bilgi', en: 'Incorrect information' },
+  { kod: 'uygunsuz_icerik', tr: 'Uygunsuz içerik', en: 'Inappropriate content' },
+  { kod: 'dolandiricilik', tr: 'Dolandırıcılık şüphesi', en: 'Suspected fraud' },
+  { kod: 'diger', tr: 'Diğer', en: 'Other' },
+]
 
 export default function UstaDetay() {
   const { id } = useParams()
@@ -67,6 +76,12 @@ export default function UstaDetay() {
   const [lightbox, setLightbox] = useState(null)
   const [favori, setFavori] = useState(false)
   const [linkKopyalandi, setLinkKopyalandi] = useState(false)
+  const [telefonGoster, setTelefonGoster] = useState(false)
+  const [bildirModal, setBildirModal] = useState(false)
+  const [bildirSebep, setBildirSebep] = useState('yanlis_bilgi')
+  const [bildirAciklama, setBildirAciklama] = useState('')
+  const [bildirYukleniyor, setBildirYukleniyor] = useState(false)
+  const [bildirGonderildi, setBildirGonderildi] = useState(false)
   const FAVORI_ANAHTAR = 'adausta_favori_ustalar'
   const L = LABELS[i18n.language === 'en' ? 'en' : 'tr']
 
@@ -115,6 +130,31 @@ export default function UstaDetay() {
   const logIletisim = (tur) => {
     axios.post(`${API}/api/analitik/iletisim`, { usta_id: numericId, tur }, { withCredentials: false })
       .catch(() => {})
+  }
+
+  const telefonuGoster = () => {
+    setTelefonGoster(true)
+    logIletisim('telefon_goster')
+  }
+
+  const bildirKapat = () => {
+    setBildirModal(false)
+    setBildirSebep('yanlis_bilgi')
+    setBildirAciklama('')
+    setBildirGonderildi(false)
+  }
+
+  const bildirGonder = async (e) => {
+    e.preventDefault()
+    setBildirYukleniyor(true)
+    try {
+      await ustaBildir(numericId, { sebep: bildirSebep, aciklama: bildirAciklama })
+      setBildirGonderildi(true)
+    } catch {
+      /* sessizce geç — bildirim formu zaten opsiyonel bir akış */
+    } finally {
+      setBildirYukleniyor(false)
+    }
   }
 
   useEffect(() => {
@@ -429,12 +469,20 @@ export default function UstaDetay() {
                 <FileText size={16} />
                 {t('common.hemenTeklif')}
               </button>
-              <a href={`tel:${usta.telefon}`}
-                onClick={() => logIletisim('ara')}
-                className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
-                <Phone size={16} />
-                {usta.telefon}
-              </a>
+              {telefonGoster ? (
+                <a href={`tel:${usta.telefon}`}
+                  onClick={() => logIletisim('ara')}
+                  className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+                  <Phone size={16} />
+                  {usta.telefon}
+                </a>
+              ) : (
+                <button onClick={telefonuGoster}
+                  className="flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-semibold px-6 py-3 rounded-xl transition-colors">
+                  <Phone size={16} />
+                  {L.telefonuGoster}
+                </button>
+              )}
               {usta.whatsapp && (
                 <a href={`https://wa.me/${usta.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
                   onClick={() => logIletisim('whatsapp')}
@@ -459,6 +507,10 @@ export default function UstaDetay() {
                   <Heart size={14} className={favori ? 'fill-rose-500' : ''} /> {favori ? L.favoride : L.favori}
                 </button>
               </div>
+              <button onClick={() => setBildirModal(true)}
+                className="flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-600 text-xs font-semibold py-1.5 transition-colors">
+                <Flag size={12} /> {L.bildir}
+              </button>
             </div>
           </div>
         </div>
@@ -649,6 +701,18 @@ export default function UstaDetay() {
                 {L.haritadaAc} <ExternalLink size={11} />
               </a>
             )}
+            {usta.hizmet_bolgesi_ilceler?.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{L.bolgeler}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {usta.hizmet_bolgesi_ilceler.map(i => (
+                    <span key={i.id} className={`text-xs font-medium px-2.5 py-1 rounded-full ${i.id === usta.ilce_id ? 'bg-orange-50 text-orange-700 border border-orange-100' : 'bg-gray-100 text-gray-700'}`}>
+                      {i.ad}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* İşletme bilgileri */}
@@ -735,8 +799,13 @@ export default function UstaDetay() {
         <button onClick={teklifAlTikla} className="flex-1 flex items-center justify-center gap-1.5 bg-yellow-400 text-gray-900 font-bold py-2.5 rounded-xl text-sm">
           <FileText size={15} /> {t('common.hemenTeklif')}
         </button>
-        <a href={`tel:${usta.telefon}`} onClick={() => logIletisim('ara')} aria-label={L.ara}
-          className="w-12 flex items-center justify-center bg-orange-500 text-white rounded-xl"><Phone size={18} /></a>
+        {telefonGoster ? (
+          <a href={`tel:${usta.telefon}`} onClick={() => logIletisim('ara')} aria-label={L.ara}
+            className="w-12 flex items-center justify-center bg-orange-500 text-white rounded-xl"><Phone size={18} /></a>
+        ) : (
+          <button onClick={telefonuGoster} aria-label={L.telefonuGoster}
+            className="w-12 flex items-center justify-center bg-orange-50 border border-orange-200 text-orange-600 rounded-xl"><Phone size={18} /></button>
+        )}
         {usta.whatsapp && (
           <a href={`https://wa.me/${usta.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" onClick={() => logIletisim('whatsapp')} aria-label="WhatsApp"
             className="w-12 flex items-center justify-center bg-emerald-500 text-white rounded-xl"><MessageCircle size={18} /></a>
@@ -957,6 +1026,62 @@ export default function UstaDetay() {
                     ) : (
                       <><CheckCircle2 size={16} /> Hesabımı Oluştur</>
                     )}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bildir Modal */}
+      {bildirModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="font-extrabold text-gray-900 text-base flex items-center gap-2"><Flag size={16} className="text-gray-400" /> {L.bildir}</h3>
+              <button onClick={bildirKapat}
+                className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition">
+                <X size={18} className="text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6">
+              {bildirGonderildi ? (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={26} className="text-emerald-500" />
+                  </div>
+                  <p className="font-semibold text-emerald-700">Bildiriminiz alındı, incelenecek.</p>
+                  <button onClick={bildirKapat}
+                    className="mt-5 bg-gray-900 hover:bg-gray-800 text-white font-bold px-8 py-2.5 rounded-xl text-sm transition">
+                    Tamam
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={bildirGonder} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-2 block">Bildirim sebebi</label>
+                    <div className="space-y-2">
+                      {BILDIR_SEBEPLERI.map(s => (
+                        <label key={s.kod} className="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
+                          <input type="radio" name="bildir_sebep" value={s.kod} checked={bildirSebep === s.kod}
+                            onChange={() => setBildirSebep(s.kod)} className="accent-gray-800" />
+                          {en ? s.en : s.tr}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Açıklama (opsiyonel)</label>
+                    <textarea value={bildirAciklama}
+                      onChange={e => setBildirAciklama(e.target.value)}
+                      rows={3} maxLength={1000}
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-gray-300 resize-none"
+                      placeholder="Detay eklemek ister misiniz?" />
+                  </div>
+                  <button type="submit" disabled={bildirYukleniyor}
+                    className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition text-sm">
+                    {bildirYukleniyor ? 'Gönderiliyor...' : 'Bildirimi Gönder'}
                   </button>
                 </form>
               )}

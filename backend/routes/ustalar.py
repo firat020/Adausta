@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, current_app
-from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge
+from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge, UstaBildirim
 from werkzeug.utils import secure_filename
 from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
@@ -343,6 +343,32 @@ def yorum_ekle(id):
     db.session.add(y)
     db.session.commit()
     return jsonify({'mesaj': 'Yorumunuz alındı, onay bekliyor'}), 201
+
+BILDIR_SEBEPLERI = ('yanlis_bilgi', 'uygunsuz_icerik', 'dolandiricilik', 'diger')
+
+@ustalar_bp.route('/<int:id>/bildir', methods=['POST'])
+@limiter.limit('5 per minute; 20 per hour')
+def usta_bildir(id):
+    """Profilden 'Bildir' — ziyaretçi bir usta profilini şikayet eder."""
+    usta = Usta.query.get_or_404(id)
+    data = request.get_json() or {}
+    sebep = data.get('sebep', 'diger')
+    if sebep not in BILDIR_SEBEPLERI:
+        sebep = 'diger'
+
+    bildirim = UstaBildirim(
+        usta_id=usta.id,
+        sebep=sebep,
+        aciklama=(data.get('aciklama') or '').strip()[:1000],
+        bildiren_kullanici_id=session.get('kullanici_id'),
+    )
+    db.session.add(bildirim)
+    db.session.add(AdminBildirim(
+        tur='sikayet',
+        mesaj=f'{usta.ad} {usta.soyad} profili bildirildi ({sebep})',
+    ))
+    db.session.commit()
+    return jsonify({'mesaj': 'Bildiriminiz alındı, incelenecek'}), 201
 
 @ustalar_bp.route('/<int:id>/is-talebi', methods=['POST'])
 def is_talebi_gonder(id):

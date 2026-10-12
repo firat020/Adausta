@@ -30,6 +30,7 @@ export const sehirleriGetir = () => api.get('/kategoriler/sehirler');
 // Ödeme
 export const planlariGetir = () => api.get('/odeme/planlar');
 export const cardplusBaslat = (data) => api.post('/odeme/cardplus/baslat', data);
+export const cardplusDenemeBaslat = (data) => api.post('/odeme/cardplus/deneme/baslat', data);
 export const promosyonBaslat = (data) => api.post('/odeme/cardplus/promosyon/baslat', data);
 export const ustaAbonelikOzet = () => api.get('/usta/abonelik/ozet');
 
@@ -40,6 +41,7 @@ export const ustaDetay = (id, params) => api.get(`/ustalar/${id}`, { params });
 export const ustaKayit = (data) => api.post('/ustalar/kayit', data);
 export const enYakinUstalar = (params) => api.get('/ustalar/en-yakin', { params });
 export const yorumEkle = (id, data) => api.post(`/ustalar/${id}/yorum`, data);
+export const ustaBildir = (id, data) => api.post(`/ustalar/${id}/bildir`, data);
 export const isTalebiGonder = (ustaId, data) => api.post(`/ustalar/${ustaId}/is-talebi`, data);
 export const ustaSahiplenKodGonder = (id, telefon) => api.post(`/ustalar/${id}/sahiplen/kod-gonder`, { telefon });
 export const ustaSahiplenDogrula = (id, data) => api.post(`/ustalar/${id}/sahiplen/dogrula`, data);
@@ -78,6 +80,8 @@ export const ustaPanelMusteriler = () => api.get('/usta/musteriler');
 export const ustaPanelIstatistikler = (aralik) => api.get('/usta/istatistikler', { params: { aralik } });
 export const ustaHizmetlerGetir = () => api.get('/usta/hizmetlerim');
 export const ustaHizmetlerKaydet = (data) => api.put('/usta/hizmetlerim', data);
+export const ustaHizmetBolgesiGetir = () => api.get('/usta/hizmet-bolgesi');
+export const ustaHizmetBolgesiKaydet = (ilce_ids) => api.put('/usta/hizmet-bolgesi', { ilce_ids });
 export const ustaAyarlarGetir = () => api.get('/usta/ayarlar');
 export const ustaAyarlarKaydet = (bildirim) => api.put('/usta/ayarlar', { bildirim });
 export const ustaSifreDegistir = (data) => api.post('/usta/sifre-degistir', data);

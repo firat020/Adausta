@@ -5,7 +5,7 @@ import {
   Wrench, Building2, Gift, Store, LocateFixed
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat } from '../api'
+import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat, cardplusDenemeBaslat } from '../api'
 import API from '../config.js'
 
 const PLANLAR = [
@@ -17,7 +17,8 @@ const PLANLAR = [
     donemMetin: 'her ay',
     aciklama: 'Esnek aylık üyelik, istediğin zaman iptal et',
     ozellikler: ['Profil sayfası', 'Müşteri talepleri al', 'Kategori listesi', 'E-posta desteği'],
-    rozet: null,
+    rozet: 'İlk 90 gün ücretsiz',
+    deneme: true,
   },
   {
     id: '3ay',
@@ -318,7 +319,38 @@ export default function UstaKayit() {
     }
   }
 
+  // 90 gün ücretsiz deneme: kart PreAuth+Void ile doğrulanır, bugün ücret alınmaz.
+  // Deneme bitince kayıtlı karttan kayıtlı aylık tahsilat otomatik başlar (sunucu tarafı cron).
+  const denemeBaslat = async () => {
+    setHata('')
+    setYukleniyor(true)
+    try {
+      const kayitResp = await ustaKayit({
+        ...form,
+        sehir_id: parseInt(form.sehir_id),
+        ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
+        kategori_id: parseInt(secilenKategoriler[0]),
+        ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
+        deneyim_yil: parseInt(form.deneyim_yil) || 0,
+        plan: secilenPlan,
+        referans_kodu: refKodu,
+      })
+      const ustaId = kayitResp?.data?.usta_id
+
+      const { data } = await cardplusDenemeBaslat({ usta_id: ustaId })
+
+      _gtagKayitDonusumu()
+      document.open()
+      document.write(data.form_html)
+      document.close()
+    } catch (err) {
+      setHata(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin')
+      setYukleniyor(false)
+    }
+  }
+
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
+  const denemeUygun = !!seciliPlan?.deneme && odemeYontemi === 'kart'
 
   if (basarili) return (
     <div className="max-w-lg mx-auto px-4 py-20 text-center">
@@ -731,7 +763,9 @@ export default function UstaKayit() {
         </button>
         <button onClick={() => setAdim(4)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-base transition-colors">
-          Devam Et — ${seciliPlan?.fiyat} {seciliPlan?.birim} {kur ? tlGoster(seciliPlan?.fiyat) : ''}
+          {seciliPlan?.deneme
+            ? 'Devam Et — İlk 90 Gün Ücretsiz'
+            : `Devam Et — $${seciliPlan?.fiyat} ${seciliPlan?.birim} ${kur ? tlGoster(seciliPlan?.fiyat) : ''}`}
         </button>
       </div>
     </div>
@@ -832,7 +866,9 @@ export default function UstaKayit() {
           {/* Kredi kartı — CardPlus 3D Secure */}
           {odemeYontemi === 'kart' && (
             <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-8 text-center">
-              <p className="text-lg font-bold text-gray-900 mb-2">Kredi Kartı ile Ödeme</p>
+              <p className="text-lg font-bold text-gray-900 mb-2">
+                {denemeUygun ? 'Kartını Doğrula, Ücretsiz Başla' : 'Kredi Kartı ile Ödeme'}
+              </p>
               <p className="text-gray-500 text-sm mb-5">
                 Kart bilgileriniz bizim sunucularımıza değil, doğrudan bankanın güvenli
                 3D Secure sayfasına girilir.
@@ -842,25 +878,39 @@ export default function UstaKayit() {
                 <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4 text-left">{hata}</div>
               )}
 
-              <label className="flex items-start gap-2.5 text-left bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-5 cursor-pointer">
-                <input type="checkbox" checked={otomatikYenileme}
-                  onChange={(e) => setOtomatikYenileme(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
-                <span className="text-xs text-gray-600 leading-relaxed">
-                  <span className="font-semibold text-gray-800">Kartımı kaydet, {seciliPlan?.donemMetin || 'her ay'} otomatik yenilensin.</span>
-                  {' '}Dönem sonunda kartınızdan otomatik tahsilat yapılır, 3D Secure'a tekrar girmenize gerek kalmaz.
-                  İstediğiniz zaman panelinizden kapatabilirsiniz.
-                </span>
-              </label>
+              {denemeUygun ? (
+                <div className="flex items-start gap-2.5 text-left bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-5">
+                  <Gift size={16} className="text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-emerald-800 leading-relaxed">
+                    <span className="font-semibold">Bugün kartından 0 TL çekilir.</span> Kartın sadece geçerliliğini
+                    doğrulamak için kullanılır (provizyon + anında iptal). 90 gün sonra kayıtlı kartından
+                    aylık ${seciliPlan?.fiyat} {kur ? `(${tlGoster(seciliPlan?.fiyat)})` : ''} otomatik tahsil edilmeye
+                    başlar — istediğin an panelinden iptal edebilirsin.
+                  </span>
+                </div>
+              ) : (
+                <label className="flex items-start gap-2.5 text-left bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-5 cursor-pointer">
+                  <input type="checkbox" checked={otomatikYenileme}
+                    onChange={(e) => setOtomatikYenileme(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    <span className="font-semibold text-gray-800">Kartımı kaydet, {seciliPlan?.donemMetin || 'her ay'} otomatik yenilensin.</span>
+                    {' '}Dönem sonunda kartınızdan otomatik tahsilat yapılır, 3D Secure'a tekrar girmenize gerek kalmaz.
+                    İstediğiniz zaman panelinizden kapatabilirsiniz.
+                  </span>
+                </label>
+              )}
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setAdim(3)} disabled={yukleniyor}
                   className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm disabled:opacity-60">
                   ← Geri
                 </button>
-                <button type="button" onClick={kartOdemeBaslat} disabled={yukleniyor}
+                <button type="button" onClick={denemeUygun ? denemeBaslat : kartOdemeBaslat} disabled={yukleniyor}
                   className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
-                  {yukleniyor ? 'Yönlendiriliyor...' : `Kredi Kartı ile Öde — $${seciliPlan?.fiyat}`}
+                  {yukleniyor
+                    ? 'Yönlendiriliyor...'
+                    : denemeUygun ? 'Kartı Doğrula ve Ücretsiz Başla' : `Kredi Kartı ile Öde — $${seciliPlan?.fiyat}`}
                 </button>
               </div>
               <p className="text-center text-xs text-gray-400 mt-3">256-bit SSL şifreli güvenli bağlantı</p>
@@ -910,17 +960,21 @@ export default function UstaKayit() {
             {/* Toplam */}
             <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-gray-900 text-sm">Toplam</span>
+                <span className="font-bold text-gray-900 text-sm">{denemeUygun ? 'Bugün Ödenecek' : 'Toplam'}</span>
                 <div className="text-right">
-                  <span className="font-extrabold text-blue-700 text-lg">${seciliPlan?.fiyat}</span>
-                  {kur && (
+                  <span className="font-extrabold text-blue-700 text-lg">{denemeUygun ? '$0' : `$${seciliPlan?.fiyat}`}</span>
+                  {kur && !denemeUygun && (
                     <p className="text-orange-600 text-sm font-bold">
                       {tlGoster(seciliPlan?.fiyat)}
                     </p>
                   )}
                 </div>
               </div>
-              {kur && (
+              {denemeUygun ? (
+                <p className="text-xs text-emerald-600 font-semibold mt-1 text-right">
+                  90 gün sonra ${seciliPlan?.fiyat}/ay otomatik başlar
+                </p>
+              ) : kur && (
                 <p className="text-xs text-gray-400 mt-1 text-right">
                   1 USD = ₺{kur?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} (günlük kur)
                 </p>

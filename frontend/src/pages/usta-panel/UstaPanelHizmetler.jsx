@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Wrench, Star, Clock, Trash2, Plus, Search, Save, CheckCircle, AlertCircle, Lock, Rocket } from 'lucide-react'
+import { Wrench, Star, Clock, Trash2, Plus, Search, Save, CheckCircle, AlertCircle, Lock, Rocket, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ustaHizmetlerGetir, ustaHizmetlerKaydet, kategorileriGetir } from '../../api'
+import { ustaHizmetlerGetir, ustaHizmetlerKaydet, kategorileriGetir, ustaHizmetBolgesiGetir, ustaHizmetBolgesiKaydet } from '../../api'
 
 export default function UstaPanelHizmetler() {
   const [hizmetler, setHizmetler] = useState([])   // [{id, ad, ikon, ana, fiyat, uzmanlik, yedi_yirmi_dort, promosyon_aktif}]
@@ -14,6 +14,16 @@ export default function UstaPanelHizmetler() {
   const [mesaj, setMesaj] = useState({ tip: '', metin: '' })
   const [degisti, setDegisti] = useState(false)
 
+  // Hizmet Bölgesi: kendi ilçesi dışında hizmet verdiği ilçeleri kendi işaretler
+  const [bolgeYukleniyor, setBolgeYukleniyor] = useState(true)
+  const [bolgeKendiIlceId, setBolgeKendiIlceId] = useState(null)
+  const [bolgeSecenekler, setBolgeSecenekler] = useState([])
+  const [bolgeSecili, setBolgeSecili] = useState([])
+  const [bolgeLimit, setBolgeLimit] = useState(8)
+  const [bolgeDegisti, setBolgeDegisti] = useState(false)
+  const [bolgeKaydediliyor, setBolgeKaydediliyor] = useState(false)
+  const [bolgeMesaj, setBolgeMesaj] = useState({ tip: '', metin: '' })
+
   useEffect(() => {
     Promise.all([ustaHizmetlerGetir(), kategorileriGetir()])
       .then(([h, k]) => {
@@ -22,7 +32,34 @@ export default function UstaPanelHizmetler() {
       })
       .catch(() => setMesaj({ tip: 'hata', metin: 'Hizmetler yüklenemedi. Sayfayı yenileyip tekrar dene.' }))
       .finally(() => setYukleniyor(false))
+
+    ustaHizmetBolgesiGetir()
+      .then(({ data }) => {
+        setBolgeKendiIlceId(data.kendi_ilce_id)
+        setBolgeSecenekler(data.secenekler || [])
+        setBolgeSecili((data.secili_ilce_ids || []).filter(id => id !== data.kendi_ilce_id))
+        setBolgeLimit(data.limit)
+      })
+      .catch(() => {})
+      .finally(() => setBolgeYukleniyor(false))
   }, [])
+
+  const bolgeToggle = (ilceId) => {
+    setBolgeDegisti(true); setBolgeMesaj({ tip: '', metin: '' })
+    setBolgeSecili(l => l.includes(ilceId) ? l.filter(x => x !== ilceId) : [...l, ilceId])
+  }
+
+  const bolgeKaydet = async () => {
+    setBolgeKaydediliyor(true); setBolgeMesaj({ tip: '', metin: '' })
+    try {
+      const { data } = await ustaHizmetBolgesiKaydet(bolgeSecili)
+      setBolgeSecili((data.hizmet_bolgesi_ilceler || []).map(i => i.id).filter(id => id !== bolgeKendiIlceId))
+      setBolgeDegisti(false)
+      setBolgeMesaj({ tip: 'basari', metin: 'Hizmet bölgen kaydedildi. Profilinde güncel haliyle görünüyor.' })
+    } catch (e) {
+      setBolgeMesaj({ tip: 'hata', metin: e.response?.data?.hata || 'Kaydedilemedi, tekrar dene.' })
+    } finally { setBolgeKaydediliyor(false) }
+  }
 
   const secili = useMemo(() => new Set(hizmetler.map(h => h.id)), [hizmetler])
   const uzmanlikSayisi = hizmetler.filter(h => h.uzmanlik).length
@@ -146,6 +183,53 @@ export default function UstaPanelHizmetler() {
           {kaydediliyor ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : <Save size={16} />}
           {degisti ? 'Değişiklikleri kaydet' : 'Kaydedildi'}
         </button>
+      </div>
+
+      {/* Hizmet Bölgesi */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2"><MapPin size={18} className="text-blue-600" /> Hizmet Bölgesi</h2>
+        <p className="text-sm text-gray-500 mb-4">Hizmet verdiğin ilçeleri işaretle, profilinde ve aramalarda gösterilsin.</p>
+
+        {bolgeMesaj.metin && (
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border mb-4 ${bolgeMesaj.tip === 'basari' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+            {bolgeMesaj.tip === 'basari' ? <CheckCircle size={16} /> : <AlertCircle size={16} />} {bolgeMesaj.metin}
+          </div>
+        )}
+
+        {bolgeYukleniyor ? (
+          <div className="flex justify-center py-6"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" /></div>
+        ) : bolgeSecenekler.length === 0 ? (
+          <p className="text-sm text-gray-400">Şehrin için ilçe listesi bulunamadı.</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {bolgeSecenekler.filter(i => i.id === bolgeKendiIlceId).map(i => (
+                <span key={i.id} title="Kendi ilçen, her zaman dahil" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-blue-300 bg-blue-50 text-blue-700">
+                  <MapPin size={12} /> {i.ad}
+                </span>
+              ))}
+              {bolgeSecenekler.filter(i => i.id !== bolgeKendiIlceId).map(i => {
+                const secili = bolgeSecili.includes(i.id)
+                const kapali = !secili && (bolgeSecili.length + 1) >= bolgeLimit
+                return (
+                  <button key={i.id} type="button" onClick={() => bolgeToggle(i.id)} disabled={kapali}
+                    title={kapali ? `En fazla ${bolgeLimit} ilçe seçebilirsin` : ''}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition disabled:opacity-40 ${secili ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-white border-gray-300 text-gray-600 hover:border-orange-300'}`}>
+                    {i.ad}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mb-4">{bolgeSecili.length + 1}/{bolgeLimit} ilçe (kendi ilçen dahil)</p>
+            <div className="flex justify-end">
+              <button type="button" onClick={bolgeKaydet} disabled={!bolgeDegisti || bolgeKaydediliyor}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold px-6 py-2.5 rounded-xl transition text-sm">
+                {bolgeKaydediliyor ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : <Save size={14} />}
+                {bolgeDegisti ? 'Hizmet bölgesini kaydet' : 'Kaydedildi'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
