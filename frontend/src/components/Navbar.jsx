@@ -23,15 +23,23 @@ export default function Navbar() {
   useEffect(() => {
     if (!profilAcik) return
     const kapat = () => setProfilAcik(false)
-    document.addEventListener('click', kapat)
-    return () => document.removeEventListener('click', kapat)
+    // Dinleyici bir sonraki turda eklenir: aksi halde menüyü açan aynı tıklama da yakalanıp menü anında kapanır
+    const zamanlayici = setTimeout(() => document.addEventListener('click', kapat), 0)
+    return () => {
+      clearTimeout(zamanlayici)
+      document.removeEventListener('click', kapat)
+    }
   }, [profilAcik])
 
   useEffect(() => {
     if (!girisAcik) return
     const kapat = () => setGirisAcik(false)
-    document.addEventListener('click', kapat)
-    return () => document.removeEventListener('click', kapat)
+    // Dinleyici bir sonraki turda eklenir: aksi halde menüyü açan aynı tıklama da yakalanıp menü anında kapanır
+    const zamanlayici = setTimeout(() => document.addEventListener('click', kapat), 0)
+    return () => {
+      clearTimeout(zamanlayici)
+      document.removeEventListener('click', kapat)
+    }
   }, [girisAcik])
 
   // Mobil menü açık/kapalı durumunu diğer bileşenlere (ör. WhatsappButon) bildir
