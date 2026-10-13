@@ -144,13 +144,16 @@ export default function UstaPanelAbonelik() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-gray-800 flex items-center gap-2"><Crown size={17} className="text-blue-600" /> Mevcut abonelik</h2>
             <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${abonelik.ucretli ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-              {abonelik.ucretli ? 'Aktif' : 'Aktif abonelik yok'}
+              {abonelik.deneme_mi ? 'Ücretsiz deneme' : abonelik.ucretli ? 'Aktif' : 'Aktif abonelik yok'}
             </span>
           </div>
           {abonelik.ucretli ? (
             <>
               <p className="text-sm text-gray-700"><span className="font-semibold">{abonelik.plan}</span> · {tarihTR(abonelik.plan_bitis)} tarihine kadar</p>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Clock size={12} /> {abonelik.kalan_gun} gün kaldı{abonelik.otomatik_yenileme ? ' · otomatik yenileme açık' : ''}</p>
+              {abonelik.deneme_mi && (
+                <p className="text-xs font-semibold text-emerald-700 mt-1.5">Deneme süren bitince ücretsiz plana düşersin. Şimdi aşağıdan ödeme yaparsan günlerin kaybolmaz, bitiş tarihinin üstüne eklenir.</p>
+              )}
               {abonelik.duraklatildi_mi && (
                 <p className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1"><PauseCircle size={12} /> Profilin şu an duraklatılmış, aramalarda görünmüyor.</p>
               )}
@@ -205,7 +208,7 @@ export default function UstaPanelAbonelik() {
                 <div className="mt-auto pt-4">
                   <button type="button" disabled={!!islem} onClick={() => planAl(p)}
                     className={`w-full text-sm font-bold py-2.5 rounded-xl transition-colors disabled:opacity-60 ${populer ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}>
-                    {islem === `plan-${p.id}` ? 'Yönlendiriliyor...' : abonelik.ucretli ? 'Süreyi uzat' : 'Satın al'}
+                    {islem === `plan-${p.id}` ? 'Yönlendiriliyor...' : abonelik.deneme_mi ? 'Şimdi öde, devam et' : abonelik.ucretli ? 'Süreyi uzat' : 'Satın al'}
                   </button>
                 </div>
               </div>

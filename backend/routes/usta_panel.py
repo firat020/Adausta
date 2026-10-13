@@ -812,6 +812,7 @@ def abonelik_ozet(usta):
             'kalan_gun': kalan_gun, 'ucretli': bool(usta.plan and usta.plan != 'ucretsiz' and kalan_gun > 0),
             'durum': ab.durum if ab else None,
             'otomatik_yenileme': bool(ab.otomatik_yenileme) if ab else False,
+            'deneme_mi': bool(ab and ab.deneme_mi and ab.durum == 'aktif'),
             'kayitli_kart_var': bool(usta.cardplus_safekey),
             'duraklatildi_mi': bool(ab.duraklatildi_mi) if ab else False,
             'duraklatma_tarihi': ab.duraklatma_tarihi.isoformat() if ab and ab.duraklatma_tarihi else None,

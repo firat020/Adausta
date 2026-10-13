@@ -67,6 +67,7 @@ from routes.sirketler import sirketler_bp
 from routes.sirket_panel import sirket_panel_bp
 from routes.odeme import odeme_bp
 from routes.odeme_cardplus import odeme_cardplus_bp
+from routes.telefon_dogrulama import telefon_dogrulama_bp
 from routes.magaza import magaza_bp
 from routes.satici_basvuru import satici_basvuru_bp
 from routes.admin_saticilar import admin_saticilar_bp
@@ -90,6 +91,7 @@ app.register_blueprint(sirketler_bp, url_prefix='/api/sirketler')
 app.register_blueprint(sirket_panel_bp, url_prefix='/api/sirket')
 app.register_blueprint(odeme_bp, url_prefix='/api/odeme')
 app.register_blueprint(odeme_cardplus_bp, url_prefix='/api/odeme/cardplus')
+app.register_blueprint(telefon_dogrulama_bp, url_prefix='/api/telefon-dogrulama')
 app.register_blueprint(magaza_bp, url_prefix='/api/magaza')
 app.register_blueprint(satici_basvuru_bp, url_prefix='/api/satici')
 app.register_blueprint(admin_saticilar_bp, url_prefix='/api/admin')
@@ -257,7 +259,7 @@ def abonelik_uyari_bildirim():
 
     for u in ustalar:
         kalan = (u.plan_bitis.date() - bugun).days
-        if kalan not in (7, 3, 1, 0):
+        if kalan > 14 or kalan < 0:
             continue
 
         # Bugün zaten bildirim gönderildi mi?
@@ -272,6 +274,9 @@ def abonelik_uyari_bildirim():
         ab = Abonelik.query.filter_by(usta_id=u.id, durum='aktif').order_by(Abonelik.id.desc()).first()
         otomatik_acik = bool(ab and ab.otomatik_yenileme and u.cardplus_safekey)
         deneme_mi = bool(ab and ab.deneme_mi)
+        # Normal üyelikte 7/3/1/0, kartsız denemede ek olarak 14 gün kala hatırlat (ödemeye dönüşüm için daha çok temas)
+        if kalan not in ((14, 7, 3, 1, 0) if deneme_mi else (7, 3, 1, 0)):
+            continue
 
         if otomatik_acik:
             if kalan == 0:
@@ -283,6 +288,15 @@ def abonelik_uyari_bildirim():
                 icerik = (f'Ucretsiz deneme sureniz {kalan} gun icinde sona eriyor, kayitli kartinizdan otomatik tahsilat baslayacak. '
                            f'Istemiyorsaniz panelinizden otomatik yenilemeyi kapatabilirsiniz.' if deneme_mi else
                            f'Aboneliginiz {kalan} gun icinde kayitli kartinizdan otomatik olarak yenilenecek.')
+        elif deneme_mi:
+            # Kartsız 90 gün deneme: tahsilat otomatik yapılmaz, kullanıcıyı ödemeye çağırıyoruz.
+            if kalan == 0:
+                baslik = 'Ucretsiz Deneminiz Sona Erdi'
+                icerik = 'Ucretsiz deneme sureniz bugun bitiyor. Profilinizin yayinda kalmasi icin kredi kartiyla odeme yapin.'
+            else:
+                baslik = f'Deneminiz {kalan} Gun Sonra Bitiyor'
+                icerik = (f'Ucretsiz deneme sureniz {kalan} gun icinde sona erecek. Kesintisiz devam etmek icin '
+                           f'panelinizden kredi kartiyla odeme yapabilirsiniz.')
         elif kalan == 0:
             baslik = 'Uyeliginiz Sona Erdi'
             icerik = 'AdaUsta uyeliginiz sona erdi. Yenilemek icin giris yapiniz.'
@@ -308,6 +322,63 @@ def abonelik_uyari_bildirim():
             if sonuc['gecersiz']:
                 FCMToken.query.filter(FCMToken.token.in_(sonuc['gecersiz'])).delete(synchronize_session=False)
 
+        # Kartsız denemede push yetmez (uygulaması/izni olmayan çok kişi var): SMS de gönder.
+        # Ayarlardaki "Abonelik ve deneme hatırlatmaları" kapalıysa saygı göster.
+        if deneme_mi and u.telefon and u.bildirim_tercihi().get('abonelik_bildirim', True):
+            from sms import sms_gonder
+            if sms_gonder(u.telefon, f'Ada Usta - {baslik}: {icerik} adausta.com/usta/panel/abonelik'):
+                gecmis.gonderildi = True
+
+    db.session.commit()
+    _deneme_bitti_geri_kazanim()
+
+
+def _deneme_bitti_geri_kazanim():
+    """Kartsız deneme bitmiş (askida) ve ödeme yapmamış ustalara bitişten 1 ve 7 gün sonra
+    'ödeme yaparak geri dön' SMS'i/bildirimi gönderir. Aynı gün tekrar gönderilmez."""
+    from models import Usta, FCMToken, BildirimGecmisi, Abonelik
+    simdi = datetime.utcnow()
+    bugun = simdi.date()
+    bugun_baslangic = datetime(simdi.year, simdi.month, simdi.day)
+
+    adaylar = Abonelik.query.filter(
+        Abonelik.deneme_mi == True,  # noqa: E712
+        Abonelik.durum == 'askida',
+        Abonelik.bitis != None,
+    ).all()
+    for ab in adaylar:
+        gecen = (bugun - ab.bitis.date()).days
+        if gecen not in (1, 7):
+            continue
+        u = Usta.query.get(ab.usta_id)
+        if not u or not u.aktif or not u.kullanici_id:
+            continue
+        # Bu arada ücretli abonelik almışsa rahatsız etme
+        if Abonelik.query.filter(Abonelik.usta_id == u.id, Abonelik.durum == 'aktif').first():
+            continue
+        if BildirimGecmisi.query.filter(
+            BildirimGecmisi.kullanici_id == u.kullanici_id,
+            BildirimGecmisi.tur == 'deneme_bitti',
+            BildirimGecmisi.olusturma >= bugun_baslangic,
+        ).first():
+            continue
+        if not u.bildirim_tercihi().get('abonelik_bildirim', True):
+            continue
+
+        baslik = 'Ucretsiz Deneminiz Bitti'
+        icerik = 'Profiliniz ucretsiz planda. Musteri taleplerini kacirmamak icin kredi kartiyla uyeliginizi baslatin.'
+        gecmis = BildirimGecmisi(kullanici_id=u.kullanici_id, baslik=baslik, icerik=icerik,
+                                 tur='deneme_bitti', gonderildi=False)
+        db.session.add(gecmis)
+        tokenlar = [t.token for t in FCMToken.query.filter_by(kullanici_id=u.kullanici_id, aktif=True).all()]
+        if tokenlar:
+            from fcm import toplu_bildirim_gonder
+            sonuc = toplu_bildirim_gonder(tokenlar, baslik, icerik, {'ekran': 'abonelik'})
+            gecmis.gonderildi = sonuc['basarili'] > 0
+        if u.telefon:
+            from sms import sms_gonder
+            if sms_gonder(u.telefon, f'Ada Usta - {baslik}: {icerik} adausta.com/usta/panel/abonelik'):
+                gecmis.gonderildi = True
     db.session.commit()
 
 
@@ -373,6 +444,8 @@ def _baslat_scheduler():
 
 
 with app.app_context():
+    from schema_guard import telefon_dogrulama_semasini_guncelle
+    telefon_dogrulama_semasini_guncelle(db)  # eski DB'ye yeni sütunları ekler (create_all eklemez)
     db.create_all()
 
 _baslat_scheduler()

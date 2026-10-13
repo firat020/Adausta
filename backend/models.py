@@ -28,6 +28,24 @@ class Kullanici(db.Model):
     soyad = db.Column(db.String(100), default='')
     telefon = db.Column(db.String(30), default='')
     adres = db.Column(db.Text, default='')
+    # Twilio Verify ile doğrulanmış telefon (E.164) ve zamanı. Mevcut kullanıcılar boş başlar (doğrulanmamış);
+    # hiçbiri otomatik doğrulanmış sayılmaz. Profildeki numara değişirse eşleşme bozulur ve doğrulama geçersiz olur.
+    telefon_dogrulanan = db.Column(db.String(20), nullable=True)
+    telefon_dogrulama_tarihi = db.Column(db.DateTime, nullable=True)
+
+    def aktif_telefon_ham(self):
+        """Rolüne göre profilde kayıtlı güncel telefon (ham metin)."""
+        if self.rol == 'usta':
+            u = Usta.query.filter_by(kullanici_id=self.id).first()
+            return u.telefon if u else (self.telefon or '')
+        if self.rol == 'sirket':
+            s = Sirket.query.filter_by(kullanici_id=self.id).first()
+            return s.telefon if s else (self.telefon or '')
+        return self.telefon or ''
+
+    def telefon_dogrulandi_mi(self):
+        from phone_utils import numara_eslesiyor
+        return bool(self.telefon_dogrulanan) and numara_eslesiyor(self.aktif_telefon_ham(), self.telefon_dogrulanan)
 
     def sifre_set(self, sifre):
         self.sifre_hash = generate_password_hash(sifre)
@@ -44,7 +62,9 @@ class Kullanici(db.Model):
         d = {'id': self.id, 'email': self.email, 'rol': self.rol,
              'ad': self.ad, 'soyad': self.soyad, 'telefon': self.telefon,
              'adres': self.adres, 'aktif': self.aktif, 'sifre_var': self.sifre_hash is not None,
-             'olusturma': fmt(self.olusturma)}
+             'olusturma': fmt(self.olusturma),
+             'telefon_dogrulandi': self.telefon_dogrulandi_mi(),
+             'telefon_dogrulama_tarihi': fmt(self.telefon_dogrulama_tarihi) if self.telefon_dogrulandi_mi() else None}
         if self.rol == 'usta':
             usta = Usta.query.filter_by(kullanici_id=self.id).first()
             d['usta_id'] = usta.id if usta else None
@@ -52,6 +72,23 @@ class Kullanici(db.Model):
             sirket = Sirket.query.filter_by(kullanici_id=self.id).first()
             d['sirket_id'] = sirket.id if sirket else None
         return d
+
+
+class TelefonDogrulamaIstegi(db.Model):
+    """Twilio Verify gönderim/kontrol kaydı. Kodun kendisi burada TUTULMAZ (Twilio üretir/doğrular).
+    Gönderim sınırları (telefon/IP/kullanıcı, bekleme süresi, deneme sayısı) bu tablo üzerinden
+    hesaplandığı için sunucu yeniden başlasa veya birden fazla worker çalışsa da kaybolmaz."""
+    __tablename__ = 'telefon_dogrulama_istekleri'
+    id = db.Column(db.Integer, primary_key=True)
+    kullanici_id = db.Column(db.Integer, db.ForeignKey('kullanicilar.id'), nullable=False, index=True)
+    amac = db.Column(db.String(30), nullable=False)          # kayit / profil
+    telefon_e164 = db.Column(db.String(20), nullable=False, index=True)
+    kanal = db.Column(db.String(10), nullable=False)         # sms / whatsapp
+    durum = db.Column(db.String(15), nullable=False, default='bekliyor')  # bekliyor / onaylandi / iptal / hata
+    ip = db.Column(db.String(64), default='', index=True)
+    olusturma = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    kontrol_sayisi = db.Column(db.Integer, default=0)
+    tamamlanma = db.Column(db.DateTime, nullable=True)
 
 
 class TelefonOtp(db.Model):

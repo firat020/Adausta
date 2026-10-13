@@ -8,6 +8,17 @@ import '../models/yorum.dart';
 import '../models/sehir.dart';
 import 'fcm_service.dart';
 
+/// Telefon doğrulama isteği başarısız olduğunda backend'in Türkçe mesajını ve ipuçlarını taşır.
+class TelefonDogrulamaHatasi implements Exception {
+  final String mesaj;
+  final String? kod;
+  final int? beklemeSn;
+  final String? digerKanal;
+  TelefonDogrulamaHatasi(this.mesaj, {this.kod, this.beklemeSn, this.digerKanal});
+  @override
+  String toString() => mesaj;
+}
+
 class ApiService {
   static final Map<String, String> _headers = {
     'Content-Type': 'application/json',
@@ -456,4 +467,42 @@ class ApiService {
       throw Exception(_hataAl(res) ?? 'Belge silinemedi');
     }
   }
+
+  // ── Telefon doğrulama (Twilio Verify) ────────────────────
+  // Kod ve doğrulama sonucu yalnızca backend'de tutulur; uygulamada Twilio bilgisi yoktur.
+  Future<Map<String, dynamic>> _telefonDogrulamaIstek(String url, {Map<String, dynamic>? govde}) async {
+    final res = govde == null
+        ? await http.get(Uri.parse(url), headers: _authHeaders)
+        : await http.post(Uri.parse(url), headers: _authHeaders, body: jsonEncode(govde));
+    Map<String, dynamic> data = {};
+    try {
+      final d = jsonDecode(res.body);
+      if (d is Map<String, dynamic>) data = d;
+    } catch (_) {}
+    if (res.statusCode >= 200 && res.statusCode < 300) return data;
+    throw TelefonDogrulamaHatasi(
+      data['hata']?.toString() ?? 'İşlem şu anda yapılamıyor. Lütfen tekrar deneyin.',
+      kod: data['kod']?.toString(),
+      beklemeSn: data['bekleme_sn'] is int ? data['bekleme_sn'] as int : null,
+      digerKanal: data['diger_kanal']?.toString(),
+    );
+  }
+
+  Future<Map<String, dynamic>> telefonDogrulamaAyarlar() =>
+      _telefonDogrulamaIstek(ApiConfig.telefonDogrulamaAyarlar);
+
+  Future<Map<String, dynamic>> telefonDogrulamaDurum() =>
+      _telefonDogrulamaIstek(ApiConfig.telefonDogrulamaDurum);
+
+  Future<Map<String, dynamic>> telefonDogrulamaGonder({
+    required String telefon,
+    required String ulke,
+    required String kanal, // 'sms' | 'whatsapp'
+    String amac = 'profil',
+  }) =>
+      _telefonDogrulamaIstek(ApiConfig.telefonDogrulamaGonder,
+          govde: {'telefon': telefon, 'ulke': ulke, 'kanal': kanal, 'amac': amac});
+
+  Future<Map<String, dynamic>> telefonDogrulamaDogrula(String kod) =>
+      _telefonDogrulamaIstek(ApiConfig.telefonDogrulamaDogrula, govde: {'kod': kod});
 }

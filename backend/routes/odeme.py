@@ -110,6 +110,7 @@ def admin_odeme_onayla(id):
         if mevcut:
             mevcut.durum = 'aktif'
             mevcut.baslangic = datetime.utcnow()
+            mevcut.deneme_mi = False
             ek_gun = mevcut.plan.sure_gun() if mevcut.plan else 30
             mevcut.bitis = datetime.utcnow() + timedelta(days=ek_gun)
             mevcut.yenileme_tarihi = mevcut.bitis

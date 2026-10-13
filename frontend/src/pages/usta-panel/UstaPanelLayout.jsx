@@ -5,7 +5,7 @@ import {
   LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag,
   MessageCircle, FileCheck2, Crown, Settings
 } from 'lucide-react'
-import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis, ustaPanelTalepMesajOkunmamis } from '../../api'
+import { benimBilgilerim, cikis as apiCikis, ustaPanelMusaitlik, ustaPanelMesajOkunmamis, ustaPanelTalepMesajOkunmamis, ustaAbonelikGetir } from '../../api'
 
 const menuItems = [
   { to: '/usta/panel',          icon: LayoutDashboard, label: 'Genel Bakış',    end: true },
@@ -29,6 +29,7 @@ export default function UstaPanelLayout() {
   const [musaitlik, setMusaitlik] = useState(true)
   const [okunmamisMesaj, setOkunmamisMesaj] = useState(0)
   const [okunmamisTalepMesaj, setOkunmamisTalepMesaj] = useState(0)
+  const [deneme, setDeneme] = useState(null) // { kalan, bitis } — kartsız 90 gün deneme sürüyorsa
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -42,6 +43,13 @@ export default function UstaPanelLayout() {
           setKontrol(false)
           ustaPanelMesajOkunmamis().then(r => setOkunmamisMesaj(r.data.sayi || 0)).catch(() => {})
           ustaPanelTalepMesajOkunmamis().then(r => setOkunmamisTalepMesaj(r.data.sayi || 0)).catch(() => {})
+          ustaAbonelikGetir().then(r => {
+            const ab = r.data?.abonelik
+            if (ab?.deneme_mi && ab.durum === 'aktif' && r.data.plan_bitis) {
+              const kalan = Math.max(0, Math.ceil((new Date(r.data.plan_bitis).getTime() - Date.now()) / 86400000))
+              setDeneme({ kalan, bitis: new Date(r.data.plan_bitis).toLocaleDateString('tr-TR') })
+            }
+          }).catch(() => {})
         }
       })
       .catch(() => navigate('/usta/giris', { replace: true }))
@@ -177,6 +185,22 @@ export default function UstaPanelLayout() {
           <span className="font-bold text-gray-900">Usta Paneli</span>
           <div className="w-9" />
         </div>
+
+        {deneme && deneme.kalan <= 30 && (
+          <div className={`px-4 py-2.5 text-sm flex items-center justify-between gap-3 flex-wrap border-b ${
+            deneme.kalan <= 3 ? 'bg-red-50 border-red-200 text-red-800'
+            : deneme.kalan <= 14 ? 'bg-amber-50 border-amber-200 text-amber-900'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
+            <span>
+              <span className="font-bold">Ücretsiz deneme: {deneme.kalan} gün kaldı</span>
+              {' '}({deneme.bitis}). {deneme.kalan <= 14 ? 'Müşteri taleplerini kaçırmamak için şimdi ödeme yap — kalan günlerin kaybolmaz, üstüne eklenir.' : 'İstediğin zaman kredi kartıyla devam edebilirsin.'}
+            </span>
+            <NavLink to="/usta/panel/abonelik"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg whitespace-nowrap transition-colors">
+              Kredi kartıyla öde
+            </NavLink>
+          </div>
+        )}
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />

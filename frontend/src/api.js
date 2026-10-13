@@ -163,3 +163,9 @@ export const adminReklamGuncelle = (id, data) => api.put(`/reklamlar/admin/${id}
 export const adminReklamSil = (id) => api.delete(`/reklamlar/admin/${id}`);
 
 export default api;
+
+// Telefon doğrulama (Twilio Verify: SMS / WhatsApp)
+export const telefonDogrulamaAyarlar = () => api.get('/telefon-dogrulama/ayarlar');
+export const telefonDogrulamaDurum = () => api.get('/telefon-dogrulama/durum');
+export const telefonDogrulamaGonder = (data) => api.post('/telefon-dogrulama/gonder', data);
+export const telefonDogrulamaDogrula = (data) => api.post('/telefon-dogrulama/dogrula', data);

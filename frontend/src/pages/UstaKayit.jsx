@@ -5,7 +5,8 @@ import {
   Wrench, Building2, Gift, Store, LocateFixed
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat, cardplusDenemeBaslat } from '../api'
+import TelefonDogrulama from '../components/TelefonDogrulama'
+import { kategorileriGetir, sehirleriGetir, ustaKayit, planlariGetir, cardplusBaslat, cardplusDenemeBaslat, telefonDogrulamaAyarlar, telefonDogrulamaDurum } from '../api'
 import API from '../config.js'
 
 const PLANLAR = [
@@ -168,6 +169,10 @@ export default function UstaKayit() {
   const [sehirler, setSehirler] = useState([])
   const [ilceler, setIlceler] = useState([])
   const [basarili, setBasarili] = useState(false)
+  const [denemeAcildi, setDenemeAcildi] = useState(false) // kartsız 90 gün deneme başladı mı
+  const [kayitliUstaId, setKayitliUstaId] = useState(null)  // kayıt oluştuysa tekrar kayıt denenmesin (OTP adımı için)
+  const [dogrulamaAdimi, setDogrulamaAdimi] = useState(false) // telefon doğrulama (Twilio Verify) adımı açık mı
+  const [dogrulamaZorunlu, setDogrulamaZorunlu] = useState(false)
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
 
@@ -319,38 +324,74 @@ export default function UstaKayit() {
     }
   }
 
-  // 90 gün ücretsiz deneme: kart PreAuth+Void ile doğrulanır, bugün ücret alınmaz.
-  // Deneme bitince kayıtlı karttan kayıtlı aylık tahsilat otomatik başlar (sunucu tarafı cron).
+  // 90 gün ücretsiz deneme: kart/ödeme bilgisi alınmaz. Süre bitmeden panelden ve bildirimle
+  // "kredi kartıyla ödeme yap" uyarısı gönderilir (sunucu tarafı abonelik_uyari_bildirim).
+  const denemeHataIsle = (err) => {
+    setHata(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin')
+    // Bu telefonla deneme daha önce alınmış: hesap oluştu ama deneme yok → ödeme sayfasına götür
+    if (err.response?.data?.kod === 'deneme_kullanilmis') {
+      _gtagKayitDonusumu()
+      setTimeout(() => navigate('/usta/panel/abonelik'), 4000)
+    }
+  }
+
+  const denemeTamamla = async (ustaId) => {
+    await cardplusDenemeBaslat({ usta_id: ustaId })
+    _gtagKayitDonusumu()
+    setDenemeAcildi(true)
+    setBasarili(true)
+    setTimeout(() => navigate('/usta/panel'), 3000)
+  }
+
+  // 1) Kayıt oluşturulur 2) telefon doğrulama (SMS/WhatsApp) sunulur 3) doğrulanınca deneme açılır
   const denemeBaslat = async () => {
     setHata('')
     setYukleniyor(true)
     try {
-      const kayitResp = await ustaKayit({
-        ...form,
-        sehir_id: parseInt(form.sehir_id),
-        ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
-        kategori_id: parseInt(secilenKategoriler[0]),
-        ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
-        deneyim_yil: parseInt(form.deneyim_yil) || 0,
-        plan: secilenPlan,
-        referans_kodu: refKodu,
-      })
-      const ustaId = kayitResp?.data?.usta_id
-
-      const { data } = await cardplusDenemeBaslat({ usta_id: ustaId })
-
-      _gtagKayitDonusumu()
-      document.open()
-      document.write(data.form_html)
-      document.close()
+      let ustaId = kayitliUstaId
+      if (!ustaId) {
+        const kayitResp = await ustaKayit({
+          ...form,
+          sehir_id: parseInt(form.sehir_id),
+          ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
+          kategori_id: parseInt(secilenKategoriler[0]),
+          ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
+          deneyim_yil: parseInt(form.deneyim_yil) || 0,
+          plan: secilenPlan,
+          referans_kodu: refKodu,
+        })
+        ustaId = kayitResp?.data?.usta_id
+        setKayitliUstaId(ustaId)
+      }
+      // Doğrulama durumu her zaman backend'den alınır
+      const [{ data: ayar }, { data: durum }] = await Promise.all([telefonDogrulamaAyarlar(), telefonDogrulamaDurum()])
+      setDogrulamaZorunlu(!!ayar.zorunlu)
+      if (ayar.yapilandirildi && !durum.dogrulandi) {
+        setDogrulamaAdimi(true)
+        return
+      }
+      await denemeTamamla(ustaId)
     } catch (err) {
-      setHata(err.response?.data?.hata || 'Bir hata oluştu, tekrar deneyin')
+      denemeHataIsle(err)
+    } finally {
+      setYukleniyor(false)
+    }
+  }
+
+  const dogrulamaSonrasiDenemeyiBaslat = async () => {
+    setHata('')
+    setYukleniyor(true)
+    try {
+      await denemeTamamla(kayitliUstaId)
+    } catch (err) {
+      denemeHataIsle(err)
+    } finally {
       setYukleniyor(false)
     }
   }
 
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
-  const denemeUygun = !!seciliPlan?.deneme && odemeYontemi === 'kart'
+  const denemeUygun = !!seciliPlan?.deneme
 
   if (basarili) return (
     <div className="max-w-lg mx-auto px-4 py-20 text-center">
@@ -359,9 +400,9 @@ export default function UstaKayit() {
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Kaydınız Tamamlandı!</h2>
       <p className="text-gray-500 leading-relaxed mb-6">
-        Profiliniz oluşturuldu, havale bildiriminiz alındı. Ödemeniz onaylandıktan ve
-        ekibimiz başvurunuzu inceledikten sonra profiliniz yayına alınacak. Usta panelinize
-        yönlendiriliyorsunuz...
+        {denemeAcildi
+          ? 'Profiliniz oluşturuldu ve 90 günlük ücretsiz denemeniz başladı. Süre bitmeden size hatırlatma göndereceğiz. Ekibimiz başvurunuzu inceledikten sonra profiliniz yayına alınacak. Usta panelinize yönlendiriliyorsunuz...'
+          : 'Profiliniz oluşturuldu, havale bildiriminiz alındı. Ödemeniz onaylandıktan ve ekibimiz başvurunuzu inceledikten sonra profiliniz yayına alınacak. Usta panelinize yönlendiriliyorsunuz...'}
       </p>
       <button onClick={() => navigate('/usta/panel')}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl transition-colors">
@@ -783,8 +824,8 @@ export default function UstaKayit() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
         <div className="md:col-span-3 space-y-4">
 
-          {/* Sekme seçici */}
-          <div className="flex gap-2">
+          {/* Sekme seçici (deneme planında ödeme yöntemi yok) */}
+          {!denemeUygun && <div className="flex gap-2">
             <button type="button" onClick={() => setOdemeYontemi('havale')}
               className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors
                 ${odemeYontemi === 'havale' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}>
@@ -795,10 +836,53 @@ export default function UstaKayit() {
                 ${odemeYontemi === 'kart' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'}`}>
               Kredi Kartı
             </button>
-          </div>
+          </div>}
+
+          {/* Kartsız 90 gün ücretsiz deneme */}
+          {denemeUygun && (
+            <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-8 text-center">
+              <p className="text-lg font-bold text-gray-900 mb-2">İlk 90 Gün Ücretsiz Başla</p>
+              <p className="text-gray-500 text-sm mb-5">Kart veya ödeme bilgisi gerekmez.</p>
+
+              {hata && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg mb-4 text-left">{hata}</div>
+              )}
+
+              <div className="flex items-start gap-2.5 text-left bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 mb-5">
+                <Gift size={16} className="text-emerald-600 mt-0.5 flex-shrink-0" />
+                <span className="text-xs text-emerald-800 leading-relaxed">
+                  <span className="font-semibold">Bugün hiçbir ödeme yapmazsın.</span> 90 gün boyunca ücretsiz kullanırsın.
+                  Süre bitmeden önce sana hatırlatma göndeririz; devam etmek istersen kredi kartıyla
+                  aylık ${seciliPlan?.fiyat} {kur ? `(${tlGoster(seciliPlan?.fiyat)})` : ''} ödeyebilirsin.
+                  Ödeme yapmazsan hesabın kendiliğinden ücretsiz plana geçer, otomatik tahsilat olmaz.
+                </span>
+              </div>
+
+              {dogrulamaAdimi && (
+                <div className="text-left mb-5">
+                  <TelefonDogrulama telefon={form.telefon} amac="kayit"
+                    onDogrulandi={dogrulamaSonrasiDenemeyiBaslat}
+                    onAtla={dogrulamaZorunlu ? undefined : dogrulamaSonrasiDenemeyiBaslat}
+                    onNumaraDuzenle={() => navigate('/usta/panel/profil')} />
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setAdim(3)} disabled={yukleniyor || !!kayitliUstaId}
+                  className="flex-1 border border-blue-200 text-blue-600 font-semibold py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-sm disabled:opacity-60">
+                  ← Geri
+                </button>
+                <button type="button" onClick={denemeBaslat}
+                  disabled={yukleniyor || dogrulamaAdimi}
+                  className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
+                  {yukleniyor ? 'Kaydediliyor...' : dogrulamaAdimi ? 'Önce telefonunu doğrula' : 'Kaydı Tamamla — Ücretsiz Başla'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Havale paneli */}
-          {odemeYontemi === 'havale' && (
+          {!denemeUygun && odemeYontemi === 'havale' && (
             <form onSubmit={odemeGonder} className="bg-white border border-blue-100 shadow-sm rounded-2xl overflow-hidden">
               {/* Banka bilgileri */}
               <div className="bg-gray-900 px-5 py-3">
@@ -864,7 +948,7 @@ export default function UstaKayit() {
           )}
 
           {/* Kredi kartı — CardPlus 3D Secure */}
-          {odemeYontemi === 'kart' && (
+          {!denemeUygun && odemeYontemi === 'kart' && (
             <div className="bg-white border border-blue-100 shadow-sm rounded-2xl p-8 text-center">
               <p className="text-lg font-bold text-gray-900 mb-2">
                 {denemeUygun ? 'Kartını Doğrula, Ücretsiz Başla' : 'Kredi Kartı ile Ödeme'}
@@ -972,7 +1056,7 @@ export default function UstaKayit() {
               </div>
               {denemeUygun ? (
                 <p className="text-xs text-emerald-600 font-semibold mt-1 text-right">
-                  90 gün sonra ${seciliPlan?.fiyat}/ay otomatik başlar
+                  90 gün sonra istersen ${seciliPlan?.fiyat}/ay ile devam edersin
                 </p>
               ) : kur && (
                 <p className="text-xs text-gray-400 mt-1 text-right">

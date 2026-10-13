@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../config/api_config.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
+import '../../widgets/telefon_dogrulama.dart';
 import 'usta_panel_musteriler.dart';
 import 'usta_panel_istatistik.dart';
 import 'usta_panel_abonelik.dart';
@@ -23,6 +24,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
   bool _fotoYukleniyor = false;
   String? _mesaj;
   bool _mesajOk = false;
+  String _kayitliTelefon = ''; // sunucuda kayıtlı telefon (doğrulama bu numara üzerinden yapılır)
 
   late TextEditingController _adCtrl;
   late TextEditingController _soyadCtrl;
@@ -62,6 +64,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
           _adCtrl.text = u['ad'] ?? '';
           _soyadCtrl.text = u['soyad'] ?? '';
           _telCtrl.text = u['telefon'] ?? '';
+          _kayitliTelefon = u['telefon'] ?? '';
           _wpCtrl.text = u['whatsapp'] ?? '';
           _emailCtrl.text = u['email'] ?? '';
           _aciklamaCtrl.text = u['aciklama'] ?? '';
@@ -84,7 +87,7 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
         'email': _emailCtrl.text,
         'aciklama': _aciklamaCtrl.text,
       });
-      if (mounted) setState(() { _mesaj = 'Profil güncellendi!'; _mesajOk = true; _kaydediliyor = false; });
+      if (mounted) setState(() { _mesaj = 'Profil güncellendi!'; _mesajOk = true; _kaydediliyor = false; _kayitliTelefon = _telCtrl.text; });
     } catch (e) {
       if (mounted) setState(() { _mesaj = e.toString().replaceAll('Exception: ', ''); _mesajOk = false; _kaydediliyor = false; });
     }
@@ -154,6 +157,11 @@ class _UstaPanelProfilState extends State<UstaPanelProfil> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Telefon doğrulama (SMS / WhatsApp) — numara değişirse doğrulama otomatik geçersiz olur
+          if (_kayitliTelefon.isNotEmpty) ...[
+            TelefonDogrulama(key: ValueKey(_kayitliTelefon), telefon: _kayitliTelefon, amac: 'profil'),
+            const SizedBox(height: 16),
+          ],
           // Profil başlık
           Container(
             width: double.infinity,

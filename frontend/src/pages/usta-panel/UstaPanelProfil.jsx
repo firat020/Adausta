@@ -4,6 +4,7 @@ import { User, Phone, Mail, MapPin, Briefcase, Camera, Trash2, Save, CheckCircle
 import { DILLER, ODEME_YONTEMLERI, GUNLER, VARSAYILAN_SAATLER } from '../../data/profilSecenekleri.js'
 import { ustaPanelProfil, ustaPanelProfilGuncelle, ustaPanelFotografYukle, ustaPanelFotografSil, ustaPanelLogoYukle, ustaPanelLogoSil, ustaPanelKapakYukle, ustaPanelKapakSil, sehirleriGetir, ustaAbonelikGetir, ustaOtomatikYenilemeAyarla, ustaPanelEkipGetir, ustaPanelEkipEkle, ustaPanelEkipSil, ustaPanelOdullerGetir, ustaPanelOdulEkle, ustaPanelOdulSil } from '../../api'
 import axios from 'axios'
+import TelefonDogrulama from '../../components/TelefonDogrulama'
 
 import API from '../../config.js'
 const API_URL = API
@@ -306,6 +307,12 @@ export default function UstaPanelProfil() {
         </div>
       )}
 
+      {/* Telefon doğrulama (SMS / WhatsApp) — kayıtlı numara değişirse doğrulama otomatik geçersiz olur */}
+      {usta?.telefon && (
+        <TelefonDogrulama key={usta.telefon} telefon={usta.telefon} amac="profil"
+          onNumaraDuzenle={() => document.getElementById('profil-telefon')?.focus()} />
+      )}
+
       {/* Abonelik */}
       {abonelik && (
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -491,7 +498,7 @@ export default function UstaPanelProfil() {
             <label className="text-sm font-bold text-gray-800 mb-1.5 block">Telefon *</label>
             <div className="relative">
               <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={form.telefon} onChange={e => setForm(p => ({ ...p, telefon: e.target.value }))}
+              <input id="profil-telefon" value={form.telefon} onChange={e => setForm(p => ({ ...p, telefon: e.target.value }))}
                 required placeholder="+90 548 000 0000"
                 className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>

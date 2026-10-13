@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../services/api_service.dart';
+import 'telefon_dogrulama_screen.dart';
 import '../models/kategori.dart';
 import '../models/sehir.dart';
 
@@ -111,6 +112,12 @@ class _UstaKayitScreenState extends State<UstaKayitScreen> {
         'kategori': _secilenKategori?.ad ?? '',
         'kategori_id': _secilenKategori?.id,
       });
+      if (ok && mounted) {
+        // Telefon sahipliği doğrulaması (SMS / WhatsApp). Zorunlu değil: kullanıcı atlayıp panelden de doğrulayabilir.
+        await Navigator.of(context).push<bool>(MaterialPageRoute(
+          builder: (_) => TelefonDogrulamaScreen(telefon: _telefonCtrl.text.trim(), amac: 'kayit'),
+        ));
+      }
       if (ok && mounted) {
         showDialog(
           context: context,

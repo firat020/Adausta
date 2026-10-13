@@ -19,6 +19,12 @@ class ApiConfig {
   static const String cikis        = '$baseUrl/api/auth/cikis';
   static const String ben          = '$baseUrl/api/auth/ben';
 
+  // Telefon doğrulama (Twilio Verify: SMS / WhatsApp)
+  static const String telefonDogrulamaAyarlar = '$baseUrl/api/telefon-dogrulama/ayarlar';
+  static const String telefonDogrulamaDurum   = '$baseUrl/api/telefon-dogrulama/durum';
+  static const String telefonDogrulamaGonder  = '$baseUrl/api/telefon-dogrulama/gonder';
+  static const String telefonDogrulamaDogrula = '$baseUrl/api/telefon-dogrulama/dogrula';
+
   // Usta Paneli
   static const String ustaPanel           = '$baseUrl/api/usta/panel';
   static const String ustaProfil          = '$baseUrl/api/usta/profil';

@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import html as _html
+import json as _json
 import os
 import secrets
 import uuid
@@ -9,11 +10,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
 import requests as _requests
-from flask import Blueprint, request, jsonify, session
-from models import db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog, AdminBildirim, PromosyonSatis
+from flask import Blueprint, request, jsonify, session, current_app
+from models import Kullanici, db, Odeme, Usta, Abonelik, Plan, MagazaSiparis, MagazaSiparisDurumLog, AdminBildirim, PromosyonSatis
 from promosyon import PROMO_FIYATLARI, PROMO_ACIKLAMA, promosyon_gecerli_mi, promosyon_aktif_et, referans_odul_kontrol
 from routes.odeme import _usd_try_kur
 from whatsapp import admin_whatsapp_gonder
+from extensions import limiter
 
 odeme_cardplus_bp = Blueprint('odeme_cardplus', __name__)
 
@@ -73,77 +75,6 @@ def _safekey_for_usta(usta_id: int) -> str:
 
 # --- Ücretsiz deneme (kart doğrulama) ayarları ---
 DENEME_SURE_GUN = 90          # yeni kayıt olan usta kaç gün ücretsiz kullanır
-DENEME_HOLD_TUTAR = 1.00      # TRY — PreAuth ile açılan hold, dönüşte anında void edilir
-
-
-def _xml_kacir(v: str) -> str:
-    return (str(v)
-            .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
-
-
-def _void_tahsilat(order_id: str, trans_id: str) -> dict:
-    """Server-to-server CC5Request (Type=Void) — PreAuth ile açılan holdü anında iptal eder,
-    kart sahibinden kalıcı bir tahsilat olmaz.
-    NOT: cardplus_otomatik_yenile.py'deki Type=Auth akışı gibi bu da HENÜZ CANLIDA TEST
-    EDİLMEDİ — Void alan adları (OrderId/TransId) Payten doküman örneğine göre yazıldı,
-    TEST ortamında gerçek bir PreAuth üzerinde elle bir kez doğrulanmadan prod'a alınmamalı."""
-    if not API_URL or not API_USERNAME or not API_PASSWORD:
-        return {'basarili': False, 'hata': 'CARDPLUS_API_URL/USERNAME/PASSWORD .env\'de tanımlı değil'}
-
-    xml_body = f"""<?xml version="1.0" encoding="UTF-8"?>
-<CC5Request>
-<Name>{_xml_kacir(API_USERNAME)}</Name>
-<Password>{_xml_kacir(API_PASSWORD)}</Password>
-<ClientId>{_xml_kacir(CLIENT_ID)}</ClientId>
-<Type>Void</Type>
-<OrderId>{_xml_kacir(order_id)}</OrderId>
-<TransId>{_xml_kacir(trans_id or '')}</TransId>
-</CC5Request>"""
-
-    resp = _requests.post(
-        API_URL, data=xml_body.encode('utf-8'),
-        headers={'Content-Type': 'text/xml; charset=utf-8'}, timeout=30,
-    )
-    root = ET.fromstring(resp.text)
-
-    def _bul(tag):
-        el = root.find(tag)
-        return el.text if el is not None and el.text else ''
-
-    proc_code = _bul('ProcReturnCode')
-    response = _bul('Response')
-    basarili = proc_code == '00' and response == 'Approved'
-    return {'basarili': basarili, 'hata': _bul('ErrMsg') if not basarili else ''}
-
-
-def _hash_ver3(params: dict, store_key: str) -> str:
-    """CardPlus 'Hash ver3' algoritması: parametreleri isim bazlı (case-insensitive)
-    sıralayıp | ile birleştirir, storeKey'i sona ekler, SHA-512 + Base64 alır."""
-    keys = sorted(
-        (k for k in params if k.lower() not in ('hash', 'encoding')),
-        key=lambda k: k.lower(),
-    )
-
-    def _escape(v: str) -> str:
-        return str(v).replace('\\', '\\\\').replace('|', '\\|')
-
-    hashval = ''.join(_escape(params[k]) + '|' for k in keys) + _escape(store_key)
-    return base64.b64encode(hashlib.sha512(hashval.encode('utf-8')).digest()).decode()
-
-
-def _client_redirect_html(url: str) -> str:
-    """Payten entegrasyon güvenlik rehberine göre okurl/failUrl sayfalarında
-    sunucu taraflı (3xx) redirect kullanılamıyor (CSP form-action kısıtlaması).
-    Bunun yerine tarayıcı taraflı JS ile yönlendirme yapılır."""
-    e_url = _html.escape(url)
-    return f"""<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Yönlendiriliyor...</title></head>
-<body>
-<p>Yönlendiriliyorsunuz, lütfen bekleyin... Otomatik geçiş olmazsa <a href="{e_url}">buraya tıklayın</a>.</p>
-<script>window.location.replace("{e_url}");</script>
-</body>
-</html>"""
 
 
 # ---------------------------------------------------------------------------
@@ -248,101 +179,94 @@ def cardplus_baslat():
     return jsonify({'form_html': form_html, 'siparis_no': order_id})
 
 
+def _telefon_son9(t) -> str:
+    """Ülke kodu/boşluk/tire yazım farklarını tolere eden karşılaştırma anahtarı (son 9 hane)."""
+    t = ''.join(ch for ch in str(t or '') if ch.isdigit())
+    return t[-9:] if len(t) >= 9 else ''
+
+
+def _telefon_deneme_kullandi_mi(usta) -> bool:
+    """Aynı telefon numarasıyla (başka bir usta kaydı üzerinden) daha önce ücretsiz deneme alınmış mı?
+    Kartsız deneme olduğu için tekrar tekrar yeni hesapla 90 gün almayı engeller."""
+    anahtarlar = {_telefon_son9(usta.telefon), _telefon_son9(getattr(usta, 'whatsapp', ''))} - {''}
+    if not anahtarlar:
+        return False
+    onceki = (Usta.query.join(Abonelik, Abonelik.usta_id == Usta.id)
+              .filter(Abonelik.deneme_mi == True, Usta.id != usta.id).all())  # noqa: E712
+    for u in onceki:
+        if {_telefon_son9(u.telefon), _telefon_son9(getattr(u, 'whatsapp', ''))} & anahtarlar:
+            return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # POST /api/odeme/cardplus/deneme/baslat
 # Body: { usta_id }
-# Yeni ustanın kartını PreAuth (minimum hold) ile doğrular — bugün kartından hiçbir
-# tutar kalıcı olarak çekilmez. Dönüşte (_deneme_aktiflestir) hold anında void edilir,
-# SafeKey kaydedilir ve usta DENEME_SURE_GUN günlük ücretsiz plana geçer. Deneme bitince
-# cardplus_otomatik_yenile.py bu aboneliği normal bir "yenileme" gibi bulup kayıtlı
-# karttan ilk gerçek aylık tahsilatı dener.
+# KARTSIZ 90 gün ücretsiz deneme: banka/PreAuth/Merchant Safe yok. Usta doğrudan
+# DENEME_SURE_GUN günlük aboneliğe geçer. Süre bitmeden app.py::abonelik_uyari_bildirim
+# 7/3/1/0 gün kala "kredi kartıyla ödeme yap" uyarısı gönderir; ödeme yapılmazsa
+# app.py::abonelik_kontrol aboneliği 'askida' yapar (otomatik_yenileme=False).
 # ---------------------------------------------------------------------------
-@odeme_cardplus_bp.route('/deneme/baslat', methods=['POST'])
-def cardplus_deneme_baslat():
+def _deneme_usta_yetkili(usta_id):
+    """(usta, hata_response) — oturum + sahiplik kontrolü."""
     if not session.get('kullanici_id'):
-        return jsonify({'hata': 'Giriş gerekli'}), 401
-    if not CLIENT_ID or not STORE_KEY:
-        return jsonify({'hata': 'CardPlus yapılandırması eksik (CLIENTID/STOREKEY)'}), 500
-    if not GATEWAY_URL:
-        return jsonify({'hata': 'CardPlus gateway adresi henüz tanımlanmadı'}), 500
-
-    data    = request.get_json()
-    usta_id = data.get('usta_id')
-
+        return None, (jsonify({'hata': 'Giriş gerekli'}), 401)
     usta = Usta.query.get(usta_id) if usta_id else None
     if not usta:
-        return jsonify({'hata': 'Geçersiz usta'}), 400
+        return None, (jsonify({'hata': 'Geçersiz usta'}), 400)
     if session.get('rol') != 'admin' and usta.kullanici_id != session.get('kullanici_id'):
-        return jsonify({'hata': 'Bu usta için işlem yetkiniz yok'}), 403
-    if usta.cardplus_safekey:
-        return jsonify({'hata': 'Bu usta için zaten kayıtlı bir kart var'}), 400
+        return None, (jsonify({'hata': 'Bu usta için işlem yetkiniz yok'}), 403)
+    return usta, None
+
+
+
+@odeme_cardplus_bp.route('/deneme/baslat', methods=['POST'])
+@limiter.limit('3 per day')  # aynı IP'den günde en fazla 3 deneme başlatma (NAT'lı ortak ağlar için esnek)
+def cardplus_deneme_baslat():
+    data = request.get_json() or {}
+    usta, hata = _deneme_usta_yetkili(data.get('usta_id'))
+    if hata:
+        return hata
     if Abonelik.query.filter_by(usta_id=usta.id, deneme_mi=True).first():
         return jsonify({'hata': 'Ücretsiz deneme bu hesap için zaten kullanılmış'}), 400
+
+    # Telefon sahipliği (Twilio Verify) — TELEFON_DOGRULAMA_ZORUNLU=true ise kartsız deneme için şart
+    if os.environ.get('TELEFON_DOGRULAMA_ZORUNLU', '').lower() in ('1', 'true', 'evet'):
+        kul = Kullanici.query.get(usta.kullanici_id) if usta.kullanici_id else None
+        if not kul or not kul.telefon_dogrulandi_mi():
+            return jsonify({'hata': 'Ücretsiz denemeyi başlatmak için telefon numaranızı doğrulayın.', 'kod': 'telefon_dogrulanmadi'}), 403
+
+    if _telefon_deneme_kullandi_mi(usta):
+        db.session.add(AdminBildirim(tur='hata', mesaj=f'Deneme reddedildi (aynı telefonla daha önce deneme alınmış): usta {usta.id} — {usta.ad} {usta.soyad}, {usta.telefon}'))
+        db.session.commit()
+        return jsonify({'hata': 'Bu telefon numarasıyla ücretsiz deneme daha önce kullanılmış. Üyeliğinizi başlatmak için bir plan seçip ödeme yapabilirsiniz.', 'kod': 'deneme_kullanilmis'}), 400
 
     plan = Plan.query.filter_by(aktif=True, sure_tip='aylik').first()
     if not plan:
         return jsonify({'hata': 'Aylık plan bulunamadı'}), 500
 
-    order_id = 'CPD' + uuid.uuid4().hex[:16].upper()
-
-    odeme = Odeme(
-        usta_id=usta_id,
-        abonelik_id=None,
-        tutar=float(DENEME_HOLD_TUTAR),
-        para_birimi='TRY',
-        siparis_no=order_id,
-        durum='bekliyor',
-        aciklama=f'CardPlus deneme kart doğrulama (PreAuth) — {DENEME_SURE_GUN} gün ücretsiz başlıyor',
-        safekey_talep_edildi=True,
-        reference_type='deneme_dogrulama',
-        reference_id=plan.id,
+    simdi = datetime.utcnow()
+    bitis = simdi + timedelta(days=DENEME_SURE_GUN)
+    ab = Abonelik(
+        usta_id=usta.id,
+        plan_id=plan.id,
+        durum='aktif',
+        baslangic=simdi,
+        bitis=bitis,
+        yenileme_tarihi=bitis,
+        deneme_mi=True,
+        otomatik_yenileme=False,
     )
-    db.session.add(odeme)
+    db.session.add(ab)
+    usta.plan = plan.ad
+    usta.plan_bitis = bitis
+
+    usta_ad = f'{usta.ad} {usta.soyad}'.strip()
+    db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'{usta_ad} - {DENEME_SURE_GUN} gun ucretsiz deneme basladi (kartsiz)'))
     db.session.commit()
+    admin_whatsapp_gonder(f'Yeni deneme: {usta_ad} - {DENEME_SURE_GUN} gun ucretsiz basladi (kartsiz).')
 
-    donus_url    = f'{BASE_URL}/api/odeme/cardplus/donus'
-    callback_url = f'{BASE_URL}/api/odeme/cardplus/callback'
-    bill_to_name = f'{usta.ad} {usta.soyad}'.strip()
-
-    params = {
-        'clientid':      CLIENT_ID,
-        'amount':        f'{float(DENEME_HOLD_TUTAR):.2f}',
-        'okurl':         donus_url,
-        'failUrl':       donus_url,
-        'TranType':      'PreAuth',
-        'Instalment':    '',
-        'callbackUrl':   callback_url,
-        'currency':      CURRENCY_CODES['TRY'],
-        'oid':           order_id,
-        'rnd':           secrets.token_hex(16),
-        'storetype':     '3D_PAY_HOSTING',
-        'hashAlgorithm': 'ver3',
-        'lang':          'tr',
-        'BillToName':    bill_to_name,
-        'BillToCompany': '',
-        'refreshtime':   '5',
-        'MERCHANTSAFEKEY':      _safekey_for_usta(usta.id),
-        'MERCHANTSAFEAUTHTYPE': '3DPAYAUTH',
-    }
-    params['HASH'] = _hash_ver3(params, STORE_KEY)
-
-    inputs = ''.join(
-        f'<input type="hidden" name="{_html.escape(k)}" value="{_html.escape(str(v))}">\n'
-        for k, v in params.items()
-    )
-
-    form_html = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Kart Doğrulanıyor...</title></head>
-<body onload="document.getElementById('cpform').submit()">
-<p>Kartınız güvenli şekilde doğrulanıyor, lütfen bekleyin... Bugün kartınızdan ücret çekilmeyecek.</p>
-<form id="cpform" method="POST" action="{GATEWAY_URL}">
-{inputs}
-</form>
-</body>
-</html>"""
-
-    return jsonify({'form_html': form_html, 'siparis_no': order_id})
+    return jsonify({'basarili': True, 'bitis': bitis.isoformat()})
 
 
 # ---------------------------------------------------------------------------
@@ -582,6 +506,7 @@ def _aktiflestir_abonelik(odeme: Odeme, params: dict):
         # profili tekrar görünür yapmak için duraklatma otomatik kaldırılır.
         mevcut.duraklatildi_mi = False
         mevcut.duraklatma_tarihi = None
+        mevcut.deneme_mi = False  # gerçek ödeme geldi: artık deneme değil, ücretli abonelik
         ab = mevcut
     else:
         bitis = simdi + timedelta(days=gun)
@@ -599,52 +524,6 @@ def _aktiflestir_abonelik(odeme: Odeme, params: dict):
     usta.plan = plan.ad if plan else 'aylik'
     usta.plan_bitis = ab.bitis
     _safekey_kaydet(odeme, ab, params)
-
-
-def _deneme_aktiflestir(odeme: Odeme, params: dict):
-    """Deneme kart doğrulama (PreAuth) başarılı dönünce çalışır:
-    1) SafeKey kaydedilir (kart ileride otomatik tahsilat için kullanılabilir olur)
-    2) DENEME_SURE_GUN günlük ücretsiz Abonelik (deneme_mi=True) açılır, usta.plan/plan_bitis güncellenir
-    3) PreAuth ile açılan hold server-to-server Void ile anında iptal edilir — kalıcı tahsilat olmaz.
-    Void başarısız olursa deneme yine de açılır (kart zaten 3D ile doğrulanmış sayılır),
-    ama admin'e bildirim düşülür — hold'un Payten panelinden elle kontrol edilmesi gerekebilir."""
-    usta = Usta.query.get(odeme.usta_id)
-    if not usta:
-        return
-
-    plan = Plan.query.get(odeme.reference_id) if odeme.reference_id else Plan.query.filter_by(aktif=True, sure_tip='aylik').first()
-    simdi = datetime.utcnow()
-    bitis = simdi + timedelta(days=DENEME_SURE_GUN)
-
-    ab = Abonelik(
-        usta_id=usta.id,
-        plan_id=plan.id if plan else None,
-        durum='aktif',
-        baslangic=simdi,
-        bitis=bitis,
-        yenileme_tarihi=bitis,
-        deneme_mi=True,
-    )
-    db.session.add(ab)
-    db.session.flush()
-
-    odeme.abonelik_id = ab.id
-    usta.plan = plan.ad if plan else 'aylik'
-    usta.plan_bitis = ab.bitis
-    _safekey_kaydet(odeme, ab, params)  # otomatik_yenileme burada True yapılır
-
-    try:
-        sonuc = _void_tahsilat(odeme.siparis_no, odeme.provider_transaction_id)
-        if not sonuc.get('basarili'):
-            raise RuntimeError(sonuc.get('hata') or 'bilinmeyen hata')
-        odeme.refunded_at = datetime.utcnow()
-        odeme.aciklama = (odeme.aciklama or '') + ' — hold void edildi'
-    except Exception as e:
-        db.session.add(AdminBildirim(
-            tur='hata',
-            mesaj=(f'Deneme doğrulama holdü iptal edilemedi (usta {usta.id} — {usta.ad} {usta.soyad}, '
-                   f'sipariş {odeme.siparis_no}): {e} — Payten panelinden elle void/iade kontrolü gerekebilir.'),
-        ))
 
 
 def _odeme_basarili_isle(odeme: Odeme, params: dict):
@@ -672,11 +551,6 @@ def _odeme_basarili_isle(odeme: Odeme, params: dict):
         urun = PROMO_ACIKLAMA.get(satis.tur, 'Öne çıkarma') if satis else 'Öne çıkarma'
         db.session.add(AdminBildirim(tur='yeni_odeme', mesaj=f'{usta_ad} - {odeme.tutar} TL kredi kartiyla odedi ({urun})'))
         admin_whatsapp_gonder(f'Odeme alindi: {usta_ad} - {odeme.tutar} TL ({urun}).')
-    elif odeme.reference_type == 'deneme_dogrulama':
-        _deneme_aktiflestir(odeme, params)
-        usta_ad = f'{odeme.usta.ad} {odeme.usta.soyad}'.strip() if odeme.usta else '-'
-        db.session.add(AdminBildirim(tur='yeni_uye', mesaj=f'{usta_ad} - kart dogrulandi, {DENEME_SURE_GUN} gun ucretsiz deneme basladi'))
-        admin_whatsapp_gonder(f'Yeni deneme: {usta_ad} - kart dogrulandi, {DENEME_SURE_GUN} gun ucretsiz basladi.')
     else:
         _aktiflestir_abonelik(odeme, params)
         if odeme.usta:
@@ -710,9 +584,18 @@ def cardplus_donus():
         db.session.commit()
         return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=basarili&siparis={odeme.siparis_no}')
 
+    if not basarili:
+        # Kart/PAN gibi hassas alanlar yazılmaz; sadece teşhis için gerekli alanlar.
+        teshis = {k: params.get(k, params.get(k.lower(), '')) for k in
+                  ('mdStatus', 'Response', 'ProcReturnCode', 'ErrMsg', 'mdErrorMsg', 'TranType', 'oid')}
+        teshis['hash_ok'] = hash_ok
+        current_app.logger.warning('CardPlus donus BASARISIZ: %s', teshis)
+
     if not basarili and odeme.durum == 'bekliyor':
         odeme.durum = 'basarisiz'
-        odeme.error_message = params.get('ErrMsg', params.get('errmsg', 'Hash doğrulanamadı' if not hash_ok else 'İşlem reddedildi'))
+        sebep = (params.get('ErrMsg') or params.get('errmsg') or params.get('mdErrorMsg')
+                 or ('Hash doğrulanamadı' if not hash_ok else 'İşlem reddedildi'))
+        odeme.error_message = f'{sebep} [mdStatus={mdstatus or "-"} hash_ok={hash_ok} proc={params.get("ProcReturnCode", "-")}]'[:500]
         db.session.commit()
 
     return _client_redirect_html(f'{BASE_URL}/odeme-sonuc?durum=hata&siparis={odeme.siparis_no}')

@@ -33,3 +33,4 @@ uploads/
 .idea/
 .vscode/
 *.iml
+!.env.example
