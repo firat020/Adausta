@@ -138,10 +138,23 @@ def ustalar():
     return jsonify({'ustalar': sonuc})
 
 
+def _telefon_dogrulanmadi(u):
+    """TELEFON_DOGRULAMA_ZORUNLU açıkken hesabı olan ama telefonu doğrulanmamış usta yayına alınamaz.
+    Hesabı olmayan (seed/sahiplenilmemiş) profiller etkilenmez."""
+    if os.environ.get('TELEFON_DOGRULAMA_ZORUNLU', '').lower() not in ('1', 'true', 'evet'):
+        return False
+    if not u.kullanici_id:
+        return False
+    k = Kullanici.query.get(u.kullanici_id)
+    return not k or not k.telefon_dogrulandi_mi()
+
+
 @admin_bp.route('/ustalar/<int:id>/onayla', methods=['POST'])
 @admin_gerekli
 def onayla(id):
     u = Usta.query.get_or_404(id)
+    if _telefon_dogrulanmadi(u):
+        return jsonify({'hata': 'Telefon numarası doğrulanmadığı için bu usta onaylanamaz', 'kod': 'telefon_dogrulanmadi'}), 400
     u.onaylanmis = True
     u.aktif = True
     db.session.commit()
@@ -504,6 +517,8 @@ def toplu_islem():
     ustalar = Usta.query.filter(Usta.id.in_(idler)).all()
     for u in ustalar:
         if islem == 'onayla':
+            if _telefon_dogrulanmadi(u):
+                continue  # doğrulanmamış usta toplu onayda atlanır
             u.onaylanmis = True
             u.aktif = True
         elif islem == 'reddet':

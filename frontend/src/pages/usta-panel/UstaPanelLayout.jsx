@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useNavigate, Outlet } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, ClipboardList, User, BarChart2,
   LogOut, Menu, Wrench, ToggleLeft, ToggleRight, Star, ShoppingBag,
@@ -30,7 +30,16 @@ export default function UstaPanelLayout() {
   const [okunmamisMesaj, setOkunmamisMesaj] = useState(0)
   const [okunmamisTalepMesaj, setOkunmamisTalepMesaj] = useState(0)
   const [deneme, setDeneme] = useState(null) // { kalan, bitis } — kartsız 90 gün deneme sürüyorsa
+  const [suresiBitti, setSuresiBitti] = useState(false) // deneme/abonelik bitmiş (askıda) — yalnız ödeme sayfası açık
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Süre bittiyse ödeme sayfası dışındaki panel sayfalarından ödemeye yönlendir
+  useEffect(() => {
+    if (suresiBitti && !location.pathname.startsWith('/usta/panel/abonelik')) {
+      navigate('/usta/panel/abonelik', { replace: true })
+    }
+  }, [suresiBitti, location.pathname, navigate])
 
   useEffect(() => {
     benimBilgilerim()
@@ -48,6 +57,9 @@ export default function UstaPanelLayout() {
             if (ab?.deneme_mi && ab.durum === 'aktif' && r.data.plan_bitis) {
               const kalan = Math.max(0, Math.ceil((new Date(r.data.plan_bitis).getTime() - Date.now()) / 86400000))
               setDeneme({ kalan, bitis: new Date(r.data.plan_bitis).toLocaleDateString('tr-TR') })
+            }
+            if (ab?.durum === 'askida' && r.data.plan_bitis && new Date(r.data.plan_bitis).getTime() < Date.now()) {
+              setSuresiBitti(true)
             }
           }).catch(() => {})
         }
@@ -185,6 +197,15 @@ export default function UstaPanelLayout() {
           <span className="font-bold text-gray-900">Usta Paneli</span>
           <div className="w-9" />
         </div>
+
+        {suresiBitti && (
+          <div className="px-4 py-2.5 text-sm flex items-center justify-between gap-3 flex-wrap border-b bg-red-50 border-red-200 text-red-800">
+            <span>
+              <span className="font-bold">Üyelik süren doldu.</span>
+              {' '}Panele devam etmek ve profilinin yayında kalması için kredi kartıyla ödeme yap.
+            </span>
+          </div>
+        )}
 
         {deneme && deneme.kalan <= 30 && (
           <div className={`px-4 py-2.5 text-sm flex items-center justify-between gap-3 flex-wrap border-b ${
