@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session
+from usta_gorunurluk import gizli_usta_idleri
 from models import db, Kullanici, IsTalebi, Usta, Kategori, IsTalebiMesaj, Abonelik, usta_kategoriler
 from extensions import limiter
 from datetime import datetime
@@ -162,9 +163,7 @@ def toplu_talep_gonder():
         return jsonify({'hata': 'Geçersiz kategori/şehir/ilçe'}), 400
 
     # Profilini duraklatan ustalar (ustalar.py listele() ile aynı dışlama — Faz 1)
-    duraklatilan_usta_idleri = db.session.query(Abonelik.usta_id).filter(
-        Abonelik.durum == 'aktif', Abonelik.duraklatildi_mi == True  # noqa: E712
-    )
+    duraklatilan_usta_idleri = gizli_usta_idleri()  # duraklatılmış + süresi dolan deneme
 
     q = Usta.query.filter(
         Usta.onaylanmis == True, Usta.aktif == True,  # noqa: E712

@@ -5,6 +5,7 @@ from sms import sms_gonder
 from whatsapp import admin_whatsapp_gonder
 from extensions import limiter
 from promosyon import referans_kaydet
+from usta_gorunurluk import gizli_usta_idleri, usta_gizli_mi
 from datetime import datetime, timedelta
 from sqlalchemy.orm import selectinload
 import os, uuid, random, hashlib
@@ -40,10 +41,7 @@ def listele():
 
     # Profilini duraklatan ustalar (SoliHoli kıyaslaması — Faz 1 "Profili Duraklat"):
     # aboneliği aktif ama kendi isteğiyle duraklattığı için arama/listelerde gizlenir.
-    duraklatilan_usta_idleri = db.session.query(Abonelik.usta_id).filter(
-        Abonelik.durum == 'aktif', Abonelik.duraklatildi_mi == True  # noqa: E712
-    )
-    q = q.filter(~Usta.id.in_(duraklatilan_usta_idleri))
+    q = q.filter(~Usta.id.in_(gizli_usta_idleri()))  # duraklatılmış + süresi dolan deneme (hesap kapalı)
 
     if kategori_id:
         # Ana kategori VEYA ek kategoriler içinde ara
@@ -135,6 +133,9 @@ def son_yorumlar():
 @ustalar_bp.route('/<int:id>', methods=['GET'])
 def detay(id):
     u = Usta.query.get_or_404(id)
+    # Kapalı hesap (süresi dolan deneme / duraklatılmış) herkese açık sayfada görünmez; sahibi ve admin görebilir
+    if session.get('rol') != 'admin' and u.kullanici_id != session.get('kullanici_id') and usta_gizli_mi(u.id):
+        return jsonify({'hata': 'Usta bulunamadı'}), 404
     lat = request.args.get('lat', type=float)
     lng = request.args.get('lng', type=float)
     veri = u.to_dict(lat, lng)
@@ -375,6 +376,8 @@ def yorum_ekle(id):
 def is_talebi_gonder(id):
     """Müşteri bir ustaya iş/arıza talebi gönderir."""
     usta = Usta.query.get_or_404(id)
+    if usta_gizli_mi(usta.id):
+        return jsonify({'hata': 'Bu usta şu anda hizmet vermiyor'}), 404
     data = request.get_json()
     if not data.get('musteri_ad') or not data.get('musteri_telefon') or not data.get('baslik'):
         return jsonify({'hata': 'Ad, telefon ve başlık zorunludur'}), 400
@@ -469,10 +472,7 @@ def en_yakin():
         return jsonify({'hata': 'Konum gerekli'}), 400
 
     q = Usta.query.filter_by(onaylanmis=True, aktif=True)
-    duraklatilan_usta_idleri = db.session.query(Abonelik.usta_id).filter(
-        Abonelik.durum == 'aktif', Abonelik.duraklatildi_mi == True  # noqa: E712
-    )
-    q = q.filter(~Usta.id.in_(duraklatilan_usta_idleri))
+    q = q.filter(~Usta.id.in_(gizli_usta_idleri()))  # duraklatılmış + süresi dolan deneme (hesap kapalı)
     if kategori_id:
         q = q.filter_by(kategori_id=kategori_id)
 

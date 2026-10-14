@@ -171,7 +171,8 @@ def sitemap():
         ekle(path, pri, freq)
 
     # Usta profilleri — SEO'lu slug ile (frontend ustaSlugUrl() ile aynı format)
-    ustalar = Usta.query.filter_by(onaylanmis=True, aktif=True).all()
+    from usta_gorunurluk import gizli_usta_idleri
+    ustalar = Usta.query.filter_by(onaylanmis=True, aktif=True).filter(~Usta.id.in_(gizli_usta_idleri())).all()
     for u in ustalar:
         ad_soyad = f'{u.ad} {u.soyad}'.strip()
         parcalar = ' '.join(filter(None, [ad_soyad, u.kategori.ad if u.kategori else '', u.sehir.ad if u.sehir else '']))
@@ -218,26 +219,8 @@ def saglik():
     return {'durum': 'OK', 'platform': 'AdaUsta KKTC'}
 
 def abonelik_kontrol():
-    """Süresi dolmuş abonelikleri pasife al.
-    Otomatik yenilemesi açık olanlar hariç — onları cardplus_otomatik_yenile.py (günlük
-    çalışan ayrı cron) birkaç günlük dunning penceresiyle yönetir; burada erken 'askida'
-    yapılırsa deneme/abonelik süresi biter bitmez otomatik tahsilat denenmeden plan düşer."""
-    from models import Abonelik, Usta
-    simdi = datetime.utcnow()
-    bitis_gecmis = Abonelik.query.filter(
-        Abonelik.durum == 'aktif',
-        Abonelik.bitis != None,
-        Abonelik.bitis < simdi,
-        Abonelik.otomatik_yenileme == False,
-        Abonelik.duraklatildi_mi != True,  # duraklatılmış abonelikte sayaç durur, otomatik pasife alınmaz
-    ).all()
-    for a in bitis_gecmis:
-        a.durum = 'askida'
-        usta = Usta.query.get(a.usta_id)
-        if usta:
-            usta.plan = 'ucretsiz'
-    if bitis_gecmis:
-        db.session.commit()
+    from abonelik_isleri import abonelik_kontrol as _kontrol
+    _kontrol()
 
 
 def abonelik_uyari_bildirim():
@@ -291,12 +274,12 @@ def abonelik_uyari_bildirim():
         elif deneme_mi:
             # Kartsız 90 gün deneme: tahsilat otomatik yapılmaz, kullanıcıyı ödemeye çağırıyoruz.
             if kalan == 0:
-                baslik = 'Ucretsiz Deneminiz Sona Erdi'
-                icerik = 'Ucretsiz deneme sureniz bugun bitiyor. Profilinizin yayinda kalmasi icin kredi kartiyla odeme yapin.'
+                baslik = 'Ucretsiz Deneminiz Bugun Bitiyor'
+                icerik = 'Ucretsiz deneme sureniz bugun bitiyor. Odeme yapmazsaniz hesabiniz kapatilacak ve profiliniz yayindan kalkacak. Devam etmek icin kredi kartiyla odeme yapin.'
             else:
                 baslik = f'Deneminiz {kalan} Gun Sonra Bitiyor'
-                icerik = (f'Ucretsiz deneme sureniz {kalan} gun icinde sona erecek. Kesintisiz devam etmek icin '
-                           f'panelinizden kredi kartiyla odeme yapabilirsiniz.')
+                icerik = (f'Ucretsiz deneme sureniz {kalan} gun icinde sona erecek. Odeme yapmazsaniz hesabiniz '
+                           f'kapatilacak ve profiliniz yayindan kalkacak. Devam etmek icin kredi kartiyla odeme yapin.')
         elif kalan == 0:
             baslik = 'Uyeliginiz Sona Erdi'
             icerik = 'AdaUsta uyeliginiz sona erdi. Yenilemek icin giris yapiniz.'
@@ -366,7 +349,7 @@ def _deneme_bitti_geri_kazanim():
             continue
 
         baslik = 'Ucretsiz Deneminiz Bitti'
-        icerik = 'Profiliniz ucretsiz planda. Musteri taleplerini kacirmamak icin kredi kartiyla uyeliginizi baslatin.'
+        icerik = 'Hesabiniz kapali, profiliniz yayinda degil. Musteri taleplerini almak icin kredi kartiyla odeme yaparak hesabinizi yeniden acin.'
         gecmis = BildirimGecmisi(kullanici_id=u.kullanici_id, baslik=baslik, icerik=icerik,
                                  tur='deneme_bitti', gonderildi=False)
         db.session.add(gecmis)
@@ -432,8 +415,10 @@ def _baslat_scheduler():
         scheduler = BackgroundScheduler()
         scheduler.add_job(func=_run_with_context(abonelik_kontrol),
                           trigger='interval', hours=12, id='abonelik_kontrol')
+        # Her gün 06:00 UTC (KKTC 09:00): yeniden başlatma günü kaydırıp mesajı kaçırmasın
         scheduler.add_job(func=_run_with_context(abonelik_uyari_bildirim),
-                          trigger='interval', hours=24, id='abonelik_uyari')
+                          trigger='cron', hour=6, minute=0, id='abonelik_uyari',
+                          misfire_grace_time=6 * 3600, coalesce=True)
         scheduler.add_job(func=_run_with_context(fcm_token_temizle),
                           trigger='interval', days=7, id='fcm_temizle')
         scheduler.add_job(func=_run_with_context(bekleyen_talep_uyari),
