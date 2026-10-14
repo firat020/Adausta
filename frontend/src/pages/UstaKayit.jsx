@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
   CreditCard, Shield, Star, Check, Eye, EyeOff, Lock,
-  Wrench, Building2, Gift, Store, LocateFixed
+  Wrench, Building2, Gift, Store, LocateFixed, ArrowRight, ArrowLeft, Info
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import TelefonDogrulama from '../components/TelefonDogrulama'
@@ -412,118 +412,142 @@ export default function UstaKayit() {
   )
 
   const ADIMLAR = [
-    { no: 1, ad: 'Kayıt Türü' },
+    { no: 1, ad: 'Hesap Türü' },
     { no: 2, ad: 'Bilgiler' },
     { no: 3, ad: 'Plan' },
-    { no: 4, ad: 'Ödeme' },
+    { no: 4, ad: 'Tamamla' },
   ]
 
   const AdimGostergesi = () => (
-    <div className="flex items-center justify-center gap-0 mb-8">
+    <div className="flex items-center justify-center flex-wrap gap-y-2 mb-10">
       {ADIMLAR.map((a, i) => (
         <div key={a.no} className="flex items-center">
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-            adim === a.no ? 'bg-blue-600 text-white' :
-            adim > a.no  ? 'bg-blue-100 text-blue-700' :
-                           'bg-gray-100 text-gray-400'
-          }`}>
-            {adim > a.no ? <Check size={12} /> : <span>{a.no}</span>}
-            {a.ad}
+          <div className="flex items-center gap-2.5">
+            <span className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-150 ease-out ${
+              adim === a.no ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' :
+              adim > a.no  ? 'bg-blue-100 text-blue-700' :
+                             'bg-slate-200/70 text-slate-500'
+            }`}>
+              {adim > a.no ? <Check size={16} /> : a.no}
+            </span>
+            <span className={`text-sm hidden sm:inline ${adim === a.no ? 'font-bold text-blue-600' : adim > a.no ? 'font-semibold text-blue-700' : 'font-medium text-slate-500'}`}>
+              {a.ad}
+            </span>
           </div>
           {i < ADIMLAR.length - 1 && (
-            <div className={`w-5 h-0.5 ${adim > a.no ? 'bg-blue-400' : 'bg-gray-200'}`} />
+            <div className={`w-5 sm:w-6 h-px mx-3 sm:mx-4 ${adim > a.no ? 'bg-blue-400' : 'bg-slate-300'}`} />
           )}
         </div>
       ))}
     </div>
   )
 
-  // ─── Adım 1: Kayıt Türü ──────────────────────────────────────────────────────
+  // ─── Adım 1: Hesap Türü ──────────────────────────────────────────────────────
+  const HESAP_KARTLARI = [
+    {
+      key: 'usta', ad: 'Bireysel Usta', Ikon: Wrench,
+      aciklama: 'Bireysel olarak hizmet veren ustalar için',
+      ozellikler: ['Kişisel profil sayfası', 'Müşteri taleplerine ulaşın', 'Hizmetlerinizi tanıtın'],
+      rozet: 'İlk 3 ay ücretsiz',
+      kart: 'border-2 border-orange-500 shadow-[0_8px_30px_rgba(249,115,22,0.12)]',
+      ikonKutu: 'bg-orange-50 text-orange-500', tik: 'text-orange-500',
+      buton: 'bg-orange-500 hover:bg-orange-600 focus-visible:ring-orange-400',
+      butonMetin: 'Usta Olarak Kaydol', git: () => setAdim(2),
+    },
+    {
+      key: 'sirket', ad: 'Kurumsal Şirket', Ikon: Building2,
+      aciklama: 'Şirketinizin hizmetlerini AdaUsta’da tanıtın.',
+      ozellikler: ['Kurumsal profil sayfası', 'Logo ve fotoğraf ekleme', 'Kurumsal hizmet yönetimi'],
+      kart: 'border border-slate-200/80 shadow-[0_4px_24px_rgba(15,30,70,0.06)]',
+      ikonKutu: 'bg-blue-50 text-blue-600', tik: 'text-blue-600',
+      buton: 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-400',
+      butonMetin: 'Şirket Olarak Kaydol', git: () => navigate('/sirket-kayit'),
+    },
+    {
+      key: 'magaza', ad: 'Mağaza Kaydı', Ikon: Store,
+      aciklama: 'Mağazanızı açın, ürünlerinizi listeleyin.',
+      ozellikler: ['Ürün listesi oluşturma', 'Sipariş yönetimi', 'Mağaza profili'],
+      kart: 'border border-slate-200/80 shadow-[0_4px_24px_rgba(15,30,70,0.06)]',
+      ikonKutu: 'bg-indigo-50 text-indigo-600', tik: 'text-blue-600',
+      buton: 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-400',
+      butonMetin: 'Mağaza Aç', git: () => navigate('/satici-basvuru'),
+    },
+  ]
+
+  const kartFiyat = (k) => {
+    if (k.key === 'usta') return (
+      <div>
+        <div className="flex items-baseline gap-2 text-[#0f1e46]">
+          <span className="text-xl font-bold">İlk 3 ay</span>
+          <span className="text-4xl font-extrabold text-orange-500 leading-none">0 USD</span>
+        </div>
+        <p className="text-sm text-slate-500 mt-1.5 leading-snug">Sonrasında aylık 9,99 USD’den<br />başlayan planlar.</p>
+      </div>
+    )
+    if (k.key === 'sirket') return (
+      <div className="flex items-baseline gap-1.5 text-[#0f1e46]">
+        <span className="text-lg font-semibold">Aylık</span>
+        <span className="text-3xl font-extrabold text-blue-700 leading-none">19,99 USD</span>
+        <span className="text-lg font-semibold">’den</span>
+      </div>
+    )
+    return <p className="text-lg font-bold text-[#0f1e46]">Mağazanızı AdaUsta’ya taşıyın</p>
+  }
+
   if (adim === 1) return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="text-center mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">Kayıt Olun</h1>
-        <p className="text-gray-500 text-sm mt-2">Hesap türünüzü seçin ve başlayın</p>
+    <div className="bg-gradient-to-b from-slate-50 to-white min-h-[calc(100vh-4rem)]">
+      <div className="max-w-[1260px] mx-auto px-4 sm:px-6 pt-12 pb-14">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#0f1e46]">AdaUsta’ya katılın</h1>
+          <p className="text-slate-500 text-base sm:text-xl mt-3">Size uygun hesap türünü seçin, kaydınızı kolayca tamamlayın.</p>
+        </div>
+        <AdimGostergesi />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7 items-stretch">
+          {HESAP_KARTLARI.map(k => (
+            <div key={k.key} className={`relative bg-white rounded-2xl p-7 flex flex-col ${k.kart}`}>
+              {k.rozet && (
+                <span className="absolute top-4 right-4 bg-orange-500 text-white text-xs font-semibold px-3.5 py-1.5 rounded-full shadow-sm">
+                  {k.rozet}
+                </span>
+              )}
+              <div className={`w-[72px] h-[72px] rounded-2xl flex items-center justify-center mb-5 ${k.ikonKutu}`}>
+                <k.Ikon size={34} strokeWidth={1.8} />
+              </div>
+              <h2 className="text-2xl font-bold text-[#0f1e46] mb-2">{k.ad}</h2>
+              <p className="text-base text-slate-500 leading-snug mb-5">{k.aciklama}</p>
+              <ul className="space-y-3 mb-6">
+                {k.ozellikler.map(f => (
+                  <li key={f} className="flex items-center gap-3 text-[15px] text-slate-600">
+                    <Check size={18} strokeWidth={2.5} className={`flex-shrink-0 ${k.tik}`} /> {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto">
+                <div className="border-t border-slate-200 pt-5 mb-5 min-h-[88px] flex items-center">
+                  {kartFiyat(k)}
+                </div>
+                <button type="button" onClick={k.git}
+                  className={`w-full flex items-center justify-center gap-2 text-white font-bold text-base py-3.5 rounded-xl transition-all duration-150 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${k.buton}`}>
+                  {k.butonMetin} <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-8 text-center">
+          <Info size={16} className="flex-shrink-0" />
+          İlk 3 ay ücretsiz kullanım yalnızca Bireysel Usta kaydı için geçerlidir.
+        </p>
+
+        <div className="border-t border-slate-200 pt-7 text-center">
+          <button type="button" onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-all duration-150 ease-out rounded-lg px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            <ArrowLeft size={16} /> Ana Sayfaya Dön
+          </button>
+        </div>
       </div>
-      <AdimGostergesi />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-
-        {/* Bireysel Usta */}
-        <div
-          onClick={() => setAdim(2)}
-          className="relative border-2 rounded-2xl p-8 cursor-pointer transition-all border-blue-200 bg-white hover:border-blue-500 hover:shadow-lg hover:shadow-blue-50 group"
-        >
-          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-blue-100 transition-colors">
-            <Wrench size={28} className="text-blue-600" />
-          </div>
-          <h3 className="font-bold text-gray-900 text-lg mb-1">Bireysel Usta</h3>
-          <p className="text-sm text-gray-500 mb-5">Bireysel olarak hizmet veren ustalar için</p>
-          <ul className="space-y-2 mb-5">
-            {['Kişisel profil sayfası', 'Müşteri talepleri al', 'Kolay kayıt süreci'].map((f, i) => (
-              <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                <Check size={13} className="text-blue-500 flex-shrink-0" /> {f}
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-center justify-between pt-4 border-t border-blue-100">
-            <span className="text-sm font-bold text-blue-600">$9.99 / ay'dan</span>
-            <span className="text-xs text-blue-400 font-medium">Seç →</span>
-          </div>
-        </div>
-
-        {/* Kurumsal Şirket */}
-        <div
-          onClick={() => navigate('/sirket-kayit')}
-          className="relative border-2 rounded-2xl p-8 cursor-pointer transition-all border-indigo-200 bg-white hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-50 group"
-        >
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-indigo-100 transition-colors">
-            <Building2 size={28} className="text-indigo-600" />
-          </div>
-          <h3 className="font-bold text-gray-900 text-lg mb-1">Kurumsal Şirket</h3>
-          <p className="text-sm text-gray-500 mb-5">Şirket olarak hizmet vermek isteyenler için</p>
-          <ul className="space-y-2 mb-5">
-            {['Şirket profil sayfası', 'Logo & fotoğraf ekle', 'Kurumsal hizmet yönetimi'].map((f, i) => (
-              <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                <Check size={13} className="text-indigo-500 flex-shrink-0" /> {f}
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-center justify-between pt-4 border-t border-indigo-100">
-            <span className="text-sm font-bold text-indigo-600">$19.99 / ay'dan</span>
-            <span className="text-xs text-indigo-400 font-medium">Seç →</span>
-          </div>
-        </div>
-
-        {/* Mağaza Kayıt */}
-        <div
-          onClick={() => navigate('/satici-basvuru')}
-          className="relative border-2 rounded-2xl p-8 cursor-pointer transition-all border-purple-200 bg-white hover:border-purple-500 hover:shadow-lg hover:shadow-purple-50 group"
-        >
-          <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-purple-100 transition-colors">
-            <Store size={28} className="text-purple-600" />
-          </div>
-          <h3 className="font-bold text-gray-900 text-lg mb-1">Mağaza Kayıt</h3>
-          <p className="text-sm text-gray-500 mb-5">Mağazanızı Ada Usta'ya açın ve ürünlerinizi listeleyin</p>
-          <ul className="space-y-2 mb-5">
-            {['Ürün listesi oluştur', 'Sipariş yönetimi', 'Mağaza profili'].map((f, i) => (
-              <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                <Check size={13} className="text-purple-500 flex-shrink-0" /> {f}
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-center justify-between pt-4 border-t border-purple-100">
-            <span className="text-sm font-bold text-purple-600">Mağaza Kur</span>
-            <span className="text-xs text-purple-400 font-medium">Seç →</span>
-          </div>
-        </div>
-
-      </div>
-
-      <button onClick={() => navigate('/')}
-        className="w-full border border-gray-200 text-gray-500 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
-        ← Ana Sayfaya Dön
-      </button>
     </div>
   )
 
