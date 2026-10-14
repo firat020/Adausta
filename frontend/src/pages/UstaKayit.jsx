@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle, User, Phone, MapPin, Briefcase, FileText,
   CreditCard, Shield, Star, Check, Eye, EyeOff, Lock,
-  Wrench, Building2, Gift, Store, LocateFixed, ArrowRight, ArrowLeft, Info
+  Wrench, Building2, Gift, Store, LocateFixed, ArrowRight, ArrowLeft, Info, ClipboardList
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import TelefonDogrulama from '../components/TelefonDogrulama'
@@ -170,6 +170,7 @@ export default function UstaKayit() {
   const [ilceler, setIlceler] = useState([])
   const [basarili, setBasarili] = useState(false)
   const [denemeAcildi, setDenemeAcildi] = useState(false) // kartsız 90 gün deneme başladı mı
+  const [telefonDogrulandi, setTelefonDogrulandi] = useState(false) // yeni 4. adımda doğrulama tamamlandı mı
   const [kayitliUstaId, setKayitliUstaId] = useState(null)  // kayıt oluştuysa tekrar kayıt denenmesin (OTP adımı için)
   const [dogrulamaAdimi, setDogrulamaAdimi] = useState(false) // telefon doğrulama (Twilio Verify) adımı açık mı
   const [dogrulamaZorunlu, setDogrulamaZorunlu] = useState(false)
@@ -335,6 +336,38 @@ export default function UstaKayit() {
     }
   }
 
+  // Hesap yoksa oluşturur (idempotent). Telefon doğrulaması oturum gerektirdiği için kod gönderilirken
+  // arka planda çağrılır — kullanıcı numarayı yeniden girmez.
+  const kayitOlustur = async () => {
+    if (kayitliUstaId) return kayitliUstaId
+    const kayitResp = await ustaKayit({
+      ...form,
+      sehir_id: parseInt(form.sehir_id),
+      ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
+      kategori_id: parseInt(secilenKategoriler[0]),
+      ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
+      deneyim_yil: parseInt(form.deneyim_yil) || 0,
+      plan: secilenPlan,
+      referans_kodu: refKodu,
+    })
+    const id = kayitResp?.data?.usta_id
+    setKayitliUstaId(id)
+    return id
+  }
+
+  const kaydiTamamla = async () => {
+    setHata('')
+    setYukleniyor(true)
+    try {
+      const id = await kayitOlustur()
+      await denemeTamamla(id)
+    } catch (err) {
+      denemeHataIsle(err)
+    } finally {
+      setYukleniyor(false)
+    }
+  }
+
   const denemeTamamla = async (ustaId) => {
     await cardplusDenemeBaslat({ usta_id: ustaId })
     _gtagKayitDonusumu()
@@ -348,21 +381,7 @@ export default function UstaKayit() {
     setHata('')
     setYukleniyor(true)
     try {
-      let ustaId = kayitliUstaId
-      if (!ustaId) {
-        const kayitResp = await ustaKayit({
-          ...form,
-          sehir_id: parseInt(form.sehir_id),
-          ilce_id: form.ilce_id ? parseInt(form.ilce_id) : null,
-          kategori_id: parseInt(secilenKategoriler[0]),
-          ek_kategori_ids: secilenKategoriler.slice(1).map(Number),
-          deneyim_yil: parseInt(form.deneyim_yil) || 0,
-          plan: secilenPlan,
-          referans_kodu: refKodu,
-        })
-        ustaId = kayitResp?.data?.usta_id
-        setKayitliUstaId(ustaId)
-      }
+      const ustaId = await kayitOlustur()
       // Doğrulama durumu her zaman backend'den alınır
       const [{ data: ayar }, { data: durum }] = await Promise.all([telefonDogrulamaAyarlar(), telefonDogrulamaDurum()])
       setDogrulamaZorunlu(!!ayar.zorunlu)
@@ -393,6 +412,12 @@ export default function UstaKayit() {
   const seciliPlan = PLANLAR.find(p => p.id === secilenPlan)
   const denemeUygun = !!seciliPlan?.deneme
 
+  useEffect(() => {
+    if (adim === 4 && denemeUygun) {
+      telefonDogrulamaAyarlar().then(r => setDogrulamaZorunlu(!!r.data?.zorunlu)).catch(() => {})
+    }
+  }, [adim, denemeUygun])
+
   if (basarili) return (
     <div className="max-w-lg mx-auto px-4 py-20 text-center">
       <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
@@ -418,8 +443,8 @@ export default function UstaKayit() {
     { no: 4, ad: 'Tamamla' },
   ]
 
-  const AdimGostergesi = () => (
-    <div className="flex items-center justify-center flex-wrap gap-y-2 mb-10">
+  const AdimGostergesi = ({ altBosluk = 'mb-10' }) => (
+    <div className={`flex items-center justify-center flex-wrap gap-y-2 ${altBosluk}`}>
       {ADIMLAR.map((a, i) => (
         <div key={a.no} className="flex items-center">
           <div className="flex items-center gap-2.5">
@@ -439,6 +464,9 @@ export default function UstaKayit() {
           )}
         </div>
       ))}
+      <p className="sm:hidden basis-full text-center text-xs font-semibold text-slate-600 mt-1">
+        {adim} / {ADIMLAR.length} • {ADIMLAR[adim - 1]?.ad}
+      </p>
     </div>
   )
 
@@ -835,6 +863,133 @@ export default function UstaKayit() {
       </div>
     </div>
   )
+
+  // ─── Adım 4 (kartsız 90 gün deneme): Kaydı tamamla + telefon doğrulama ───────────
+  if (adim === 4 && denemeUygun) {
+    const fiyatTR = String(seciliPlan?.fiyat || '9.99').replace('.', ',')
+    const hediyeBaslik = (
+      <div>
+        <h2 className="text-2xl font-extrabold text-[#0f1e46] leading-tight">İlk 90 gün ücretsiz</h2>
+        <span className="inline-flex items-center gap-1.5 mt-2 bg-emerald-50 text-emerald-700 text-sm font-semibold px-3 py-1 rounded-full">
+          <CheckCircle size={16} /> Bugün ödeme yok
+        </span>
+      </div>
+    )
+    return (
+      <div className="bg-gradient-to-b from-slate-50 to-white min-h-[calc(100vh-4rem)]">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-14">
+          <AdimGostergesi altBosluk="mb-6 sm:mb-8" />
+
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0f1e46]">Kaydınızı tamamlayın</h1>
+            <p className="text-slate-500 text-sm sm:text-xl mt-2 sm:mt-3">Telefonunuzu doğrulayın, ücretsiz kullanıma başlayın.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 lg:gap-6 items-start">
+            {/* Sol: ücretsiz bilgi + telefon doğrulama + butonlar */}
+            <div className="space-y-4 lg:space-y-0 lg:bg-white lg:border lg:border-slate-200/80 lg:rounded-2xl lg:shadow-[0_4px_24px_rgba(15,30,70,0.06)] lg:p-8">
+              {/* Mobil: kompakt yeşil kart */}
+              <div className="lg:hidden flex items-center gap-4 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                <span className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><Gift size={26} /></span>
+                <div>
+                  <p className="text-xl font-extrabold text-[#0f1e46] leading-tight">İlk 90 gün ücretsiz</p>
+                  <p className="text-sm font-semibold text-emerald-700 mt-0.5">Bugün ödenecek: 0 USD</p>
+                </div>
+              </div>
+
+              {/* Masaüstü: ücretsiz bölümü */}
+              <div className="hidden lg:flex items-start gap-5 pb-6 border-b border-slate-200">
+                <span className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0"><Gift size={30} /></span>
+                <div>
+                  {hediyeBaslik}
+                  <p className="text-slate-500 text-[15px] leading-relaxed mt-3">
+                    Kart veya ödeme bilgisi gerekmez. Süre sonunda devam etmek sizin seçiminizdir. Otomatik tahsilat yapılmaz.
+                  </p>
+                </div>
+              </div>
+
+              {/* Telefon doğrulama */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 lg:border-0 lg:rounded-none lg:p-0 lg:pt-6">
+                <TelefonDogrulama
+                  telefon={form.telefon} amac="kayit" cerceve={false}
+                  oturumAcik={!!kayitliUstaId}
+                  onOnce={kayitOlustur}
+                  onDogrulandi={() => { setTelefonDogrulandi(true); setHata('') }}
+                  onAtla={dogrulamaZorunlu ? undefined : kaydiTamamla}
+                  onNumaraDuzenle={() => (kayitliUstaId ? navigate('/usta/panel/profil') : setAdim(2))} />
+              </div>
+
+              {hata && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl lg:mt-5" role="alert">{hata}</div>
+              )}
+
+              {/* Butonlar */}
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:border-t lg:border-slate-200 lg:mt-6 lg:pt-6">
+                <button type="button" onClick={() => setAdim(3)} disabled={yukleniyor || !!kayitliUstaId}
+                  className="order-2 lg:order-1 flex items-center justify-center gap-2 lg:w-[150px] text-blue-600 lg:bg-white lg:border lg:border-blue-200 hover:bg-blue-50 font-semibold text-[15px] py-3 rounded-xl transition-all duration-150 ease-out disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <ArrowLeft size={18} /> Geri
+                </button>
+                <div className="order-1 lg:order-2 lg:w-[260px]">
+                  <button type="button" onClick={kaydiTamamla} disabled={!telefonDogrulandi || yukleniyor}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-base py-3.5 rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                    {yukleniyor ? 'Kaydediliyor...' : 'Kaydı tamamla'}
+                  </button>
+                  {!telefonDogrulandi && (
+                    <p className="hidden lg:flex items-center gap-2 text-[13px] text-slate-500 mt-3">
+                      <Info size={15} className="flex-shrink-0" /> Devam etmek için telefonunuzu doğrulayın.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="lg:hidden flex items-center justify-center gap-2 text-[13px] text-slate-500 text-center pt-1">
+                <Info size={15} className="flex-shrink-0" /> 90 gün sonrası: {fiyatTR} USD / ay. Otomatik tahsilat yok.
+              </p>
+            </div>
+
+            {/* Sağ: kayıt özeti (yalnız masaüstü) */}
+            <aside className="hidden lg:block bg-white border border-slate-200/80 rounded-2xl shadow-[0_4px_24px_rgba(15,30,70,0.06)] overflow-hidden">
+              <div className="bg-blue-600 text-white flex items-center gap-3 px-6 py-4">
+                <ClipboardList size={22} /> <span className="text-xl font-bold">Kayıt Özeti</span>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="flex justify-between items-center text-[15px]">
+                  <span className="text-slate-500">Seçilen plan</span>
+                  <span className="font-bold text-[#0f1e46]">{seciliPlan?.ad}</span>
+                </div>
+                <div className="flex justify-between items-center text-[15px]">
+                  <span className="text-slate-500">İlk 90 gün</span>
+                  <span className="font-bold text-emerald-600">Ücretsiz</span>
+                </div>
+                <div className="flex justify-between items-center bg-blue-50 rounded-xl px-4 py-3.5">
+                  <span className="font-semibold text-[#0f1e46]">Bugün ödenecek</span>
+                  <span className="text-xl font-extrabold text-blue-600">0 USD</span>
+                </div>
+                <div className="flex justify-between items-center text-[15px]">
+                  <span className="text-slate-500">Sonrasında</span>
+                  <span className="font-bold text-[#0f1e46]">{fiyatTR} USD / ay</span>
+                </div>
+                <p className="flex items-start gap-2 text-[13px] text-slate-500 leading-snug">
+                  <Info size={15} className="flex-shrink-0 mt-0.5" />
+                  90 gün sonunda ödeme yapılmazsa hesabınız kapatılır; kredi kartıyla ödeme yaparak yeniden açabilirsiniz.
+                </p>
+                <div className="border-t border-slate-200 pt-4">
+                  <p className="font-bold text-[#0f1e46] mb-3">Plan kapsamı</p>
+                  <ul className="space-y-2.5">
+                    {(seciliPlan?.ozellikler || []).map(f => (
+                      <li key={f} className="flex items-center gap-3 text-[15px] text-slate-600">
+                        <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><Check size={14} strokeWidth={3} /></span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ─── Adım 4: Ödeme ────────────────────────────────────────────────────────────
   return (
