@@ -1,3 +1,4 @@
+from guvenlik import icerir
 from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Usta, Fotograf, Yorum, Kategori, Kullanici, AdminLog, Abone, IletisimLog, KategoriGoruntuleme, Plan, Abonelik, Odeme, usta_kategoriler, AdminBildirim, Sirket, Mesaj, UstaBelge, UstaSikayet, FCMToken, BildirimGecmisi, fmt
 from functools import wraps
@@ -122,9 +123,9 @@ def ustalar():
         # parça olarak aramak hiçbir sütunla eşleşmiyordu).
         for kelime in arama.split():
             q = q.filter(
-                Usta.ad.ilike(f'%{kelime}%') |
-                Usta.soyad.ilike(f'%{kelime}%') |
-                Usta.telefon.ilike(f'%{kelime}%')
+                icerir(Usta.ad, kelime) |
+                icerir(Usta.soyad, kelime) |
+                icerir(Usta.telefon, kelime)
             )
 
     sonuc = []
@@ -583,9 +584,9 @@ def sirketler():
         # adı birlikte aranınca da bulunsun (bkz. /ustalar aynı düzeltme).
         for kelime in arama.split():
             q = q.filter(
-                Sirket.sirket_adi.ilike(f'%{kelime}%') |
-                Sirket.yetkili_ad.ilike(f'%{kelime}%') |
-                Sirket.telefon.ilike(f'%{kelime}%')
+                icerir(Sirket.sirket_adi, kelime) |
+                icerir(Sirket.yetkili_ad, kelime) |
+                icerir(Sirket.telefon, kelime)
             )
 
     return jsonify({'sirketler': [s.to_dict() for s in q.order_by(Sirket.olusturma.desc()).all()]})
@@ -764,10 +765,10 @@ def uyeler():
     if arama:
         for kelime in arama.split():
             q = q.filter(
-                Kullanici.ad.ilike(f'%{kelime}%') |
-                Kullanici.soyad.ilike(f'%{kelime}%') |
-                Kullanici.email.ilike(f'%{kelime}%') |
-                Kullanici.telefon.ilike(f'%{kelime}%')
+                icerir(Kullanici.ad, kelime) |
+                icerir(Kullanici.soyad, kelime) |
+                icerir(Kullanici.email, kelime) |
+                icerir(Kullanici.telefon, kelime)
             )
 
     return jsonify({'uyeler': [k.to_dict() for k in q.order_by(Kullanici.olusturma.desc()).all()]})
@@ -1094,7 +1095,7 @@ def aboneler():
     arama = request.args.get('arama', '')
     q = Abone.query
     if arama:
-        q = q.filter(Abone.email.ilike(f'%{arama}%') | Abone.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Abone.email, arama) | icerir(Abone.ad, arama))
     liste = q.order_by(Abone.tarih.desc()).all()
     return jsonify({
         'aboneler': [a.to_dict() for a in liste],

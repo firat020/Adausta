@@ -1,3 +1,4 @@
+from guvenlik import icerir
 from flask import Blueprint, request, jsonify, session, send_file, current_app
 from models import (db, Kullanici, SellerApplication, SellerDocument,
                     MarketplaceStore, StoreMember, SellerBalance, SellerAuditLog,
@@ -51,9 +52,9 @@ def basvurular_listele():
 
     if arama:
         q = q.filter(
-            SellerApplication.ticari_unvan.ilike(f'%{arama}%') |
-            SellerApplication.yetkili_email.ilike(f'%{arama}%') |
-            SellerApplication.magaza_adi.ilike(f'%{arama}%')
+            icerir(SellerApplication.ticari_unvan, arama) |
+            icerir(SellerApplication.yetkili_email, arama) |
+            icerir(SellerApplication.magaza_adi, arama)
         )
 
     total = q.count()
@@ -278,9 +279,9 @@ def magazalar_listele():
 
     if arama:
         q = q.filter(
-            MarketplaceStore.magaza_adi.ilike(f'%{arama}%') |
-            MarketplaceStore.ticari_unvan.ilike(f'%{arama}%') |
-            MarketplaceStore.slug.ilike(f'%{arama}%')
+            icerir(MarketplaceStore.magaza_adi, arama) |
+            icerir(MarketplaceStore.ticari_unvan, arama) |
+            icerir(MarketplaceStore.slug, arama)
         )
 
     if askida_filtre == '1' or askida_filtre == 'true':

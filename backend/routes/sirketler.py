@@ -1,3 +1,4 @@
+from guvenlik import icerir, baslar
 from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Sirket, Kullanici, Kategori, Sehir, SirketIsTalebi, AdminBildirim
 from werkzeug.utils import secure_filename
@@ -24,7 +25,7 @@ def listele():
     limit       = request.args.get('limit', 20, type=int)
 
     if sehir_ad and not sehir_id:
-        s = Sehir.query.filter(Sehir.ad.ilike(f'{sehir_ad}%')).first()
+        s = Sehir.query.filter(baslar(Sehir.ad, sehir_ad)).first()
         if s:
             sehir_id = s.id
 
@@ -38,9 +39,9 @@ def listele():
         q = q.filter_by(ilce_id=ilce_id)
     if arama:
         q = q.join(Kategori, Sirket.kategori_id == Kategori.id, isouter=True).filter(
-            Sirket.sirket_adi.ilike(f'%{arama}%') |
-            Sirket.aciklama.ilike(f'%{arama}%') |
-            Kategori.ad.ilike(f'%{arama}%')
+            icerir(Sirket.sirket_adi, arama) |
+            icerir(Sirket.aciklama, arama) |
+            icerir(Kategori.ad, arama)
         )
 
     sirketler = q.order_by(Sirket.olusturma.desc()).all()

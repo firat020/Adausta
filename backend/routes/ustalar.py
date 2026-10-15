@@ -1,3 +1,4 @@
+from guvenlik import icerir, baslar
 from flask import Blueprint, request, jsonify, session, current_app
 from models import db, Usta, Fotograf, Yorum, IsTalebi, Kullanici, Kategori, Sehir, usta_kategoriler, AdminBildirim, TelefonOtp, FCMToken, BildirimGecmisi, UstaBelge, Abonelik, UstaSikayet, UstaEkipUyesi, UstaSertifika, UstaOdul
 from werkzeug.utils import secure_filename
@@ -33,7 +34,7 @@ def listele():
 
     # Şehir adından ID bul (hero search'ten gelen sehir= parametresi için)
     if sehir_ad and not sehir_id:
-        s = Sehir.query.filter(Sehir.ad.ilike(f'{sehir_ad}%')).first()
+        s = Sehir.query.filter(baslar(Sehir.ad, sehir_ad)).first()
         if s:
             sehir_id = s.id
 
@@ -64,10 +65,10 @@ def listele():
         q = q.join(Kategori, Usta.kategori_id == Kategori.id, isouter=True)
         for kelime in arama.split():
             q = q.filter(
-                Usta.ad.ilike(f'%{kelime}%') |
-                Usta.soyad.ilike(f'%{kelime}%') |
-                Usta.aciklama.ilike(f'%{kelime}%') |
-                Kategori.ad.ilike(f'%{kelime}%')
+                icerir(Usta.ad, kelime) |
+                icerir(Usta.soyad, kelime) |
+                icerir(Usta.aciklama, kelime) |
+                icerir(Kategori.ad, kelime)
             )
 
     # yorum/fotoğraf/ek kategori ilişkileri toplu yüklenir (sıralama puanı ve to_dict her usta için bunlara bakar)

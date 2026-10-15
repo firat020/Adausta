@@ -1,3 +1,4 @@
+from guvenlik import icerir
 from flask import Blueprint, request, jsonify, session
 from models import (
     db, Kullanici, MarketplaceStore, StoreMember, SellerBalance,
@@ -137,7 +138,7 @@ def urunler_listele():
 
     q = Urun.query.filter_by(store_id=store.id)
     if arama:
-        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Urun.ad, arama))
     if urun_durum:
         q = q.filter(Urun.urun_durum == urun_durum)
 

@@ -1,3 +1,4 @@
+from guvenlik import icerir
 from flask import Blueprint, request, jsonify, session
 from models import (db, Marka, UrunModeli, Urun, UrunGorsel, UrunSiparis,
                     MagazaSiparis, MagazaSiparisKalemi, MagazaSiparisDurumLog,
@@ -129,7 +130,7 @@ def urunler_listele():
 
     q = Urun.query
     if arama:
-        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Urun.ad, arama))
     if aktif is not None:
         q = q.filter_by(aktif=(aktif == '1'))
     total = q.count()
@@ -287,7 +288,7 @@ def public_urunler():
     limit = 20
     q = Urun.query.filter(Urun.aktif == True, db.or_(Urun.urun_durum == 'active', Urun.urun_durum == None))
     if arama:
-        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Urun.ad, arama))
     if kategori:
         q = q.filter_by(kategori=kategori)
     if marka_id:
@@ -573,10 +574,10 @@ def admin_magaza_siparisler():
         q = q.filter_by(odeme_durumu=odeme_durumu)
     if arama:
         q = q.filter(db.or_(
-            MagazaSiparis.siparis_no.ilike(f'%{arama}%'),
-            MagazaSiparis.misafir_ad.ilike(f'%{arama}%'),
-            MagazaSiparis.misafir_telefon.ilike(f'%{arama}%'),
-            MagazaSiparis.misafir_email.ilike(f'%{arama}%'),
+            icerir(MagazaSiparis.siparis_no, arama),
+            icerir(MagazaSiparis.misafir_ad, arama),
+            icerir(MagazaSiparis.misafir_telefon, arama),
+            icerir(MagazaSiparis.misafir_email, arama),
         ))
     total = q.count()
     siparisler = q.order_by(MagazaSiparis.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
@@ -653,7 +654,7 @@ def usta_urunler():
     limit = 20
     q = Urun.query.filter_by(aktif=True)
     if arama:
-        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Urun.ad, arama))
     total = q.count()
     urunler = q.order_by(Urun.olusturma.desc()).offset((sayfa-1)*limit).limit(limit).all()
     return jsonify({'urunler': [u.to_dict() for u in urunler], 'total': total})
@@ -732,9 +733,9 @@ def admin_siparisler():
         q = q.filter_by(durum=durum)
     if arama:
         q = q.filter(db.or_(
-            UrunSiparis.misafir_ad.ilike(f'%{arama}%'),
-            UrunSiparis.siparis_kodu.ilike(f'%{arama}%'),
-            UrunSiparis.misafir_telefon.ilike(f'%{arama}%'),
+            icerir(UrunSiparis.misafir_ad, arama),
+            icerir(UrunSiparis.siparis_kodu, arama),
+            icerir(UrunSiparis.misafir_telefon, arama),
         ))
     total = q.count()
     siparisler = q.order_by(UrunSiparis.olusturma.desc()).offset((sayfa - 1) * limit).limit(limit).all()
@@ -776,7 +777,7 @@ def public_magaza_urunleri(slug):
         db.or_(Urun.urun_durum == 'active', Urun.urun_durum == None)
     )
     if arama:
-        q = q.filter(Urun.ad.ilike(f'%{arama}%'))
+        q = q.filter(icerir(Urun.ad, arama))
     if kategori:
         q = q.filter_by(kategori=kategori)
     total = q.count()
@@ -796,7 +797,7 @@ def public_saticilar():
     limit = 20
     q = MarketplaceStore.query.filter_by(aktif=True, askida=False)
     if arama:
-        q = q.filter(MarketplaceStore.magaza_adi.ilike(f'%{arama}%'))
+        q = q.filter(icerir(MarketplaceStore.magaza_adi, arama))
     total = q.count()
     magazalar = q.order_by(MarketplaceStore.toplam_satis.desc()).offset((sayfa-1)*limit).limit(limit).all()
     return jsonify({
