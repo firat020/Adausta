@@ -41,7 +41,8 @@ except AttributeError:
 HOST = '31.210.53.135'
 PORT = 22
 USER = 'root'
-PASSWORD = os.environ.get('ADAUSTA_SSH_PASSWORD', 'iU7FTMHC')
+KEY_FILE = os.path.join(os.path.expanduser('~'), '.ssh', 'adausta_ed25519')  # sifre kodda tutulmaz
+PASSWORD = os.environ.get('ADAUSTA_SSH_PASSWORD')
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 REMOTE_BACKEND = '/var/www/adausta/backend'
@@ -64,7 +65,8 @@ def make_client(retries=3):
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(HOST, port=PORT, username=USER, password=PASSWORD, timeout=30)
+            kw = {'key_filename': KEY_FILE} if os.path.exists(KEY_FILE) else {'password': PASSWORD}
+            client.connect(HOST, port=PORT, username=USER, timeout=30, look_for_keys=False, allow_agent=False, **kw)
             return client
         except Exception as e:
             last_err = e

@@ -36,12 +36,13 @@ cd frontend && npm run build
 git add -A && git commit -m "..." && git push origin master
 
 # 3. dist/ SCP ile upload (KRİTİK — git checkout dist'i kopyalamaz!)
-'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/assets/index-XXXX.js"  "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
-'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/assets/index-XXXX.css" "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
-'/c/Program Files/PuTTY/pscp.exe' -pw 'iU7FTMHC' "C:/Adausta/frontend/dist/index.html"            "root@31.210.53.135:/var/www/adausta/frontend/dist/"
+scp -i ~/.ssh/adausta_ed25519 "C:/Adausta/frontend/dist/assets/index-XXXX.js"  "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
+scp -i ~/.ssh/adausta_ed25519 "C:/Adausta/frontend/dist/assets/index-XXXX.css" "root@31.210.53.135:/var/www/adausta/frontend/dist/assets/"
+scp -i ~/.ssh/adausta_ed25519 "C:/Adausta/frontend/dist/index.html"            "root@31.210.53.135:/var/www/adausta/frontend/dist/"
 
+# (Sunucuya SSH artik yalnizca anahtarla: ~/.ssh/adausta_ed25519 — sifre kullanilmaz. Python scriptleri: ssh_baglan.py)
 # 4. Nginx reload
-'/c/Program Files/PuTTY/plink.exe' -ssh root@31.210.53.135 -pw 'iU7FTMHC' "nginx -s reload && echo TAMAM"
+ssh -i ~/.ssh/adausta_ed25519 root@31.210.53.135 "nginx -s reload && echo TAMAM"
 ```
 
 > **NOT:** Sunucuda backend dosyaları (app.py, models.py, routes/) uncommitted değişiklikler içeriyor.
