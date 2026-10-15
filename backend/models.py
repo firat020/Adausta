@@ -1342,7 +1342,7 @@ class UstaBelge(db.Model):
             'id': self.id,
             'usta_id': self.usta_id,
             'tur': self.tur,
-            'url': f'/uploads/{self.dosya}',
+            'url': f'/api/usta/belge-dosya/{self.id}',
             'durum': self.durum,
             'admin_notu': self.admin_notu or '',
             'olusturma': fmt(self.olusturma),

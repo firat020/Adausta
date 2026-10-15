@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, send_from_directory
 from models import db, Kullanici, Usta, IsTalebi, IletisimLog, Yorum, Fotograf, Kategori, Sehir, Ilce, Abonelik, Mesaj, UstaBelge, AdminBildirim, Plan, Odeme, Referans, PromosyonSatis, FCMToken, UstaEkipUyesi, UstaSertifika, UstaOdul, IsTalebiMesaj, HizmetOnerisi
 from extensions import limiter
 from datetime import datetime, timedelta
@@ -10,6 +10,9 @@ from werkzeug.utils import secure_filename
 usta_panel_bp = Blueprint('usta_panel', __name__)
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
+# Kimlik/ustalık belgeleri herkese açık /uploads altında DEĞİL, nginx'in sunmadığı özel klasörde tutulur
+BELGE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'private_belgeler')
+os.makedirs(BELGE_FOLDER, exist_ok=True)
 IZIN_UZANTILAR = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
@@ -969,6 +972,24 @@ def belgeler_getir(usta):
     return jsonify({'belgeler': [b.to_dict() for b in liste]})
 
 
+@usta_panel_bp.route('/belge-dosya/<int:bid>', methods=['GET'])
+def belge_dosya(bid):
+    """Belge dosyası: yalnızca admin veya belgenin sahibi olan usta görebilir."""
+    kid = session.get('kullanici_id')
+    if not kid:
+        return jsonify({'hata': 'Giriş gerekli'}), 401
+    belge = UstaBelge.query.get_or_404(bid)
+    if session.get('rol') != 'admin':
+        usta = Usta.query.filter_by(kullanici_id=kid).first()
+        if not usta or usta.id != belge.usta_id:
+            return jsonify({'hata': 'Yetkisiz'}), 403
+    ad = os.path.basename(belge.dosya)
+    klasor = BELGE_FOLDER if os.path.exists(os.path.join(BELGE_FOLDER, ad)) else UPLOAD_FOLDER
+    resp = send_from_directory(klasor, ad)
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
+
+
 @usta_panel_bp.route('/belgeler', methods=['POST'])
 @usta_gerekli
 def belge_yukle(usta):
@@ -983,7 +1004,7 @@ def belge_yukle(usta):
         tur = 'diger'
 
     ad = f'{uuid.uuid4().hex}.{ext}'
-    f.save(os.path.join(UPLOAD_FOLDER, ad))
+    f.save(os.path.join(BELGE_FOLDER, ad))
     belge = UstaBelge(usta_id=usta.id, tur=tur, dosya=ad, durum='bekliyor')
     db.session.add(belge)
 
@@ -1002,9 +1023,10 @@ def belge_sil(usta, bid):
     belge = UstaBelge.query.filter_by(id=bid, usta_id=usta.id).first_or_404()
     if belge.durum == 'onaylandi':
         return jsonify({'hata': 'Onaylanmış belge silinemez'}), 400
-    yol = os.path.join(UPLOAD_FOLDER, belge.dosya)
-    if os.path.exists(yol):
-        os.remove(yol)
+    for klasor in (BELGE_FOLDER, UPLOAD_FOLDER):
+        yol = os.path.join(klasor, os.path.basename(belge.dosya))
+        if os.path.exists(yol):
+            os.remove(yol)
     db.session.delete(belge)
     db.session.commit()
     return jsonify({'mesaj': 'Belge silindi'})

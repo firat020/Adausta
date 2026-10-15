@@ -51,6 +51,10 @@ CORS(app, supports_credentials=True, origins=[
     'http://www.adausta.com',
 ])
 
+# nginx arkasında gerçek istemci IP'sini al (hız sınırı herkesi 127.0.0.1 görüyordu)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=0)
+
 db.init_app(app)
 limiter.init_app(app)
 
@@ -103,6 +107,28 @@ app.register_blueprint(satici_panel_bp, url_prefix='/api/satici-panel')
 app.register_blueprint(iade_bp, url_prefix='/api/iade')
 app.register_blueprint(admin_finans_bp, url_prefix='/api/admin/finans')
 app.register_blueprint(satici_yorum_bp, url_prefix='/api/satici-yorum')
+
+# Herkese açık yazma uç noktaları: istenmeyen kayıt / SMS istismarına karşı IP başına sınır
+_HERKESE_ACIK_SINIRLAR = {
+    'ustalar.yorum_ekle': '10 per hour',
+    'ustalar.kayit': '10 per hour',
+    'ustalar.is_talebi_gonder': '20 per hour',
+    'sirketler.kayit': '10 per hour',
+    'sirketler.is_talebi_gonder': '20 per hour',
+    'analitik.abone_ol': '10 per hour',
+    'analitik.iletisim_log': '120 per minute',
+    'analitik.kategori_goruntule': '120 per minute',
+    'reklamlar.reklam_tikla': '60 per minute',
+    'iade.iade_olustur': '10 per hour',
+    'telefon_dogrulama.gonder': '5 per minute; 20 per hour',
+    'telefon_dogrulama.dogrula': '10 per minute; 30 per hour',
+    'satici_basvuru.basvuru_olustur': '10 per hour',
+    'magaza.public_siparis': '20 per hour',
+}
+for _ep, _lim in _HERKESE_ACIK_SINIRLAR.items():
+    if _ep in app.view_functions:
+        app.view_functions[_ep] = limiter.limit(_lim)(app.view_functions[_ep])
+
 
 @app.after_request
 def guvenlik_basliklari(response):
